@@ -25,6 +25,12 @@ async function loadGlobals() {
         if (sidebarSchoolName && settings.schoolName) {
             sidebarSchoolName.innerText = settings.schoolName;
         }
+        if (document.getElementById('cat-weight')) {
+            document.getElementById('cat-weight').value = settings.catWeight !== undefined ? settings.catWeight : 30;
+        }
+        if (document.getElementById('exam-weight')) {
+            document.getElementById('exam-weight').value = settings.examWeight !== undefined ? settings.examWeight : 70;
+        }
     } catch(e) {}
 }
 
@@ -35,6 +41,8 @@ function getAbbreviation(sub) {
 function formatRole(role) {
     if (role === 'class_teacher') return 'Class Teacher';
     if (role === 'superadmin') return 'Super Admin';
+    if (role === 'bursar') return 'Bursar';
+    if (role === 'discipline_master') return 'Discipline Master';
     if (!role) return '';
     return role.charAt(0).toUpperCase() + role.slice(1);
 }
@@ -71,6 +79,13 @@ function renderActiveTab() {
     if (!activeTab) return;
     const tabId = activeTab.getAttribute('data-tab');
     if (tabId === 'students-tab') renderStudentsTab();
+    if (tabId === 'fees-tab') renderFeesTab();
+    if (tabId === 'attendance-tab') renderAttendanceTab();
+    if (tabId === 'timetable-tab') renderTimetableTab();
+    if (tabId === 'payroll-tab') renderPayrollTab();
+    if (tabId === 'mobilemoney-tab') renderMobileMoneyTab();
+    if (tabId === 'notices-tab') renderNoticesTab();
+    if (tabId === 'applications-tab') renderApplicationsTab();
     if (tabId === 'staff-tab') renderStaffTab();
     if (tabId === 'marks-tab') renderMarksTab();
     if (tabId === 'rankings-tab') renderRankingsTab();
@@ -119,6 +134,26 @@ async function checkLogin() {
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
             document.getElementById('students-tab').classList.add('active');
             renderStudentsTab();
+        } else if (currentUser.role === 'bursar') {
+            document.querySelectorAll('.nav-links li').forEach(li => li.style.display = 'none');
+            document.querySelector('[data-tab="students-tab"]').style.display = 'block';
+            document.querySelector('[data-tab="fees-tab"]').style.display = 'block';
+
+            document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
+            document.querySelector('[data-tab="fees-tab"]').classList.add('active');
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('fees-tab').classList.add('active');
+            renderFeesTab();
+        } else if (currentUser.role === 'discipline_master') {
+            document.querySelectorAll('.nav-links li').forEach(li => li.style.display = 'none');
+            document.querySelector('[data-tab="students-tab"]').style.display = 'block';
+            document.querySelector('[data-tab="attendance-tab"]').style.display = 'block';
+
+            document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
+            document.querySelector('[data-tab="attendance-tab"]').classList.add('active');
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('attendance-tab').classList.add('active');
+            renderAttendanceTab();
         } else if (currentUser.role === 'teacher') {
             document.querySelector('[data-tab="students-tab"]').style.display = 'none';
             document.querySelector('[data-tab="staff-tab"]').style.display = 'none';
@@ -1457,6 +1492,690 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
 document.getElementById('preview-design-btn').addEventListener('click', () => {
     window.open(`/api/preview-pdf/dummy?token=${authToken}&t=${Date.now()}`, '_blank');
 });
+
+// ── 💰 Fee Ledger UI Implementation ────────────────────────────────
+async function renderFeesTab() {
+    try {
+        const res = await apiFetch('/api/students');
+        if (!res.ok) return;
+        students = await res.json();
+    } catch(e) {
+        return;
+    }
+
+    const classStudents = students.filter(s => (s.classLevel || 'Form 1') === currentClass);
+    const tbody = document.getElementById('fees-table-tbody');
+    tbody.innerHTML = '';
+
+    let totalExpected = 0;
+    let totalCollected = 0;
+    let totalOutstanding = 0;
+
+    classStudents.forEach(student => {
+        const tf = Number(student.totalFees || 0);
+        const pa = Number(student.paidAmount || 0);
+        const bal = tf - pa;
+
+        totalExpected += tf;
+        totalCollected += pa;
+        totalOutstanding += Math.max(0, bal);
+
+        const tr = document.createElement('tr');
+
+        // Fee lock badge
+        let lockBadge = '';
+        if (bal <= 0) {
+            lockBadge = '<span class="badge" style="background: var(--accent-success); color: white;">🟢 Cleared</span>';
+        } else if (student.feeLockOverride) {
+            lockBadge = '<span class="badge" style="background: var(--accent-blue); color: white;">🔑 Admin Override (Unlocked)</span>';
+        } else {
+            lockBadge = '<span class="badge" style="background: var(--accent-danger); color: white;">🔒 Locked</span>';
+        }
+
+        tr.innerHTML = `
+            <td><strong>${student.name}</strong></td>
+            <td>${student.classLevel || 'Form 1'}</td>
+            <td>
+                <input type="number" class="fee-input" value="${tf}" min="0" style="width: 110px; padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-primary); color: white;" data-id="${student.id}">
+            </td>
+            <td>MK ${pa.toLocaleString()}</td>
+            <td style="color: ${bal > 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}; font-weight: bold;">
+                MK ${bal.toLocaleString()}
+            </td>
+            <td>${lockBadge}</td>
+            <td>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <button class="btn btn-pay success-btn" style="padding: 4px 8px; font-size: 0.8rem;" data-id="${student.id}" data-name="${student.name}">+ Record Payment</button>
+                    <button class="btn btn-override outline-btn" style="padding: 4px 8px; font-size: 0.8rem;" data-id="${student.id}" data-override="${student.feeLockOverride ? 'false' : 'true'}">
+                        ${student.feeLockOverride ? 'Lock' : 'Override Lock'}
+                    </button>
+                </div>
+            </td>
+        `;
+
+        // Update fee amount change handler
+        tr.querySelector('.fee-input').addEventListener('change', async (e) => {
+            const sid = e.target.getAttribute('data-id');
+            const newFee = Number(e.target.value);
+            const updates = {};
+            updates[sid] = { totalFees: newFee };
+            await apiFetch('/api/students', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ updates })
+            });
+            renderFeesTab();
+        });
+
+        // Record payment click handler
+        tr.querySelector('.btn-pay').addEventListener('click', (e) => {
+            const sid = e.target.getAttribute('data-id');
+            const sname = e.target.getAttribute('data-name');
+            openPaymentModal(sid, sname);
+        });
+
+        // Override toggle click handler
+        tr.querySelector('.btn-override').addEventListener('click', async (e) => {
+            const sid = e.target.getAttribute('data-id');
+            const overrideState = e.target.getAttribute('data-override') === 'true';
+            await apiFetch(`/api/students/${sid}/fee-lock-override`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ override: overrideState })
+            });
+            renderFeesTab();
+        });
+
+        tbody.appendChild(tr);
+    });
+
+    // Update summary cards
+    document.getElementById('fee-summary-total').innerText = `MK ${totalExpected.toLocaleString()}`;
+    document.getElementById('fee-summary-collected').innerText = `MK ${totalCollected.toLocaleString()}`;
+    document.getElementById('fee-summary-outstanding').innerText = `MK ${totalOutstanding.toLocaleString()}`;
+}
+
+// Payment Modal Logic
+function openPaymentModal(studentId, studentName) {
+    document.getElementById('payment-student-id').value = studentId;
+    document.getElementById('payment-student-name').innerText = `Student: ${studentName}`;
+    document.getElementById('payment-amount').value = '';
+    document.getElementById('payment-note').value = '';
+    document.getElementById('payment-error').style.display = 'none';
+
+    const s = students.find(x => x.id === studentId);
+    const hist = document.getElementById('payment-history-list');
+    hist.innerHTML = '';
+
+    if (s && s.paymentHistory && s.paymentHistory.length > 0) {
+        s.paymentHistory.slice().reverse().forEach(p => {
+            const div = document.createElement('div');
+            div.style.cssText = 'padding: 6px 0; border-bottom: 1px solid var(--border-color); color: var(--text-secondary);';
+            div.innerHTML = `<strong>MK ${Number(p.amount).toLocaleString()}</strong> - ${new Date(p.date).toLocaleDateString()} (${p.receiptNo}) <br><small>${p.note || ''}</small>`;
+            hist.appendChild(div);
+        });
+    } else {
+        hist.innerHTML = '<p style="color: var(--text-secondary);">No previous payment records.</p>';
+    }
+
+    document.getElementById('payment-modal').style.display = 'flex';
+}
+
+document.getElementById('payment-cancel-btn').addEventListener('click', () => {
+    document.getElementById('payment-modal').style.display = 'none';
+});
+
+document.getElementById('payment-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const studentId = document.getElementById('payment-student-id').value;
+    const amount = Number(document.getElementById('payment-amount').value);
+    const note = document.getElementById('payment-note').value;
+
+    const res = await apiFetch(`/api/students/${studentId}/payments`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ amount, note })
+    });
+
+    if (res.ok) {
+        document.getElementById('payment-modal').style.display = 'none';
+        renderFeesTab();
+    } else {
+        const err = await res.json();
+        document.getElementById('payment-error').innerText = err.error || 'Failed to record payment.';
+        document.getElementById('payment-error').style.display = 'block';
+    }
+});
+
+// Batch Set Fee Modal
+document.getElementById('btn-batch-set-fees').addEventListener('click', () => {
+    document.getElementById('batch-fee-amount').value = '';
+    document.getElementById('batch-fee-modal').style.display = 'flex';
+});
+
+document.getElementById('batch-fee-cancel-btn').addEventListener('click', () => {
+    document.getElementById('batch-fee-modal').style.display = 'none';
+});
+
+document.getElementById('batch-fee-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const defaultFee = Number(document.getElementById('batch-fee-amount').value);
+    if (isNaN(defaultFee) || defaultFee < 0) return;
+
+    const updates = {};
+    students.forEach(s => {
+        if ((s.classLevel || 'Form 1') === currentClass) {
+            updates[s.id] = { totalFees: defaultFee };
+        }
+    });
+
+    await apiFetch('/api/students', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ updates })
+    });
+
+    document.getElementById('batch-fee-modal').style.display = 'none';
+    renderFeesTab();
+});
+
+// ── 📅 Daily Attendance UI Implementation ─────────────────────────────
+let currentAttendanceDate = new Date().toISOString().split('T')[0];
+
+async function renderAttendanceTab() {
+    const dateInput = document.getElementById('attendance-date');
+    if (!dateInput.value) {
+        dateInput.value = currentAttendanceDate;
+    } else {
+        currentAttendanceDate = dateInput.value;
+    }
+
+    try {
+        const res = await apiFetch('/api/students');
+        if (!res.ok) return;
+        students = await res.json();
+    } catch(e) {
+        return;
+    }
+
+    let existingRegister = { records: {} };
+    try {
+        const attRes = await apiFetch(`/api/attendance?date=${currentAttendanceDate}&classLevel=${encodeURIComponent(currentClass)}`);
+        if (attRes.ok) existingRegister = await attRes.json();
+    } catch(e) {}
+
+    const classStudents = students.filter(s => (s.classLevel || 'Form 1') === currentClass);
+    const tbody = document.getElementById('attendance-table-tbody');
+    tbody.innerHTML = '';
+
+    for (const student of classStudents) {
+        const currentStatus = (existingRegister.records && existingRegister.records[student.id]) || 'present';
+
+        // Fetch student summary attendance
+        let summaryText = '0 / 0 Days';
+        try {
+            const sumRes = await apiFetch(`/api/students/${student.id}/attendance-summary`);
+            if (sumRes.ok) {
+                const sum = await sumRes.json();
+                summaryText = `${sum.present} Present / ${sum.totalDays} Total Days`;
+            }
+        } catch(e) {}
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${student.name}</strong></td>
+            <td>${student.classLevel || 'Form 1'}</td>
+            <td>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="att-status-group" data-id="${student.id}">
+                    <label style="cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 4px; color: var(--accent-success);">
+                        <input type="radio" name="att-${student.id}" value="present" ${currentStatus === 'present' ? 'checked' : ''}> 🟢 Present
+                    </label>
+                    <label style="cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 4px; color: var(--accent-danger);">
+                        <input type="radio" name="att-${student.id}" value="absent" ${currentStatus === 'absent' ? 'checked' : ''}> 🔴 Absent
+                    </label>
+                    <label style="cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 4px; color: #f59e0b;">
+                        <input type="radio" name="att-${student.id}" value="late" ${currentStatus === 'late' ? 'checked' : ''}> 🟡 Late
+                    </label>
+                    <label style="cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 4px; color: var(--accent-blue);">
+                        <input type="radio" name="att-${student.id}" value="excused" ${currentStatus === 'excused' ? 'checked' : ''}> 🔵 Excused
+                    </label>
+                </div>
+            </td>
+            <td style="color: var(--text-secondary); font-size: 0.9rem;">${summaryText}</td>
+        `;
+        tbody.appendChild(tr);
+    }
+}
+
+document.getElementById('btn-load-attendance').addEventListener('click', () => {
+    currentAttendanceDate = document.getElementById('attendance-date').value;
+    renderAttendanceTab();
+});
+
+document.getElementById('btn-mark-all-present').addEventListener('click', () => {
+    document.querySelectorAll('#attendance-table-tbody input[value="present"]').forEach(r => r.checked = true);
+});
+
+document.getElementById('btn-save-attendance').addEventListener('click', async () => {
+    const date = document.getElementById('attendance-date').value;
+    const records = {};
+
+    document.querySelectorAll('#attendance-table-tbody .att-status-group').forEach(group => {
+        const sid = group.getAttribute('data-id');
+        const selected = group.querySelector('input:checked');
+        if (selected) {
+            records[sid] = selected.value;
+        }
+    });
+
+    const res = await apiFetch('/api/attendance', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ date, classLevel: currentClass, records })
+    });
+
+    const msg = document.getElementById('attendance-status-msg');
+    if (res.ok) {
+        msg.innerText = `✅ Attendance register for ${currentClass} on ${date} saved successfully!`;
+        msg.style.display = 'block';
+        setTimeout(() => msg.style.display = 'none', 4000);
+        renderAttendanceTab();
+    } else {
+        alert('Failed to save attendance register.');
+    }
+});
+
+document.getElementById('btn-send-absent-whatsapp').addEventListener('click', async () => {
+    const date = document.getElementById('attendance-date').value;
+    const res = await apiFetch('/api/whatsapp/send-absent-alerts', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ date, classLevel: currentClass })
+    });
+
+    if (res.ok) {
+        const data = await res.json();
+        alert(`📲 Sent ${data.count} absence alert(s) to parents on WhatsApp!`);
+    } else {
+        const err = await res.json();
+        alert(`Error: ${err.error || 'Failed to send WhatsApp alerts.'}`);
+    }
+});
+
+// ── 🗓️ PHASE 3.2 — Timetable UI ─────────────────────────────────────
+const TIMETABLE_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+const TIMETABLE_PERIODS = [
+    { period: 1, name: '07:30–08:15' },
+    { period: 2, name: '08:15–09:00' },
+    { period: 3, name: '09:00–09:45' },
+    { period: 4, name: '10:15–11:00' },
+    { period: 5, name: '11:00–11:45' },
+    { period: 6, name: '12:30–13:15' },
+    { period: 7, name: '13:15–14:00' }
+];
+
+async function renderTimetableTab() {
+    document.getElementById('timetable-class-label').innerText = currentClass;
+    const grid = document.getElementById('timetable-grid');
+    grid.innerHTML = '<p style="color: var(--text-secondary);">Loading timetable...</p>';
+
+    let scheduleData = [];
+    let staffList = [];
+    try {
+        const [ttRes, stRes] = await Promise.all([
+            apiFetch(`/api/timetable?classLevel=${encodeURIComponent(currentClass)}`),
+            apiFetch('/api/users')
+        ]);
+        if (ttRes.ok) { const d = await ttRes.json(); scheduleData = d.schedule || []; }
+        if (stRes.ok) staffList = await stRes.json();
+    } catch(e) { grid.innerHTML = '<p>Error loading timetable.</p>'; return; }
+
+    const scheduleMap = {};
+    scheduleData.forEach(slot => {
+        scheduleMap[`${slot.day}-${slot.period}`] = slot;
+    });
+
+    let html = `<table style="width:100%; border-collapse:collapse; min-width:600px;">
+        <thead><tr>
+            <th style="padding:10px; text-align:left; background:var(--bg-secondary); border:1px solid var(--border-color);">Period</th>
+            ${TIMETABLE_DAYS.map(d => `<th style="padding:10px; text-align:center; background:var(--accent-blue); color:white; border:1px solid var(--border-color);">${d}</th>`).join('')}
+        </tr></thead>
+        <tbody>`;
+
+    TIMETABLE_PERIODS.forEach(p => {
+        html += `<tr>`;
+        html += `<td style="padding:10px; font-size:0.8rem; color:var(--text-secondary); border:1px solid var(--border-color); white-space:nowrap;"><strong>P${p.period}</strong><br>${p.name}</td>`;
+        TIMETABLE_DAYS.forEach(day => {
+            const key = `${day}-${p.period}`;
+            const slot = scheduleMap[key];
+            const teacher = slot && slot.teacherId ? staffList.find(u => u.id === slot.teacherId) : null;
+            html += `<td style="padding:6px; border:1px solid var(--border-color); min-width:110px; vertical-align:top;">
+                <div style="font-size:0.85rem; font-weight:bold; color:${slot ? 'var(--accent-blue)' : 'var(--text-secondary)'}">
+                    ${slot ? slot.subject : '<em style="opacity:0.4">Free</em>'}
+                </div>
+                ${teacher ? `<div style="font-size:0.75rem; color:var(--text-secondary); margin-top:3px;">${teacher.name}</div>` : ''}
+                <div style="display:flex; gap:4px; margin-top:5px; flex-wrap:wrap;">
+                    <button class="btn outline-btn btn-tt-edit" style="padding:2px 6px; font-size:0.72rem;" data-day="${day}" data-period="${p.period}" data-slot='${JSON.stringify(slot || {})}'>✏️</button>
+                    ${slot ? `<button class="btn outline-btn btn-tt-clear" style="padding:2px 6px; font-size:0.72rem; color:var(--accent-danger);" data-day="${day}" data-period="${p.period}">✕</button>` : ''}
+                </div>
+            </td>`;
+        });
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table>`;
+    grid.innerHTML = html;
+
+    grid.querySelectorAll('.btn-tt-edit').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const day = btn.getAttribute('data-day');
+            const period = btn.getAttribute('data-period');
+            const slot = JSON.parse(btn.getAttribute('data-slot') || '{}');
+            openTimetableSlotModal(day, period, slot, staffList);
+        });
+    });
+
+    grid.querySelectorAll('.btn-tt-clear').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const day = btn.getAttribute('data-day');
+            const period = btn.getAttribute('data-period');
+            await apiFetch(`/api/timetable?classLevel=${encodeURIComponent(currentClass)}&day=${day}&period=${period}`, { method: 'DELETE' });
+            renderTimetableTab();
+        });
+    });
+}
+
+document.getElementById('btn-reload-timetable').addEventListener('click', renderTimetableTab);
+
+function openTimetableSlotModal(day, period, existing, staffList) {
+    const subject = prompt(`Subject for ${day} Period ${period} (${currentClass}):`, existing.subject || '');
+    if (subject === null) return;
+
+    const teacherOptions = staffList.map(s => `${s.id}: ${s.name}`).join('\n');
+    const teacherChoice = prompt(`Teacher ID (optional — leave blank for none).\nAvailable:\n${teacherOptions}`, existing.teacherId || '');
+    const teacherId = teacherChoice && teacherChoice.trim() ? teacherChoice.trim().split(':')[0].trim() : null;
+
+    apiFetch('/api/timetable', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            classLevel: currentClass,
+            day,
+            period: Number(period),
+            subject,
+            teacherId
+        })
+    }).then(res => {
+        if (res.ok) {
+            renderTimetableTab();
+        } else {
+            res.json().then(d => alert(`Error: ${d.error}`));
+        }
+    });
+}
+
+// ── 💼 PHASE 3.3 — Payroll & HR UI ───────────────────────────────────
+async function renderPayrollTab() {
+    const tbody = document.getElementById('payroll-table-tbody');
+    tbody.innerHTML = '';
+    let staffList = [];
+    try {
+        const res = await apiFetch('/api/payroll/staff');
+        if (!res.ok) return;
+        staffList = await res.json();
+    } catch(e) { return; }
+
+    staffList.forEach(s => {
+        const allowances = s.allowances || {};
+        const totalAllow = (Number(allowances.housing || 0) + Number(allowances.transport || 0) + Number(allowances.health || 0));
+        const gross = Number(s.basicSalary || 0) + totalAllow;
+
+        // Simplified net: deduct 15% PAYE + 5% pension from basic for preview
+        const paye = Math.round(Math.max(0, Number(s.basicSalary || 0) - 100000) * 0.15);
+        const pension = Math.round(Number(s.basicSalary || 0) * 0.05);
+        const net = gross - paye - pension;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${s.name}</strong></td>
+            <td>${formatRole(s.role)}</td>
+            <td>${s.employmentType || 'Full-Time'}</td>
+            <td>
+                <input type="number" class="payroll-basic-input" value="${s.basicSalary || 0}" min="0" data-id="${s.id}" style="width:110px; padding:5px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-primary); color:white;">
+            </td>
+            <td>MK ${gross.toLocaleString()}</td>
+            <td style="font-weight:bold; color:var(--accent-success);">MK ${net.toLocaleString()}</td>
+            <td>${s.leaveBalance !== undefined ? s.leaveBalance + ' day(s)' : '14 day(s)'}</td>
+            <td>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button class="btn primary-btn btn-gen-payslip" style="padding:3px 8px; font-size:0.78rem;" data-id="${s.id}" data-name="${s.name}">🧾 Payslip</button>
+                    <button class="btn outline-btn btn-record-leave" style="padding:3px 8px; font-size:0.78rem;" data-id="${s.id}" data-name="${s.name}">🌴 Leave</button>
+                </div>
+            </td>`;
+
+        tr.querySelector('.payroll-basic-input').addEventListener('change', async (e) => {
+            await apiFetch(`/api/payroll/staff/${s.id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ basicSalary: Number(e.target.value) })
+            });
+            renderPayrollTab();
+        });
+
+        tr.querySelector('.btn-gen-payslip').addEventListener('click', async (e) => {
+            const sid = e.target.getAttribute('data-id');
+            const sname = e.target.getAttribute('data-name');
+            const month = prompt(`Generate payslip for ${sname}.\nEnter month (e.g. September):`, new Date().toLocaleString('default', { month: 'long' }));
+            if (!month) return;
+            const res = await apiFetch(`/api/payroll/payslip/${sid}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ month, year: new Date().getFullYear() })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const p = data.payslip;
+                alert(`🧾 PAYSLIP — ${sname} — ${p.month} ${p.year}\n\nBasic Salary:   MK ${p.basicSalary.toLocaleString()}\nAllowances:     MK ${p.totalAllowances.toLocaleString()}\nGross Pay:      MK ${p.grossPay.toLocaleString()}\n────────────────────\nPAYE Tax:       MK ${p.paye.toLocaleString()}\nPension (MIPF): MK ${p.pension.toLocaleString()}\n────────────────────\nNET PAY:        MK ${p.netPay.toLocaleString()}\n\nSlip ID: ${p.slipId}`);
+            }
+        });
+
+        tr.querySelector('.btn-record-leave').addEventListener('click', async (e) => {
+            const sid = e.target.getAttribute('data-id');
+            const sname = e.target.getAttribute('data-name');
+            const type = prompt(`Leave type for ${sname}:\n1. Annual Leave\n2. Sick Leave\n3. Compassionate\nEnter type:`, 'Annual Leave');
+            if (!type) return;
+            const startDate = prompt('Start date (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+            if (!startDate) return;
+            const endDate = prompt('End date (YYYY-MM-DD):', startDate);
+            if (!endDate) return;
+            const reason = prompt('Reason (optional):') || '';
+            const res = await apiFetch(`/api/payroll/leave/${sid}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ startDate, endDate, reason, type })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                alert(`✅ Leave recorded. Remaining balance: ${data.leaveBalance} day(s).`);
+                renderPayrollTab();
+            } else {
+                const err = await res.json();
+                alert(`Error: ${err.error}`);
+            }
+        });
+
+        tbody.appendChild(tr);
+    });
+}
+
+// ── 📱 PHASE 3.1 — Mobile Money Verification UI ──────────────────────
+async function renderMobileMoneyTab() {
+    const sel = document.getElementById('mm-student-id');
+    if (sel.options.length <= 1) {
+        try {
+            const res = await apiFetch('/api/students');
+            if (!res.ok) return;
+            const allStudents = await res.json();
+            sel.innerHTML = '<option value="">— Select Student —</option>';
+            allStudents.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = `${s.name} (${s.classLevel || 'Form 1'})`;
+                sel.appendChild(opt);
+            });
+        } catch(e) {}
+    }
+}
+
+document.getElementById('mobile-money-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const studentId = document.getElementById('mm-student-id').value;
+    const provider = document.getElementById('mm-provider').value;
+    const transactionRef = document.getElementById('mm-ref').value.trim();
+    const amount = Number(document.getElementById('mm-amount').value);
+    const resultEl = document.getElementById('mm-result');
+
+    const res = await apiFetch('/api/payments/verify-mobile-money', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ studentId, provider, transactionRef, amount })
+    });
+
+    if (res.ok) {
+        const data = await res.json();
+        const bal = data.feeBalance;
+        resultEl.style.color = bal <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)';
+        resultEl.innerText = `✅ Payment of MK ${amount.toLocaleString()} recorded! (Ref: ${data.receipt.receiptNo}) | Balance: MK ${bal.toLocaleString()}`;
+        resultEl.style.display = 'block';
+        document.getElementById('mm-ref').value = '';
+        document.getElementById('mm-amount').value = '';
+    } else {
+        const err = await res.json();
+        resultEl.style.color = 'var(--accent-danger)';
+        resultEl.innerText = `❌ Error: ${err.error}`;
+        resultEl.style.display = 'block';
+    }
+});
+
+// ── 📢 PHASE 3.4 — Notices Tab (Admin side) ──────────────────────────
+async function renderNoticesTab() {
+    const listEl = document.getElementById('notices-admin-list');
+    const countEl = document.getElementById('notices-count');
+    listEl.innerHTML = '<p style="color:var(--text-secondary);">Loading...</p>';
+
+    try {
+        const res = await apiFetch('/api/parent-portal/notices');
+        if (!res.ok) return;
+        const notices = await res.json();
+        countEl.textContent = `(${notices.length})`;
+        if (!notices.length) {
+            listEl.innerHTML = '<p style="color:var(--text-secondary);">No notices posted yet.</p>';
+            return;
+        }
+        listEl.innerHTML = notices.map(n => `
+            <div style="border-left:3px solid var(--accent-blue); padding:10px 14px; margin-bottom:10px; background:var(--bg-secondary); border-radius:0 8px 8px 0;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                    <div>
+                        <div style="font-weight:700; margin-bottom:4px;">${n.title}</div>
+                        <div style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:6px;">${new Date(n.postedAt).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})} · by ${n.postedBy || 'Admin'}</div>
+                        <div style="font-size:0.88rem; color:var(--text-secondary);">${n.body}</div>
+                    </div>
+                    <button class="btn outline-btn btn-del-notice" data-id="${n.id}" style="padding:3px 8px; font-size:0.75rem; color:var(--accent-danger); border-color:var(--accent-danger); flex-shrink:0;">✕</button>
+                </div>
+            </div>`).join('');
+
+        listEl.querySelectorAll('.btn-del-notice').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Delete this notice?')) return;
+                await apiFetch(`/api/parent-portal/notices/${btn.getAttribute('data-id')}`, { method: 'DELETE' });
+                renderNoticesTab();
+            });
+        });
+    } catch(e) {
+        listEl.innerHTML = '<p style="color:var(--accent-danger);">Failed to load notices.</p>';
+    }
+}
+
+document.getElementById('notices-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = document.getElementById('notice-title').value.trim();
+    const body  = document.getElementById('notice-body').value.trim();
+    const res = await apiFetch('/api/parent-portal/notices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, body })
+    });
+    if (res.ok) {
+        document.getElementById('notice-title').value = '';
+        document.getElementById('notice-body').value = '';
+        renderNoticesTab();
+    } else {
+        const err = await res.json();
+        alert(`Error: ${err.error}`);
+    }
+});
+
+// ── 📥 PHASE 4.4 — Applications Tab (Admin side) ──────────────────────
+async function renderApplicationsTab() {
+    const tbody = document.getElementById('applications-table-tbody');
+    tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text-secondary);">Loading applications...</td></tr>';
+
+    try {
+        const res = await apiFetch('/api/admin/applications');
+        if (!res.ok) return;
+        const apps = await res.json();
+        if (!apps.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text-secondary);">No applications received yet. Parents can apply via the <a href="/explore.html" target="_blank" style="color:var(--accent-blue);">Public Discovery Page</a>.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = apps.map(a => {
+            const statusColor = a.status === 'Approved' ? 'var(--accent-success)' : a.status === 'Rejected' ? 'var(--accent-danger)' : 'var(--accent-amber)';
+            return `
+            <tr>
+                <td><strong>${a.studentName}</strong></td>
+                <td>${a.classApplied}</td>
+                <td>${a.parentName || '—'}</td>
+                <td>${a.parentPhone}</td>
+                <td>${new Date(a.appliedAt).toLocaleDateString()}</td>
+                <td><span style="color:${statusColor}; font-weight:bold;">${a.status}</span></td>
+                <td>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn primary-btn btn-app-approve" data-id="${a.id}" style="padding:3px 8px; font-size:0.75rem;">Accept</button>
+                        <button class="btn outline-btn btn-app-reject" data-id="${a.id}" style="padding:3px 8px; font-size:0.75rem; color:var(--accent-danger); border-color:var(--accent-danger);">Reject</button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+
+        tbody.querySelectorAll('.btn-app-approve').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.getAttribute('data-id');
+                await apiFetch(`/api/admin/applications/${id}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ status: 'Approved', note: 'Accepted for admission' })
+                });
+                renderApplicationsTab();
+            });
+        });
+
+        tbody.querySelectorAll('.btn-app-reject').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.getAttribute('data-id');
+                await apiFetch(`/api/admin/applications/${id}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ status: 'Rejected', note: 'Not accepted' })
+                });
+                renderApplicationsTab();
+            });
+        });
+
+    } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="7" style="color:var(--accent-danger);">Failed to load applications.</td></tr>';
+    }
+}
 
 // Initial load
 checkLogin();

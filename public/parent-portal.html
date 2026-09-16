@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Parent Portal — School Management System</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary:   #0f1117;
+            --bg-secondary: #1a1d26;
+            --bg-card:      #1e2130;
+            --border-color: #2e3250;
+            --text-primary: #e8eaf6;
+            --text-secondary: #7c83a8;
+            --accent-blue:  #4f8ef7;
+            --accent-success: #22c55e;
+            --accent-danger:  #ef4444;
+            --accent-warning: #f59e0b;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100dvh;
+        }
+
+        /* ── Login Screen ── */
+        #login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100dvh;
+            padding: 24px;
+            background: linear-gradient(135deg, #0f1117 0%, #1a1d26 100%);
+        }
+
+        .login-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px 36px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .login-card .logo {
+            font-size: 2.2rem;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .login-card h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+
+        .login-card .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .form-group { margin-bottom: 16px; }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 13px;
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-login:hover { opacity: 0.9; }
+        .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        #login-error {
+            color: var(--accent-danger);
+            font-size: 0.85rem;
+            margin-top: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        /* ── Main Portal ── */
+        #portal-app { display: none; }
+
+        .portal-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .portal-header .school-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .portal-header .student-name {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .portal-header .btn-logout {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* ── Tabs ── */
+        .portal-tabs {
+            display: flex;
+            overflow-x: auto;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            scrollbar-width: none;
+        }
+
+        .portal-tabs::-webkit-scrollbar { display: none; }
+
+        .portal-tab {
+            padding: 12px 20px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
+            transition: color 0.2s, border-color 0.2s;
+        }
+
+        .portal-tab.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+        }
+
+        /* ── Content ── */
+        .portal-content { padding: 20px; max-width: 780px; margin: 0 auto; }
+
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        .info-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .info-card h2 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Summary Grid */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .summary-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .summary-card .value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .summary-card .label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        /* Table */
+        .portal-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        .portal-table th {
+            background: var(--bg-secondary);
+            padding: 10px 12px;
+            text-align: left;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .portal-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .portal-table tr:last-child td { border-bottom: none; }
+        .portal-table tr:hover td { background: rgba(79,142,247,0.04); }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 99px;
+            font-size: 0.73rem;
+            font-weight: 700;
+        }
+        .badge-success { background: rgba(34,197,94,0.15); color: var(--accent-success); }
+        .badge-danger  { background: rgba(239,68,68,0.15);  color: var(--accent-danger);  }
+        .badge-warning { background: rgba(245,158,11,0.15); color: var(--accent-warning); }
+        .badge-blue    { background: rgba(79,142,247,0.15); color: var(--accent-blue);    }
+
+        /* Notices */
+        .notice-item {
+            background: var(--bg-card);
+            border-left: 3px solid var(--accent-blue);
+            border-radius: 0 10px 10px 0;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+        .notice-item .notice-title { font-weight: 700; margin-bottom: 4px; }
+        .notice-item .notice-date  { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 6px; }
+        .notice-item .notice-body  { font-size: 0.9rem; color: var(--text-secondary); }
+
+        /* Loading / Error */
+        .loading { text-align: center; color: var(--text-secondary); padding: 40px; }
+        .loading .spinner { font-size: 2rem; animation: spin 1s linear infinite; display:inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            .login-card { padding: 28px 20px; }
+            .portal-content { padding: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ════════════════════ LOGIN ════════════════════ -->
+<div id="login-screen">
+    <div class="login-card">
+        <div class="logo">🏫</div>
+        <h1>Parent Portal</h1>
+        <p class="subtitle">View your child's academic progress, fees, and school notices.</p>
+
+        <div class="form-group">
+            <label>Your Registered Phone Number</label>
+            <input type="tel" id="login-phone" placeholder="e.g. 0881234567" inputmode="tel" autocomplete="tel">
+        </div>
+        <div class="form-group">
+            <label>School Code <span style="color:var(--text-secondary); font-weight:400;">(from your school's registration slip)</span></label>
+            <input type="text" id="login-school-code" placeholder="e.g. school_1" autocomplete="off">
+        </div>
+
+        <button class="btn-login" id="btn-portal-login">🔐 Login to Portal</button>
+        <p id="login-error"></p>
+        <p style="text-align:center; color:var(--text-secondary); font-size:0.8rem; margin-top:20px;">
+            Not registered? Contact your school administration.
+        </p>
+    </div>
+</div>
+
+<!-- ════════════════════ PORTAL APP ════════════════════ -->
+<div id="portal-app">
+    <header class="portal-header">
+        <div>
+            <div class="school-name" id="ph-school-name">—</div>
+            <div class="student-name" id="ph-student-name">—</div>
+        </div>
+        <button class="btn-logout" id="btn-portal-logout">Logout</button>
+    </header>
+
+    <nav class="portal-tabs">
+        <div class="portal-tab active" data-panel="panel-overview">📊 Overview</div>
+        <div class="portal-tab" data-panel="panel-fees">💳 Fees</div>
+        <div class="portal-tab" data-panel="panel-attendance">📋 Attendance</div>
+        <div class="portal-tab" data-panel="panel-marks">📝 Marks</div>
+        <div class="portal-tab" data-panel="panel-notices">📢 Notices</div>
+    </nav>
+
+    <div class="portal-content">
+
+        <!-- Overview -->
+        <div id="panel-overview" class="panel active">
+            <div id="overview-loading" class="loading"><span class="spinner">⏳</span><br><br>Loading your child's data...</div>
+            <div id="overview-content" style="display:none;">
+                <div class="summary-grid" id="overview-summary"></div>
+                <div class="info-card">
+                    <h2>🎓 Student Details</h2>
+                    <div id="overview-student-details"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fees -->
+        <div id="panel-fees" class="panel">
+            <div class="info-card">
+                <h2>💳 Fee Balance</h2>
+                <div id="fees-summary-grid" class="summary-grid"></div>
+            </div>
+            <div class="info-card">
+                <h2>📜 Payment History</h2>
+                <div id="fees-history-table" class="table-container" style="overflow-x:auto;"></div>
+            </div>
+        </div>
+
+        <!-- Attendance -->
+        <div id="panel-attendance" class="panel">
+            <div class="info-card">
+                <h2>📋 Attendance Summary</h2>
+                <div id="attendance-summary-grid" class="summary-grid"></div>
+            </div>
+            <div class="info-card">
+                <h2>📅 Detailed Records</h2>
+                <div id="attendance-detail-table" style="overflow-x:auto;"></div>
+            </div>
+        </div>
+
+        <!-- Marks -->
+        <div id="panel-marks" class="panel">
+            <div class="info-card">
+                <h2>📝 Subject Marks & Grades</h2>
+                <div id="marks-table-container" style="overflow-x:auto;"></div>
+            </div>
+        </div>
+
+        <!-- Notices -->
+        <div id="panel-notices" class="panel">
+            <div class="info-card">
+                <h2>📢 School Notices</h2>
+                <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:16px;">Latest announcements from your school administration.</p>
+                <div id="notices-list"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // ── State ──
+    let portalToken = null;
+    let portalStudent = null;
+    let portalSchool = null;
+    let portalSchoolId = null;
+
+    const API_BASE = window.location.origin;
+
+    async function apiFetch(path, opts = {}) {
+        const headers = { ...(opts.headers || {}) };
+        if (portalToken) headers['Authorization'] = 'Bearer ' + portalToken;
+        return fetch(API_BASE + path, { ...opts, headers });
+    }
+
+    // ── Login ──
+    document.getElementById('btn-portal-login').addEventListener('click', handleLogin);
+    document.getElementById('login-phone').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+    document.getElementById('login-school-code').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+
+    async function handleLogin() {
+        const phone = document.getElementById('login-phone').value.trim();
+        const schoolCode = document.getElementById('login-school-code').value.trim();
+        const errorEl = document.getElementById('login-error');
+        const btn = document.getElementById('btn-portal-login');
+
+        errorEl.style.display = 'none';
+
+        if (!phone || !schoolCode) {
+            errorEl.textContent = 'Please enter your phone number and school code.';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Logging in...';
+
+        try {
+            const res = await fetch(`${API_BASE}/api/parent-portal/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, schoolId: schoolCode })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                errorEl.textContent = data.error || 'Login failed. Check your phone number and school code.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            portalToken   = data.token;
+            portalStudent = data.student;
+            portalSchool  = data.school;
+            portalSchoolId = schoolCode;
+
+            sessionStorage.setItem('parentPortalToken', portalToken);
+            sessionStorage.setItem('parentPortalSchoolId', portalSchoolId);
+            sessionStorage.setItem('parentPortalStudentId', portalStudent.id);
+
+            enterPortal();
+
+        } catch (e) {
+            errorEl.textContent = 'Network error. Please try again.';
+            errorEl.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '🔐 Login to Portal';
+        }
+    }
+
+    function enterPortal() {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('portal-app').style.display = 'block';
+
+        document.getElementById('ph-school-name').textContent = portalSchool.name || 'Your School';
+        document.getElementById('ph-student-name').textContent = `Viewing: ${portalStudent.name} · ${portalStudent.classLevel || ''}`;
+
+        loadOverview();
+    }
+
+    // ── Logout ──
+    document.getElementById('btn-portal-logout').addEventListener('click', () => {
+        portalToken = null;
+        portalStudent = null;
+        portalSchool = null;
+        sessionStorage.clear();
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('portal-app').style.display = 'none';
+        document.getElementById('login-phone').value = '';
+    });
+
+    // ── Tab navigation ──
+    document.querySelectorAll('.portal-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.portal-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            const panel = document.getElementById(tab.getAttribute('data-panel'));
+            if (panel) panel.classList.add('active');
+
+            const panelId = tab.getAttribute('data-panel');
+            if (panelId === 'panel-fees') loadFees();
+            if (panelId === 'panel-attendance') loadAttendance();
+            if (panelId === 'panel-marks') loadMarks();
+            if (panelId === 'panel-notices') loadNotices();
+        });
+    });
+
+    // ── Overview ──
+    async function loadOverview() {
+        document.getElementById('overview-loading').style.display = 'block';
+        document.getElementById('overview-content').style.display = 'none';
+
+        const s = portalStudent;
+
+        // Fee stats
+        const total = Number(s.totalFees || 0);
+        const paid  = Number(s.paidAmount || 0);
+        const bal   = total - paid;
+
+        // Attendance (load live)
+        let attSummary = { present: 0, absent: 0, total: 0 };
+        try {
+            const aRes = await apiFetch(`/api/parent-portal/attendance/${s.id}`);
+            if (aRes.ok) attSummary = await aRes.json();
+        } catch(e) {}
+
+        const attPct = attSummary.total > 0 ? Math.round((attSummary.present / attSummary.total) * 100) : 0;
+
+        const summaryEl = document.getElementById('overview-summary');
+        summaryEl.innerHTML = `
+            <div class="summary-card">
+                <div class="value" style="color:${bal <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)'}">${bal <= 0 ? '✅' : 'MK ' + bal.toLocaleString()}</div>
+                <div class="label">Fee Balance</div>
+            </div>
+            <div class="summary-card">
+                <div class="value" style="color:${attPct >= 80 ? 'var(--accent-success)' : 'var(--accent-danger)'}">${attPct}%</div>
+                <div class="label">Attendance</div>
+            </div>
+            <div class="summary-card">
+                <div class="value">${attSummary.present}</div>
+                <div class="label">Days Present</div>
+            </div>
+            <div class="summary-card">
+                <div class="value" style="color:${attSummary.absent > 0 ? 'var(--accent-warning)' : 'var(--accent-success)'}">${attSummary.absent}</div>
+                <div class="label">Days Absent</div>
+            </div>
+        `;
+
+        const detailsEl = document.getElementById('overview-student-details');
+        detailsEl.innerHTML = `
+            <table class="portal-table">
+                <tr><td style="color:var(--text-secondary); width:140px;">Full Name</td><td><strong>${s.name}</strong></td></tr>
+                <tr><td style="color:var(--text-secondary);">Class</td><td>${s.classLevel || 'N/A'}</td></tr>
+                <tr><td style="color:var(--text-secondary);">Student ID</td><td>${s.id}</td></tr>
+                <tr><td style="color:var(--text-secondary);">Gender</td><td>${s.gender || '—'}</td></tr>
+                <tr><td style="color:var(--text-secondary);">Parent/Guardian</td><td>${s.parentName || '—'}</td></tr>
+                <tr><td style="color:var(--text-secondary);">Fee Status</td><td><span class="badge ${bal <= 0 ? 'badge-success' : 'badge-danger'}">${bal <= 0 ? 'FULLY PAID' : 'BALANCE DUE'}</span></td></tr>
+            </table>`;
+
+        document.getElementById('overview-loading').style.display = 'none';
+        document.getElementById('overview-content').style.display = 'block';
+    }
+
+    // ── Fees ──
+    async function loadFees() {
+        const s = portalStudent;
+        const total = Number(s.totalFees || 0);
+        const paid  = Number(s.paidAmount || 0);
+        const bal   = total - paid;
+
+        document.getElementById('fees-summary-grid').innerHTML = `
+            <div class="summary-card">
+                <div class="value">MK ${total.toLocaleString()}</div>
+                <div class="label">Total Fees</div>
+            </div>
+            <div class="summary-card">
+                <div class="value" style="color:var(--accent-success)">MK ${paid.toLocaleString()}</div>
+                <div class="label">Amount Paid</div>
+            </div>
+            <div class="summary-card">
+                <div class="value" style="color:${bal <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)'}">
+                    ${bal <= 0 ? 'MK 0' : 'MK ' + bal.toLocaleString()}
+                </div>
+                <div class="label">Balance Due</div>
+            </div>
+        `;
+
+        const history = s.paymentHistory || [];
+        const histEl = document.getElementById('fees-history-table');
+        if (!history.length) {
+            histEl.innerHTML = '<p style="color:var(--text-secondary); padding:10px 0;">No payment records found.</p>';
+        } else {
+            histEl.innerHTML = `
+                <table class="portal-table">
+                    <thead><tr>
+                        <th>Date</th>
+                        <th>Amount (MK)</th>
+                        <th>Method</th>
+                        <th>Receipt No.</th>
+                    </tr></thead>
+                    <tbody>
+                        ${history.map(p => `<tr>
+                            <td>${new Date(p.date).toLocaleDateString()}</td>
+                            <td><strong>${Number(p.amount).toLocaleString()}</strong></td>
+                            <td>${p.method || 'Cash'}</td>
+                            <td><span class="badge badge-blue">${p.receiptNo || '—'}</span></td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>`;
+        }
+    }
+
+    // ── Attendance ──
+    async function loadAttendance() {
+        try {
+            const res = await apiFetch(`/api/parent-portal/attendance/${portalStudent.id}`);
+            if (!res.ok) return;
+            const data = await res.json();
+
+            const attPct = data.total > 0 ? Math.round((data.present / data.total) * 100) : 0;
+
+            document.getElementById('attendance-summary-grid').innerHTML = `
+                <div class="summary-card">
+                    <div class="value" style="color:${attPct >= 80 ? 'var(--accent-success)' : 'var(--accent-danger)'}">${attPct}%</div>
+                    <div class="label">Attendance Rate</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value" style="color:var(--accent-success)">${data.present}</div>
+                    <div class="label">Present</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value" style="color:var(--accent-danger)">${data.absent}</div>
+                    <div class="label">Absent</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value" style="color:var(--accent-warning)">${data.late || 0}</div>
+                    <div class="label">Late</div>
+                </div>
+            `;
+
+            const records = data.records || [];
+            const detailEl = document.getElementById('attendance-detail-table');
+
+            if (!records.length) {
+                detailEl.innerHTML = '<p style="color:var(--text-secondary); padding:10px 0;">No attendance records yet.</p>';
+            } else {
+                detailEl.innerHTML = `
+                    <table class="portal-table">
+                        <thead><tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr></thead>
+                        <tbody>
+                            ${records.slice(-30).reverse().map(r => {
+                                const cls = { present:'badge-success', absent:'badge-danger', late:'badge-warning', excused:'badge-blue' }[r.status] || 'badge-blue';
+                                return `<tr>
+                                    <td>${r.date}</td>
+                                    <td><span class="badge ${cls}">${r.status.toUpperCase()}</span></td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                    <p style="color:var(--text-secondary); font-size:0.8rem; margin-top:10px;">Showing last 30 records.</p>`;
+            }
+        } catch(e) {}
+    }
+
+    // ── Marks ──
+    async function loadMarks() {
+        const s = portalStudent;
+        const marks = s.marks || {};
+        const subjects = Object.keys(marks);
+
+        const container = document.getElementById('marks-table-container');
+        if (!subjects.length) {
+            container.innerHTML = '<p style="color:var(--text-secondary); padding:10px 0;">No marks recorded yet.</p>';
+            return;
+        }
+
+        container.innerHTML = `
+            <table class="portal-table">
+                <thead><tr>
+                    <th>Subject</th>
+                    <th>CAT Score</th>
+                    <th>Exam Score</th>
+                    <th>Final Score</th>
+                    <th>Grade</th>
+                </tr></thead>
+                <tbody>
+                    ${subjects.map(sub => {
+                        const score = Number(marks[sub] || 0);
+                        const cat  = s.catMarks  && s.catMarks[sub]  !== undefined ? s.catMarks[sub]  : '—';
+                        const exam = s.examMarks && s.examMarks[sub] !== undefined ? s.examMarks[sub] : '—';
+                        const grade = getSimpleGrade(score);
+                        return `<tr>
+                            <td><strong>${sub}</strong></td>
+                            <td>${cat}</td>
+                            <td>${exam}</td>
+                            <td><strong>${score}</strong></td>
+                            <td><span class="badge ${grade.cls}">${grade.letter}</span></td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>`;
+    }
+
+    function getSimpleGrade(score) {
+        if (score >= 80) return { letter: 'A', cls: 'badge-success' };
+        if (score >= 65) return { letter: 'B', cls: 'badge-blue' };
+        if (score >= 50) return { letter: 'C', cls: 'badge-blue' };
+        if (score >= 40) return { letter: 'D', cls: 'badge-warning' };
+        return { letter: 'F', cls: 'badge-danger' };
+    }
+
+    // ── Notices ──
+    async function loadNotices() {
+        const container = document.getElementById('notices-list');
+        try {
+            const res = await apiFetch('/api/parent-portal/notices');
+            if (!res.ok) throw new Error();
+            const notices = await res.json();
+            if (!notices.length) {
+                container.innerHTML = '<p style="color:var(--text-secondary);">No notices at this time.</p>';
+                return;
+            }
+            container.innerHTML = notices.map(n => `
+                <div class="notice-item">
+                    <div class="notice-title">${n.title}</div>
+                    <div class="notice-date">${new Date(n.postedAt || Date.now()).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}</div>
+                    <div class="notice-body">${n.body}</div>
+                </div>`).join('');
+        } catch(e) {
+            container.innerHTML = '<p style="color:var(--text-secondary);">Could not load notices.</p>';
+        }
+    }
+
+    // ── Session restore ──
+    (async function restoreSession() {
+        const savedToken     = sessionStorage.getItem('parentPortalToken');
+        const savedSchoolId  = sessionStorage.getItem('parentPortalSchoolId');
+        const savedStudentId = sessionStorage.getItem('parentPortalStudentId');
+        if (!savedToken || !savedSchoolId || !savedStudentId) return;
+
+        portalToken   = savedToken;
+        portalSchoolId = savedSchoolId;
+
+        try {
+            const res = await apiFetch('/api/parent-portal/me');
+            if (!res.ok) return;
+            const data = await res.json();
+            portalStudent = data.student;
+            portalSchool  = data.school;
+            document.getElementById('login-school-code').value = savedSchoolId;
+            enterPortal();
+        } catch(e) { /* session expired */ }
+    })();
+</script>
+</body>
+</html>

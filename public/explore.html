@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Find & Compare Schools in Malawi — Public Discovery Network</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #1a1d26;
+            --bg-card: #1e2130;
+            --border-color: #2e3250;
+            --text-primary: #e8eaf6;
+            --text-secondary: #94a3b8;
+            --accent-blue: #4f8ef7;
+            --accent-green: #22c55e;
+            --accent-amber: #f59e0b;
+            --accent-purple: #a855f7;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100dvh;
+        }
+
+        /* ── Header ── */
+        .site-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: white;
+            text-decoration: none;
+        }
+
+        .header-links { display: flex; gap: 12px; align-items: center; }
+
+        .btn-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+
+        .btn-link:hover { color: white; border-color: var(--accent-blue); }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        /* ── Hero ── */
+        .hero {
+            background: linear-gradient(180deg, #1a1d26 0%, #0f1117 100%);
+            padding: 48px 24px 32px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .hero h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            max-width: 620px;
+            margin: 0 auto 28px;
+        }
+
+        /* ── Search Controls ── */
+        .search-bar-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .search-inputs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .search-input-text {
+            flex: 2;
+            min-width: 200px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.95rem;
+        }
+
+        .search-select {
+            flex: 1;
+            min-width: 140px;
+            padding: 12px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.95rem;
+        }
+
+        .btn-gps {
+            background: rgba(34,197,94,0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(34,197,94,0.4);
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .btn-gps:hover { background: rgba(34,197,94,0.25); }
+
+        .filter-tags {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+            padding-top: 4px;
+        }
+
+        .filter-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        /* ── Comparison Bar ── */
+        #compare-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-card);
+            border: 1px solid var(--accent-blue);
+            border-radius: 99px;
+            padding: 12px 24px;
+            display: none;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            z-index: 90;
+        }
+
+        /* ── Grid ── */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 32px 20px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .school-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .school-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+        }
+
+        .school-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent-blue);
+        }
+
+        .card-top { margin-bottom: 14px; }
+
+        .school-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .school-district {
+            font-size: 0.83rem;
+            color: var(--accent-blue);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 10px;
+        }
+
+        .badge-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.06);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .badge-verified {
+            background: rgba(34,197,94,0.15);
+            color: var(--accent-green);
+            border-color: rgba(34,197,94,0.3);
+        }
+
+        .card-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: var(--bg-secondary);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.8rem;
+        }
+
+        .stat-item .lbl { color: var(--text-secondary); font-size: 0.7rem; }
+        .stat-item .val { font-weight: 700; color: white; margin-top: 2px; }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-card {
+            flex: 1;
+            padding: 9px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: white;
+            text-align: center;
+        }
+
+        .btn-card-apply {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.75);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 20px;
+        }
+
+        .modal-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px;
+            width: 100%;
+            max-width: 640px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 { font-size: 1.3rem; font-weight: 800; }
+
+        .btn-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.4rem;
+            cursor: pointer;
+        }
+
+        /* Compare Table */
+        .compare-table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+        .compare-table th, .compare-table td {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+            font-size: 0.85rem;
+        }
+        .compare-table th { background: var(--bg-secondary); color: var(--accent-blue); }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="site-header">
+        <a href="/explore.html" class="brand">
+            <span>🇲🇼</span> School Discovery Network
+        </a>
+        <div class="header-links">
+            <a href="/parent-portal.html" class="btn-link">🔑 Parent Portal</a>
+            <a href="/index.html" class="btn-primary">School Admin Login</a>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <h1>Find & Compare Verified Schools in Malawi</h1>
+        <p>Explore top secondary schools, compare termly fees, pass rates, and facilities, or apply directly online.</p>
+
+        <div class="search-bar-container">
+            <div class="search-inputs">
+                <input type="text" id="search-q" class="search-input-text" placeholder="Search school name or keyword...">
+                <select id="search-district" class="search-select">
+                    <option value="All">All Districts</option>
+                    <option value="Blantyre">Blantyre</option>
+                    <option value="Lilongwe">Lilongwe</option>
+                    <option value="Mzuzu">Mzuzu</option>
+                    <option value="Zomba">Zomba</option>
+                    <option value="Kasungu">Kasungu</option>
+                    <option value="Mangochi">Mangochi</option>
+                    <option value="Salima">Salima</option>
+                </select>
+                <button class="btn-gps" id="btn-gps-search">📍 Near Me (GPS)</button>
+            </div>
+            <div class="filter-tags">
+                <span>Filter by:</span>
+                <label class="filter-checkbox"><input type="checkbox" id="chk-boarding"> 🏠 Boarding Available</label>
+                <label class="filter-checkbox"><input type="checkbox" id="chk-lab"> 🔬 Science/ICT Lab</label>
+                <span id="gps-status" style="margin-left:auto; color:var(--accent-green); font-size:0.8rem; display:none;">📍 Using your GPS location</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Container -->
+    <main class="container">
+        <div class="section-header">
+            <h2 style="font-size: 1.2rem; font-weight: 800;" id="results-count">Verified Schools</h2>
+            <span style="font-size:0.85rem; color:var(--text-secondary);">Updated live from school records</span>
+        </div>
+
+        <div class="school-grid" id="school-grid">
+            <p style="color:var(--text-secondary);">Loading verified schools...</p>
+        </div>
+    </main>
+
+    <!-- Floating Compare Drawer -->
+    <div id="compare-bar">
+        <span style="font-weight:bold; font-size:0.9rem;" id="compare-count">0 schools selected</span>
+        <button class="btn-primary" id="btn-open-compare">⚖️ Compare Now</button>
+        <button class="btn-link" id="btn-clear-compare" style="border:none;">Clear</button>
+    </div>
+
+    <!-- Application Modal -->
+    <div class="modal-overlay" id="modal-apply">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 id="apply-school-title">Apply for Admission</h2>
+                <button class="btn-close" onclick="closeModal('modal-apply')">✕</button>
+            </div>
+            <form id="form-apply">
+                <input type="hidden" id="apply-school-id">
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:4px;">Student Full Name</label>
+                    <input type="text" id="apply-student-name" required placeholder="e.g. Chisomo Banda" style="width:100%; padding:10px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:6px; color:white;">
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:4px;">Parent/Guardian Name</label>
+                    <input type="text" id="apply-parent-name" placeholder="e.g. Mr. Banda" style="width:100%; padding:10px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:6px; color:white;">
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:4px;">Parent WhatsApp / Phone</label>
+                    <input type="tel" id="apply-parent-phone" required placeholder="e.g. 0881234567" style="width:100%; padding:10px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:6px; color:white;">
+                </div>
+                <div style="margin-bottom:18px;">
+                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:4px;">Class Applying For</label>
+                    <select id="apply-class" style="width:100%; padding:10px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:6px; color:white;">
+                        <option value="Form 1">Form 1</option>
+                        <option value="Form 2">Form 2</option>
+                        <option value="Form 3">Form 3</option>
+                        <option value="Form 4">Form 4</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%; padding:12px;">🚀 Submit Application</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Compare Modal -->
+    <div class="modal-overlay" id="modal-compare">
+        <div class="modal-box" style="max-width:850px;">
+            <div class="modal-header">
+                <h2>⚖️ School Side-by-Side Comparison</h2>
+                <button class="btn-close" onclick="closeModal('modal-compare')">✕</button>
+            </div>
+            <div id="compare-table-container" style="overflow-x:auto;"></div>
+        </div>
+    </div>
+
+<script>
+    let userCoords = null;
+    let selectedForCompare = new Set();
+    let currentSchools = [];
+
+    // ── Fetch schools ──
+    async function loadSchools() {
+        const q = document.getElementById('search-q').value;
+        const district = document.getElementById('search-district').value;
+        const boarding = document.getElementById('chk-boarding').checked;
+        const lab = document.getElementById('chk-lab').checked;
+
+        let url = `/api/public/explore?search=${encodeURIComponent(q)}&district=${encodeURIComponent(district)}&boarding=${boarding}&lab=${lab}`;
+        if (userCoords) {
+            url += `&userLat=${userCoords.lat}&userLng=${userCoords.lng}`;
+        }
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            currentSchools = data.schools || [];
+            renderGrid(currentSchools);
+        } catch(e) {
+            document.getElementById('school-grid').innerHTML = '<p style="color:var(--accent-amber);">Error loading schools.</p>';
+        }
+    }
+
+    function renderGrid(schools) {
+        const grid = document.getElementById('school-grid');
+        document.getElementById('results-count').innerText = `${schools.length} Verified School(s) Found`;
+
+        if (!schools.length) {
+            grid.innerHTML = '<p style="color:var(--text-secondary); grid-column:1/-1;">No schools matching your search criteria.</p>';
+            return;
+        }
+
+        grid.innerHTML = schools.map(s => {
+            const isCompared = selectedForCompare.has(s.schoolId);
+            return `
+            <div class="school-card">
+                <div class="card-top">
+                    <div class="school-title">${s.schoolName}</div>
+                    <div class="school-district">📍 ${s.district} ${s.distanceKm ? `· ${s.distanceKm} km away` : ''}</div>
+                    <div class="badge-list">
+                        ${s.badges.map(b => `<span class="badge badge-verified">${b}</span>`).join('')}
+                    </div>
+                    <p style="font-size:0.83rem; color:var(--text-secondary); margin-bottom:12px;">"${s.motto}"</p>
+                </div>
+                <div>
+                    <div class="card-stats">
+                        <div class="stat-item">
+                            <div class="lbl">EST. TERM FEE</div>
+                            <div class="val" style="color:var(--accent-green);">MK ${Number(s.approxFees).toLocaleString()}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="lbl">STAFF RATIO</div>
+                            <div class="val">${s.teacherRatio}</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-card" onclick="toggleCompare('${s.schoolId}')" style="border-color:${isCompared ? 'var(--accent-blue)' : 'var(--border-color)'}">
+                            ${isCompared ? '✓ Selected' : '+ Compare'}
+                        </button>
+                        <button class="btn-card btn-card-apply" onclick="openApplyModal('${s.schoolId}', '${s.schoolName}')">
+                            Apply Now
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── Compare Logic ──
+    function toggleCompare(schoolId) {
+        if (selectedForCompare.has(schoolId)) {
+            selectedForCompare.delete(schoolId);
+        } else {
+            if (selectedForCompare.size >= 3) {
+                alert('You can compare up to 3 schools at once.');
+                return;
+            }
+            selectedForCompare.add(schoolId);
+        }
+        updateCompareBar();
+        renderGrid(currentSchools);
+    }
+
+    function updateCompareBar() {
+        const bar = document.getElementById('compare-bar');
+        const count = selectedForCompare.size;
+        document.getElementById('compare-count').innerText = `${count} school(s) selected`;
+        bar.style.display = count > 0 ? 'flex' : 'none';
+    }
+
+    document.getElementById('btn-clear-compare').addEventListener('click', () => {
+        selectedForCompare.clear();
+        updateCompareBar();
+        renderGrid(currentSchools);
+    });
+
+    document.getElementById('btn-open-compare').addEventListener('click', () => {
+        const selected = currentSchools.filter(s => selectedForCompare.has(s.schoolId));
+        const container = document.getElementById('compare-table-container');
+
+        container.innerHTML = `
+            <table class="compare-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        ${selected.map(s => `<th>${s.schoolName}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>District</strong></td>
+                        ${selected.map(s => `<td>${s.district}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td><strong>Term Fee</strong></td>
+                        ${selected.map(s => `<td style="color:var(--accent-green); font-weight:bold;">MK ${Number(s.approxFees).toLocaleString()}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td><strong>Teacher Ratio</strong></td>
+                        ${selected.map(s => `<td>${s.teacherRatio}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td><strong>Facilities</strong></td>
+                        ${selected.map(s => `<td>${s.facilities.join(', ')}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td><strong>Badges</strong></td>
+                        ${selected.map(s => `<td>${s.badges.join('<br>')}</td>`).join('')}
+                    </tr>
+                </tbody>
+            </table>`;
+
+        document.getElementById('modal-compare').style.display = 'flex';
+    });
+
+    // ── Application ──
+    function openApplyModal(id, name) {
+        document.getElementById('apply-school-id').value = id;
+        document.getElementById('apply-school-title').innerText = `Apply for Admission — ${name}`;
+        document.getElementById('modal-apply').style.display = 'flex';
+    }
+
+    document.getElementById('form-apply').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const schoolId = document.getElementById('apply-school-id').value;
+        const studentName = document.getElementById('apply-student-name').value;
+        const parentName = document.getElementById('apply-parent-name').value;
+        const parentPhone = document.getElementById('apply-parent-phone').value;
+        const classApplied = document.getElementById('apply-class').value;
+
+        const res = await fetch('/api/public/apply', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ schoolId, studentName, parentName, parentPhone, classApplied })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            alert(data.message);
+            closeModal('modal-apply');
+        } else {
+            alert('Failed to submit application. Please try again.');
+        }
+    });
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    // ── GPS ──
+    document.getElementById('btn-gps-search').addEventListener('click', () => {
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser.');
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                document.getElementById('gps-status').style.display = 'inline';
+                loadSchools();
+            },
+            () => { alert('Could not get your location.'); }
+        );
+    });
+
+    // Event listeners
+    document.getElementById('search-q').addEventListener('input', loadSchools);
+    document.getElementById('search-district').addEventListener('change', loadSchools);
+    document.getElementById('chk-boarding').addEventListener('change', loadSchools);
+    document.getElementById('chk-lab').addEventListener('change', loadSchools);
+
+    // Initial load
+    loadSchools();
+</script>
+</body>
+</html>

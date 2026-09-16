@@ -76,10 +76,17 @@
             </div>
             <ul class="nav-links">
                 <li class="active" data-tab="students-tab">Students</li>
+                <li data-tab="fees-tab">Fee Ledger</li>
+                <li data-tab="attendance-tab">Attendance</li>
+                <li data-tab="timetable-tab">Timetable</li>
+                <li data-tab="payroll-tab">Payroll & HR</li>
+                <li data-tab="mobilemoney-tab">Mobile Money</li>
                 <li data-tab="staff-tab">Staff</li>
                 <li data-tab="marks-tab">Marks Grid</li>
                 <li data-tab="rankings-tab">Ranks & PDFs</li>
                 <li data-tab="whatsapp-tab">WhatsApp Portal</li>
+                <li data-tab="notices-tab">📢 Notices</li>
+                <li data-tab="applications-tab">📥 Applications</li>
                 <li data-tab="settings-tab">Settings</li>
                 <li data-tab="superadmin-tab" id="nav-superadmin" style="display:none; color: var(--accent-success); font-weight: bold;">Super Admin</li>
             </ul>
@@ -150,6 +157,243 @@
                 </div>
             </section>
 
+            <!-- Fee Ledger Tab -->
+            <section id="fees-tab" class="tab-panel">
+                <div class="panel-header">
+                    <h1>💰 Student Fee Ledger & Payment Tracking</h1>
+                    <span class="badge" style="background: var(--accent-success); color: white;">WhatsApp Fee Lock Active</span>
+                </div>
+
+                <!-- Fee Summary Cards -->
+                <div style="display: flex; gap: 20px; margin-bottom: 25px; flex-wrap: wrap;">
+                    <div class="card" style="flex: 1; min-width: 200px; padding: 20px; border-left: 5px solid var(--accent-blue);">
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 5px;">Total Expected Fees</p>
+                        <h2 id="fee-summary-total" style="font-size: 1.6rem; color: var(--text-primary);">MK 0</h2>
+                    </div>
+                    <div class="card" style="flex: 1; min-width: 200px; padding: 20px; border-left: 5px solid var(--accent-success);">
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 5px;">Total Collected Fees</p>
+                        <h2 id="fee-summary-collected" style="font-size: 1.6rem; color: var(--accent-success);">MK 0</h2>
+                    </div>
+                    <div class="card" style="flex: 1; min-width: 200px; padding: 20px; border-left: 5px solid var(--accent-danger);">
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 5px;">Outstanding Balances</p>
+                        <h2 id="fee-summary-outstanding" style="font-size: 1.6rem; color: var(--accent-danger);">MK 0</h2>
+                    </div>
+                </div>
+
+                <div class="card full-width-card">
+                    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <p class="subtitle" style="margin: 0;">Manage termly tuition fees, track installment payments, and control report card release locks.</p>
+                        <button id="btn-batch-set-fees" class="btn primary-btn">Set Default Fee for All Students</button>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table id="fees-table">
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Class</th>
+                                    <th>Term Fee (MK)</th>
+                                    <th>Paid Amount (MK)</th>
+                                    <th>Balance (MK)</th>
+                                    <th>Report Lock Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fees-table-tbody">
+                                <!-- Dynamically rendered -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Daily Attendance Tab -->
+            <section id="attendance-tab" class="tab-panel">
+                <div class="panel-header">
+                    <h1>📅 Daily Attendance Register</h1>
+                    <span class="badge" style="background: var(--accent-blue); color: white;">Fast Mobile Entry</span>
+                </div>
+
+                <div class="card full-width-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="font-weight: bold;">Date:</label>
+                            <input type="date" id="attendance-date" style="padding: 8px; border-radius: 5px; border: 1px solid var(--border-color); background: var(--bg-primary); color: white;">
+                            <button id="btn-load-attendance" class="btn outline-btn" style="padding: 8px 12px;">Load Register</button>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button id="btn-mark-all-present" class="btn outline-btn" style="border-color: var(--accent-success); color: var(--accent-success);">🟢 Mark All Present</button>
+                            <button id="btn-save-attendance" class="btn primary-btn">Save Register</button>
+                            <button id="btn-send-absent-whatsapp" class="btn" style="background: #25D366; color: white;">📲 Send Absent WhatsApp Alerts</button>
+                        </div>
+                    </div>
+
+                    <p id="attendance-status-msg" style="margin-bottom: 15px; font-weight: bold; color: var(--accent-success); display: none;"></p>
+
+                    <div class="table-container">
+                        <table id="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Class</th>
+                                    <th>Attendance Status</th>
+                                    <th>Term Record (Present / Total)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-table-tbody">
+                                <!-- Dynamically populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Timetable Tab -->
+            <section id="timetable-tab" class="tab-panel">
+                <div class="panel-header">
+                    <h1>🗓️ Master Class Timetable</h1>
+                    <span class="badge" style="background: var(--accent-blue); color: white;">Collision Detection Active</span>
+                </div>
+                <div class="card full-width-card">
+                    <div style="margin-bottom: 18px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <label style="font-weight: bold;">Viewing Class:</label>
+                        <span style="font-size: 1.1rem; font-weight: bold; color: var(--accent-blue);" id="timetable-class-label">Form 1</span>
+                        <button class="btn outline-btn" id="btn-reload-timetable" style="padding: 6px 12px;">Refresh</button>
+                    </div>
+                    <div id="timetable-grid" class="table-container">
+                        <!-- Dynamically rendered -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Payroll & HR Tab -->
+            <section id="payroll-tab" class="tab-panel">
+                <div class="panel-header">
+                    <h1>💼 Staff Payroll & HR</h1>
+                    <span class="badge" style="background: var(--accent-blue); color: white;">Auto PAYE & Pension</span>
+                </div>
+                <div class="card full-width-card">
+                    <p class="subtitle" style="margin-bottom: 15px;">Manage staff salaries, allowances, payslips, and leave records. PAYE and MIPF pension are calculated automatically.</p>
+                    <div class="table-container">
+                        <table id="payroll-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Employment</th>
+                                    <th>Basic Salary (MK)</th>
+                                    <th>Gross Pay (MK)</th>
+                                    <th>Net Pay (MK)</th>
+                                    <th>Leave Balance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payroll-table-tbody">
+                                <!-- Dynamically populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Mobile Money Tab -->
+            <section id="mobilemoney-tab" class="tab-panel">
+                <div class="panel-header">
+                    <h1>📱 Mobile Money Verification</h1>
+                    <span class="badge" style="background: #F97316; color: white;">Airtel Money & TNM Mpamba</span>
+                </div>
+                <div class="card full-width-card" style="max-width: 560px;">
+                    <h3 style="margin-bottom: 5px;">Manually Verify a Mobile Money Payment</h3>
+                    <p class="subtitle" style="margin-bottom: 20px;">Once you confirm a mobile money reference via SMS or Airtel/TNM app, record it here to automatically update the student's fee ledger.</p>
+                    <form id="mobile-money-form">
+                        <div class="input-group" style="margin-bottom: 12px;">
+                            <label>Student</label>
+                            <select id="mm-student-id" required style="width:100%; padding:10px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-primary); color:white;">
+                                <option value="">— Select Student —</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 12px;">
+                            <label>Provider</label>
+                            <select id="mm-provider" style="width:100%; padding:10px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-primary); color:white;">
+                                <option value="Airtel Money">Airtel Money</option>
+                                <option value="TNM Mpamba">TNM Mpamba</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 12px;">
+                            <label>Transaction Reference No.</label>
+                            <input type="text" id="mm-ref" required placeholder="e.g. ART12345678" style="width:100%;">
+                        </div>
+                        <div class="input-group" style="margin-bottom: 20px;">
+                            <label>Amount Received (MK)</label>
+                            <input type="number" id="mm-amount" required min="1" placeholder="e.g. 25000" style="width:100%;">
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button type="submit" class="btn primary-btn" style="flex:1;">✅ Verify & Record Payment</button>
+                        </div>
+                        <p id="mm-result" style="margin-top:15px; font-weight:bold; display:none;"></p>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Notices Tab -->
+            <section id="notices-tab" class="tab-panel">
+                <div class="panel-header">
+                    <h1>📢 School Notices</h1>
+                    <a href="/parent-portal.html" target="_blank" class="btn outline-btn" style="padding: 7px 14px; font-size: 0.85rem; text-decoration: none;">🔗 Open Parent Portal</a>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; align-items:start; flex-wrap:wrap;">
+                    <div class="card" style="min-width:280px;">
+                        <h3 style="margin-bottom:12px;">Post New Notice</h3>
+                        <form id="notices-form">
+                            <div class="input-group" style="margin-bottom:10px;">
+                                <label>Title</label>
+                                <input type="text" id="notice-title" required placeholder="e.g. End of Term Exams" style="width:100%;">
+                            </div>
+                            <div class="input-group" style="margin-bottom:16px;">
+                                <label>Message Body</label>
+                                <textarea id="notice-body" required rows="4" placeholder="Enter your message to parents here..." style="width:100%; padding:10px; background:var(--bg-primary); color:white; border:1px solid var(--border-color); border-radius:6px; font-family:inherit; font-size:0.9rem; resize:vertical;"></textarea>
+                            </div>
+                            <button type="submit" class="btn primary-btn" style="width:100%;">📢 Post Notice</button>
+                        </form>
+                    </div>
+                    <div class="card" style="min-width:280px;">
+                        <h3 style="margin-bottom:12px;">Posted Notices <span id="notices-count" style="font-size:0.8rem; color:var(--text-secondary);"></span></h3>
+                        <div id="notices-admin-list">
+                            <p style="color:var(--text-secondary);">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Online Applications Tab -->
+            <section id="applications-tab" class="tab-panel">
+                <div class="panel-header">
+                    <h1>📥 Online Admission Applications</h1>
+                    <a href="/explore.html" target="_blank" class="btn outline-btn" style="padding: 7px 14px; font-size: 0.85rem; text-decoration: none;">🌐 View Public Discovery Page</a>
+                </div>
+                <div class="card full-width-card">
+                    <p class="subtitle" style="margin-bottom: 16px;">Review applications submitted by parents through the public discovery network.</p>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Class Applied</th>
+                                    <th>Parent Name</th>
+                                    <th>Parent Phone</th>
+                                    <th>Applied Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="applications-table-tbody">
+                                <tr><td colspan="7" style="color:var(--text-secondary);">Loading applications...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <!-- Staff Tab (Admin Only) -->
             <section id="staff-tab" class="tab-panel">
                 <div class="header">
@@ -177,6 +421,8 @@
                             <select id="staff-role" required style="padding: 10px; border-radius: 5px; border: 1px solid var(--border-color); font-size: 1rem;">
                                 <option value="teacher">Teacher</option>
                                 <option value="class_teacher">Class Teacher</option>
+                                <option value="bursar">Bursar</option>
+                                <option value="discipline_master">Discipline Master</option>
                                 <option value="admin">Admin</option>
                             </select>
                         </div>
@@ -381,6 +627,17 @@
                             <small>Leave blank to keep the current logo.</small>
                         </div>
                         
+                        <div class="input-group" style="display: flex; gap: 15px;">
+                            <div style="flex: 1;">
+                                <label for="cat-weight">Continuous Assessment Weight (%)</label>
+                                <input type="number" id="cat-weight" name="catWeight" min="0" max="100" placeholder="e.g. 30" value="30">
+                            </div>
+                            <div style="flex: 1;">
+                                <label for="exam-weight">Final Exam Weight (%)</label>
+                                <input type="number" id="exam-weight" name="examWeight" min="0" max="100" placeholder="e.g. 70" value="70">
+                            </div>
+                        </div>
+
                         <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border-color);">
                         
                         <h3>Report Card Footer Details</h3>
@@ -617,7 +874,59 @@
                 <p id="edit-school-error" style="color:red; margin-top:10px; display:none;"></p>
             </form>
         </div>
+    <!-- Record Payment Modal -->
+    <div id="payment-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10000; justify-content:center; align-items:center;">
+        <div class="card" style="width:440px; padding:30px; position:relative; border-top: 5px solid var(--accent-success);">
+            <h3 style="margin-bottom:5px;">💵 Record Fee Payment</h3>
+            <p class="subtitle" id="payment-student-name" style="margin-bottom:20px; font-weight: bold; color: var(--text-primary);"></p>
+            
+            <form id="payment-form">
+                <input type="hidden" id="payment-student-id">
+                <div class="input-group" style="margin-bottom:15px;">
+                    <label>Payment Amount (MK)</label>
+                    <input type="number" id="payment-amount" required min="1" placeholder="e.g. 25000" style="width:100%;">
+                </div>
+                <div class="input-group" style="margin-bottom:20px;">
+                    <label>Payment Note / Reference</label>
+                    <input type="text" id="payment-note" placeholder="e.g. Airtel Money Ref / Cash / Installment 1" style="width:100%;">
+                </div>
+                
+                <div style="display:flex; gap:10px;">
+                    <button type="submit" class="btn success-btn" style="flex:1;">Confirm & Record Payment</button>
+                    <button type="button" id="payment-cancel-btn" class="btn outline-btn" style="flex:1;">Cancel</button>
+                </div>
+                <p id="payment-error" style="color:red; margin-top:10px; display:none;"></p>
+            </form>
+
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border-color);">
+            
+            <h4>Recent Payment History</h4>
+            <div id="payment-history-list" style="max-height: 150px; overflow-y: auto; font-size: 0.85rem; margin-top: 10px;">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
     </div>
+
+    <!-- Batch Fee Modal -->
+    <div id="batch-fee-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10000; justify-content:center; align-items:center;">
+        <div class="card" style="width:400px; padding:30px; position:relative; border-top: 5px solid var(--accent-blue);">
+            <h3 style="margin-bottom:5px;">⚙️ Set Termly Fee for All Students</h3>
+            <p class="subtitle" style="margin-bottom:20px;">Applies a standard total fee amount to every student.</p>
+            
+            <form id="batch-fee-form">
+                <div class="input-group" style="margin-bottom:20px;">
+                    <label>Default Fee Amount (MK)</label>
+                    <input type="number" id="batch-fee-amount" required min="0" placeholder="e.g. 50000" style="width:100%;">
+                </div>
+                
+                <div style="display:flex; gap:10px;">
+                    <button type="submit" class="btn primary-btn" style="flex:1;">Apply to All Students</button>
+                    <button type="button" id="batch-fee-cancel-btn" class="btn outline-btn" style="flex:1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
