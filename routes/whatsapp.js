@@ -116,12 +116,19 @@ async function connectToWhatsApp(schoolId = 'default') {
         auth: state,
         printQRInTerminal: false,
         syncFullHistory: false,
-        markOnlineOnConnect: false,
+        markOnlineOnConnect: true,
+        keepAliveIntervalMs: 25000,
+        connectTimeoutMs: 60000,
+        defaultQueryTimeoutMs: 60000,
+        retryRequestOptions: {
+            delayMs: 250,
+            maxRetries: 5
+        },
         logger: pino({ level: 'silent' })
     });
 
     waSocks[schoolId] = sock;
-    waStatuses[schoolId] = 'Disconnected';
+    waStatuses[schoolId] = 'Connecting...';
     waQrImages[schoolId] = null;
 
     sock.ev.on('connection.update', async (update) => {
@@ -139,21 +146,23 @@ async function connectToWhatsApp(schoolId = 'default') {
 
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
-            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+            const shouldReconnect = statusCode !== DisconnectReason.loggedOut && statusCode !== 401;
             waStatuses[schoolId] = 'Disconnected';
             waQrImages[schoolId] = null;
             delete waSocks[schoolId];
             if (shouldReconnect) {
-                console.log(`[WhatsApp:${schoolId}] Reconnecting...`);
-                connectToWhatsApp(schoolId);
+                console.log(`[WhatsApp:${schoolId}] Disconnected (status ${statusCode}). Auto-reconnecting in 3s...`);
+                setTimeout(() => {
+                    connectToWhatsApp(schoolId).catch(err => console.error(`[WhatsApp:${schoolId}] Reconnect failed:`, err));
+                }, 3000);
             } else {
-                console.log(`[WhatsApp:${schoolId}] Logged out — clearing credentials.`);
+                console.log(`[WhatsApp:${schoolId}] Explicitly logged out. Clearing credentials.`);
                 await clearWhatsAppAuth(schoolId);
             }
         } else if (connection === 'open') {
             waStatuses[schoolId] = 'Connected';
             waQrImages[schoolId] = null;
-            console.log(`✅ [WhatsApp:${schoolId}] Connected!`);
+            console.log(`✅ [WhatsApp:${schoolId}] Connected successfully!`);
         }
     });
 
