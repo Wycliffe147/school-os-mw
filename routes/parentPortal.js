@@ -33,7 +33,7 @@ router.post('/parent-portal/login', (req, res) => {
 
     // JWT carries all matched student IDs so parent can switch between children
     const token = jwt.sign(
-        { parentPhone: phone, studentIds: students.map(s => s.id), schoolId },
+        { parentPhone: phone, studentIds: students.map(s => String(s.id)), schoolId },
         JWT_SECRET,
         { expiresIn: '24h' }
     );
@@ -43,7 +43,7 @@ router.post('/parent-portal/login', (req, res) => {
         token,
         // Return minimal info for all children so the frontend can show a picker
         students: students.map(s => ({
-            id: s.id,
+            id: String(s.id),
             name: s.name,
             classLevel: s.classLevel,
             gender: s.gender
@@ -72,7 +72,7 @@ function authenticateParent(req, res, next) {
 function sanitiseStudent(s) {
     // Never expose internal DB fields; only expose what parents should see
     return {
-        id: s.id,
+        id: String(s.id),
         name: s.name,
         classLevel: s.classLevel,
         gender: s.gender,
@@ -95,15 +95,15 @@ function sanitiseStudent(s) {
 // ── GET /api/parent-portal/me?studentId=xxx ───────────────────────────
 // studentId param selects which child to view (defaults to first in list)
 router.get('/parent-portal/me', authenticateParent, (req, res) => {
-    const { studentIds, schoolId } = req.parentUser;
-    const ids = studentIds || [];
-    const requestedId = req.query.studentId || ids[0];
+    const { studentIds, studentId: singleId, schoolId } = req.parentUser;
+    const ids = (studentIds || (singleId ? [singleId] : [])).map(String);
+    const requestedId = String(req.query.studentId || ids[0] || '');
 
     // Security: parent can only view children linked to their token
     if (!ids.includes(requestedId)) return res.status(403).json({ error: 'Forbidden' });
 
     const db = readDb(schoolId);
-    const student = (db.students || []).find(s => s.id === requestedId);
+    const student = (db.students || []).find(s => String(s.id) === requestedId);
     if (!student) return res.status(404).json({ error: 'Student not found' });
 
     const settings = db.settings || {};
@@ -111,8 +111,8 @@ router.get('/parent-portal/me', authenticateParent, (req, res) => {
         student: sanitiseStudent(student),
         // Include all siblings so the portal can show a switcher
         siblings: ids.map(id => {
-            const sib = (db.students || []).find(s => s.id === id);
-            return sib ? { id: sib.id, name: sib.name, classLevel: sib.classLevel } : null;
+            const sib = (db.students || []).find(s => String(s.id) === String(id));
+            return sib ? { id: String(sib.id), name: sib.name, classLevel: sib.classLevel } : null;
         }).filter(Boolean),
         school: {
             name: settings.schoolName || schoolId,
@@ -124,16 +124,17 @@ router.get('/parent-portal/me', authenticateParent, (req, res) => {
 
 // ── GET /api/parent-portal/attendance/:studentId ───────────────────────
 router.get('/parent-portal/attendance/:studentId', authenticateParent, (req, res) => {
-    const { studentIds, schoolId } = req.parentUser;
-    const ids = studentIds || [];
+    const { studentIds, studentId: singleId, schoolId } = req.parentUser;
+    const ids = (studentIds || (singleId ? [singleId] : [])).map(String);
+    const targetId = String(req.params.studentId || '');
 
     // Security: parent can only see their own children's data
-    if (!ids.includes(req.params.studentId)) {
+    if (!ids.includes(targetId)) {
         return res.status(403).json({ error: 'Forbidden' });
     }
 
     const db = readDb(schoolId);
-    const student = (db.students || []).find(s => s.id === req.params.studentId);
+    const student = (db.students || []).find(s => String(s.id) === targetId);
     if (!student) return res.status(404).json({ error: 'Student not found' });
 
     const allAttendance = db.attendance || [];
