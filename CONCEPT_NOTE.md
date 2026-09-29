@@ -2,18 +2,18 @@
 
 **PROJECT TITLE:** SchoolOS Malawi & EduSearch Network  
 **SUBTITLE:** Integrated Digital School Management System (B2B) & Public School Discovery Network (B2C) for Malawian Secondary Education  
-**NATIONAL ALIGNMENT:** *Malawi 2063 (MW2063) — Enabler 5: Human Capital Development & Digitalisation*  
+**NATIONAL ALIGNMENT:** *Malawi 2063 (MW2063): Enabler 5: Human Capital Development & Digitalisation*  
 **LIVE PROTOTYPE:** [https://school-os-mw.onrender.com](https://school-os-mw.onrender.com)  
 
 ---
 
 ## 1. Executive Summary
 
-Malawian secondary education is undergoing a vital transformation toward digital public infrastructure. However, the majority of secondary schools—particularly Community Day Secondary Schools (CDSS) and conventional public schools—continue to rely on manual, paper-based processes for student record-keeping, grading, fee tracking, and parent communication.
+Malawian secondary education is undergoing a vital transformation toward digital public infrastructure. However, the majority of secondary schools, particularly Community Day Secondary Schools (CDSS) and conventional public schools, continue to rely on manual, paper-based processes for student record-keeping, grading, fee tracking, and parent communication.
 
 **SchoolOS Malawi** is a comprehensive, cloud-native School Management System (SMS) and Public Discovery Network specifically engineered for Malawian secondary schools. It operates seamlessly across low-bandwidth mobile devices, tablets, and desktop browsers, requiring zero hardware installation.
 
-By digitizing school operations, automating Malawi Senior MSCE (1–9 Points) and Junior JCE grading, integrating mobile money fee reconciliation, and providing a public school discovery portal, **SchoolOS Malawi** bridges the digital divide between schools, parents, and government education divisions.
+By digitizing school operations, automating Malawi Senior MSCE (1-9 Points) and Junior JCE grading, integrating mobile money fee reconciliation, and providing a public school discovery portal, **SchoolOS Malawi** bridges the digital divide between schools, parents, and government education divisions.
 
 ---
 
@@ -46,7 +46,7 @@ The platform is split into two interconnected engines:
 
 ### Key Functional Capabilities:
 
-- **Automated MSCE & JCE Grading Engine:** Computes subject grades (Points 1–9 for Senior Forms 3–4; Grades A–F for Junior Forms 1–2) with customizable CAT & Exam weightings, automatically ranks students, and generates official PDF report cards in bulk ZIP archives.
+- **Automated MSCE & JCE Grading Engine:** Computes subject grades (Points 1-9 for Senior Forms 3-4; Grades A-F for Junior Forms 1-2) with customizable CAT & Exam weightings, automatically ranks students, and generates official PDF report cards in bulk ZIP archives.
 - **Fintech & Fee Lock Gate:** Integrates Mobile Money reference verification (Airtel Money & TNM Mpamba). The system enforces an automated *Fee Lock Gate* that safely restricts report card access for unpaid balances unless granted administrative override.
 - **Staff Payroll & HR Suite:** Automates monthly staff salary computations, including Malawian PAYE tax bands, 5% MIPF pension deductions, leave day balances, and digital payslip generation.
 - **Parent Self-Service Portal (`parent-portal.html`):** Parents log in using their registered phone number and school code to view real-time fee balances, last 30-day attendance records, marks, and school notices.
@@ -78,7 +78,7 @@ To scale **SchoolOS Malawi** into a national digital public good, we are seeking
 
 ## 6. Project Contact Information
 
-- **Innovator / Lead Developer:** [Your Name / Organization]
-- **Email / Phone:** [Your Email & Phone Number]
+- **Innovator / Lead Developer:** Wycliffe Mwanganda / DigiHelp
+- **Email:** wycliffemwanganda@gmail.com
 - **Live Interactive System Link:** [https://school-os-mw.onrender.com](https://school-os-mw.onrender.com)
 - **Public Discovery Portal Link:** [https://school-os-mw.onrender.com/explore.html](https://school-os-mw.onrender.com/explore.html)
