@@ -4,7 +4,10 @@ const router = express.Router();
 const { readDb, writeDb } = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
-router.use(authenticateToken, requireAdmin);
+// Scope auth to /payroll/* only — a global router.use() would block
+// ALL /api/* requests including public routes from other routers.
+router.use('/payroll', authenticateToken, requireAdmin);
+router.use('/admin', authenticateToken, requireAdmin);
 
 // Get all staff profiles for the school
 router.get('/payroll/staff', (req, res) => {

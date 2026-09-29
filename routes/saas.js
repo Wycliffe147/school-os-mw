@@ -5,7 +5,10 @@ const bcrypt = require('bcryptjs');
 const { readDb, writeDb, getDbCache } = require('../db');
 const { authenticateToken, requireSuperAdmin } = require('../middleware/auth');
 
-router.use(authenticateToken, requireSuperAdmin);
+// Scope auth to /saas/* only — do NOT use global router.use() here,
+// because this router is mounted on /api and a global use() would block
+// ALL /api/* requests including public routes from other routers.
+router.use('/saas', authenticateToken, requireSuperAdmin);
 
 router.get('/saas/schools', (req, res) => {
     readDb('default');
@@ -98,7 +101,7 @@ router.put('/saas/schools/:schoolId', (req, res) => {
     res.json({ success: true });
 });
 
-router.put('/saas/me', (req, res) => {
+router.put('/saas/me', authenticateToken, requireSuperAdmin, (req, res) => {
     readDb('default');
     const dbCache = getDbCache();
     const { newUsername, newPassword } = req.body;
