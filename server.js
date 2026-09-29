@@ -23,6 +23,11 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 
 // Register API Routes
 app.use('/api', require('./routes/auth'));
+// Public routes — registered FIRST so they are not blocked by protected routers below
+app.use('/api', require('./routes/parentPortal'));
+app.use('/api', require('./routes/discovery'));
+
+// Protected routes (these have global router.use(authenticateToken) guards)
 app.use('/api', require('./routes/saas'));
 app.use('/api', require('./routes/students'));
 app.use('/api', require('./routes/staff'));
@@ -33,10 +38,6 @@ app.use('/api', require('./routes/whatsapp'));
 app.use('/api', require('./routes/payments'));
 app.use('/api', require('./routes/timetable'));
 app.use('/api', require('./routes/payroll'));
-// Phase 3.4 — Parent Portal
-app.use('/api', require('./routes/parentPortal'));
-// Phase 4 — Public Discovery Network
-app.use('/api', require('./routes/discovery'));
 
 initDB().then(() => {
     app.listen(PORT, '0.0.0.0', () => {
