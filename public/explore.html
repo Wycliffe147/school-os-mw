@@ -512,7 +512,7 @@
                 <!-- Custom Searchable District Dropdown -->
                 <div class="custom-dropdown" id="district-dropdown">
                     <div class="custom-dropdown-toggle" id="district-toggle">
-                        <span id="district-selected-text">📍 All Districts (Nationwide)</span>
+                        <span id="district-selected-text">All Districts (Nationwide)</span>
                         <span style="font-size:0.75rem; color:var(--text-secondary);">▼</span>
                     </div>
                     <div class="custom-dropdown-menu" id="district-menu">
@@ -520,7 +520,7 @@
                             <input type="text" id="district-search-input" placeholder="🔍 Search district...">
                         </div>
                         <div id="district-options-list">
-                            <div class="dropdown-option active" data-val="All">📍 All Districts (Nationwide)</div>
+                            <div class="dropdown-option active" data-val="All">All Districts (Nationwide)</div>
                             <div class="dropdown-option" data-val="Balaka">Balaka</div>
                             <div class="dropdown-option" data-val="Blantyre">Blantyre</div>
                             <div class="dropdown-option" data-val="Chikwawa">Chikwawa</div>
@@ -566,12 +566,20 @@
 
                 <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
                     <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:600;">Sort:</span>
-                    <select id="sort-by" class="search-select" style="min-width:145px; height:36px; padding:4px 28px 4px 10px; font-size:0.82rem;">
-                        <option value="rating">🌟 Top Rated</option>
-                        <option value="distance">📍 Nearest (GPS)</option>
-                        <option value="fees_asc">💰 Lowest Fees</option>
-                        <option value="fees_desc">💎 Highest Fees</option>
-                    </select>
+                    <!-- Custom Sort Dropdown -->
+                    <div class="custom-dropdown" id="sort-dropdown" style="min-width:150px;">
+                        <div class="custom-dropdown-toggle" id="sort-toggle" style="height:36px; padding:4px 10px; font-size:0.82rem;">
+                            <span id="sort-selected-text">🌟 Top Rated</span>
+                            <span style="font-size:0.7rem; color:var(--text-secondary);">▼</span>
+                        </div>
+                        <div class="custom-dropdown-menu" id="sort-menu" style="min-width:150px;">
+                            <div class="dropdown-option active" data-val="rating">🌟 Top Rated</div>
+                            <div class="dropdown-option" data-val="distance">📍 Nearest (GPS)</div>
+                            <div class="dropdown-option" data-val="fees_asc">💰 Lowest Fees</div>
+                            <div class="dropdown-option" data-val="fees_desc">💎 Highest Fees</div>
+                        </div>
+                        <input type="hidden" id="sort-by" value="rating">
+                    </div>
                 </div>
                 <span id="gps-status" style="width:100%; color:var(--accent-green); font-size:0.8rem; display:none; margin-top:2px;">📍 Sorting by nearest distance from your GPS location</span>
             </div>
@@ -698,7 +706,7 @@
                 <div>
                     <div class="card-stats">
                         <div class="stat-item">
-                            <div class="lbl">EST. TERM FEE</div>
+                            <div class="lbl">TERMLY FEE</div>
                             <div class="val" style="color:var(--accent-green);">MK ${Number(s.approxFees).toLocaleString()}</div>
                         </div>
                         <div class="stat-item">
@@ -765,7 +773,7 @@
                         ${selected.map(s => `<td>${s.district}</td>`).join('')}
                     </tr>
                     <tr>
-                        <td><strong>Term Fee</strong></td>
+                        <td><strong>Termly Fee</strong></td>
                         ${selected.map(s => `<td style="color:var(--accent-green); font-weight:bold;">MK ${Number(s.approxFees).toLocaleString()}</td>`).join('')}
                     </tr>
                     <tr>
@@ -847,6 +855,7 @@
     districtToggle.addEventListener('click', (e) => {
         e.stopPropagation();
         districtDropdown.classList.toggle('open');
+        if (sortDropdown) sortDropdown.classList.remove('open');
         if (districtDropdown.classList.contains('open')) {
             districtSearchInput.focus();
             districtSearchInput.value = '';
@@ -881,9 +890,40 @@
         });
     });
 
+    // ── Custom Sort Dropdown ──
+    const sortDropdown = document.getElementById('sort-dropdown');
+    const sortToggle = document.getElementById('sort-toggle');
+    const sortSelectedText = document.getElementById('sort-selected-text');
+    const sortHiddenInput = document.getElementById('sort-by');
+    const sortOptions = document.querySelectorAll('#sort-menu .dropdown-option');
+
+    sortToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sortDropdown.classList.toggle('open');
+        if (districtDropdown) districtDropdown.classList.remove('open');
+    });
+
+    sortOptions.forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const val = opt.getAttribute('data-val');
+            sortHiddenInput.value = val;
+            sortSelectedText.innerText = opt.innerText;
+
+            sortOptions.forEach(o => o.classList.remove('active'));
+            opt.classList.add('active');
+
+            sortDropdown.classList.remove('open');
+            loadSchools();
+        });
+    });
+
     document.addEventListener('click', (e) => {
         if (districtDropdown && !districtDropdown.contains(e.target)) {
             districtDropdown.classList.remove('open');
+        }
+        if (sortDropdown && !sortDropdown.contains(e.target)) {
+            sortDropdown.classList.remove('open');
         }
     });
 
@@ -894,7 +934,6 @@
     document.getElementById('chk-ict').addEventListener('change', loadSchools);
     document.getElementById('chk-library').addEventListener('change', loadSchools);
     document.getElementById('chk-sports').addEventListener('change', loadSchools);
-    document.getElementById('sort-by').addEventListener('change', loadSchools);
 
     // Initial load
     loadSchools();
