@@ -8,6 +8,7 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
+            color-scheme: dark;
             --bg-primary: #0f1117;
             --bg-secondary: #1a1d26;
             --bg-card: #1e2130;
@@ -18,6 +19,12 @@
             --accent-green: #22c55e;
             --accent-amber: #f59e0b;
             --accent-purple: #a855f7;
+        }
+
+        select option {
+            background-color: #1a1d26;
+            color: #ffffff;
+            padding: 8px;
         }
 
         body {
@@ -383,14 +390,36 @@
             <div class="search-inputs">
                 <input type="text" id="search-q" class="search-input-text" placeholder="Search school name or keyword...">
                 <select id="search-district" class="search-select">
-                    <option value="All">All Districts</option>
+                    <option value="All">All Districts (Nationwide)</option>
+                    <option value="Balaka">Balaka</option>
                     <option value="Blantyre">Blantyre</option>
-                    <option value="Lilongwe">Lilongwe</option>
-                    <option value="Mzuzu">Mzuzu</option>
-                    <option value="Zomba">Zomba</option>
+                    <option value="Chikwawa">Chikwawa</option>
+                    <option value="Chiradzulu">Chiradzulu</option>
+                    <option value="Chitipa">Chitipa</option>
+                    <option value="Dedza">Dedza</option>
+                    <option value="Dowa">Dowa</option>
+                    <option value="Karonga">Karonga</option>
                     <option value="Kasungu">Kasungu</option>
+                    <option value="Likoma">Likoma</option>
+                    <option value="Lilongwe">Lilongwe</option>
+                    <option value="Machinga">Machinga</option>
                     <option value="Mangochi">Mangochi</option>
+                    <option value="Mchinji">Mchinji</option>
+                    <option value="Mulanje">Mulanje</option>
+                    <option value="Mwanza">Mwanza</option>
+                    <option value="Mzimba">Mzimba</option>
+                    <option value="Mzuzu">Mzuzu</option>
+                    <option value="Neno">Neno</option>
+                    <option value="Nkhata Bay">Nkhata Bay</option>
+                    <option value="Nkhotakota">Nkhotakota</option>
+                    <option value="Nsanje">Nsanje</option>
+                    <option value="Ntcheu">Ntcheu</option>
+                    <option value="Ntchisi">Ntchisi</option>
+                    <option value="Phalombe">Phalombe</option>
+                    <option value="Rumphi">Rumphi</option>
                     <option value="Salima">Salima</option>
+                    <option value="Thyolo">Thyolo</option>
+                    <option value="Zomba">Zomba</option>
                 </select>
                 <button class="btn-gps" id="btn-gps-search">📍 Near Me (GPS)</button>
             </div>

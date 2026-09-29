@@ -16,15 +16,37 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return Math.round(R * c * 10) / 10; // 1 decimal place
 }
 
-// Default Malawi District sample coordinates (for fallback if school hasn't set explicit lat/lng)
+// Default Malawi District coordinates (for fallback when school hasn't configured custom GPS pins)
 const DISTRICT_COORDS = {
-    'Blantyre': { lat: -15.7861, lng: 35.0058 },
-    'Lilongwe': { lat: -13.9626, lng: 33.7741 },
-    'Mzuzu':    { lat: -11.4581, lng: 34.0151 },
-    'Zomba':    { lat: -15.3833, lng: 35.3333 },
-    'Kasungu':  { lat: -13.0333, lng: 33.4833 },
-    'Mangochi': { lat: -14.4781, lng: 35.2645 },
-    'Salima':   { lat: -13.7804, lng: 34.4587 }
+    'Balaka':      { lat: -14.9794, lng: 34.9558 },
+    'Blantyre':    { lat: -15.7861, lng: 35.0058 },
+    'Chikwawa':    { lat: -16.0333, lng: 34.8000 },
+    'Chiradzulu':  { lat: -15.7000, lng: 35.1833 },
+    'Chitipa':     { lat: -9.7022,  lng: 33.2703 },
+    'Dedza':       { lat: -14.3778, lng: 34.3333 },
+    'Dowa':        { lat: -13.6542, lng: 33.9378 },
+    'Karonga':     { lat: -9.9333,  lng: 33.9333 },
+    'Kasungu':     { lat: -13.0333, lng: 33.4833 },
+    'Likoma':      { lat: -12.0500, lng: 34.7333 },
+    'Lilongwe':    { lat: -13.9626, lng: 33.7741 },
+    'Machinga':    { lat: -15.1689, lng: 35.3000 },
+    'Mangochi':    { lat: -14.4781, lng: 35.2645 },
+    'Mchinji':     { lat: -13.8000, lng: 32.8833 },
+    'Mulanje':     { lat: -16.0319, lng: 35.5000 },
+    'Mwanza':      { lat: -15.6000, lng: 34.5167 },
+    'Mzimba':      { lat: -11.9000, lng: 33.6000 },
+    'Mzuzu':       { lat: -11.4581, lng: 34.0151 },
+    'Neno':        { lat: -15.3981, lng: 34.6533 },
+    'Nkhata Bay':  { lat: -11.6067, lng: 34.2908 },
+    'Nkhotakota':  { lat: -12.9272, lng: 34.2961 },
+    'Nsanje':      { lat: -16.9200, lng: 35.2600 },
+    'Ntcheu':      { lat: -14.8200, lng: 34.6358 },
+    'Ntchisi':     { lat: -13.3667, lng: 33.9167 },
+    'Phalombe':    { lat: -15.8064, lng: 35.6508 },
+    'Rumphi':      { lat: -11.0186, lng: 33.8575 },
+    'Salima':      { lat: -13.7804, lng: 34.4587 },
+    'Thyolo':      { lat: -16.0678, lng: 35.1403 },
+    'Zomba':       { lat: -15.3833, lng: 35.3333 }
 };
 
 // ── GET /api/public/explore ─────────────────────────────────────────────
