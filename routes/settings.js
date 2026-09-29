@@ -20,6 +20,19 @@ router.post('/settings', requireAdmin, upload.single('logo'), (req, res) => {
     if (req.body.schoolName) db.settings.schoolName = req.body.schoolName;
     if (req.body.subtitle) db.settings.subtitle = req.body.subtitle;
     if (req.body.themeColor) db.settings.themeColor = req.body.themeColor;
+    if (req.body.district !== undefined) db.settings.district = req.body.district;
+    if (req.body.address !== undefined) db.settings.address = req.body.address;
+    if (req.body.motto !== undefined) db.settings.motto = req.body.motto;
+    if (req.body.latitude !== undefined) db.settings.latitude = req.body.latitude ? Number(req.body.latitude) : null;
+    if (req.body.longitude !== undefined) db.settings.longitude = req.body.longitude ? Number(req.body.longitude) : null;
+    if (req.body.defaultTermFee !== undefined) db.settings.defaultTermFee = Number(req.body.defaultTermFee);
+    if (req.body.facilities !== undefined) {
+        try {
+            db.settings.facilities = Array.isArray(req.body.facilities) ? req.body.facilities : JSON.parse(req.body.facilities);
+        } catch (_) {
+            db.settings.facilities = String(req.body.facilities).split(',').map(s => s.trim()).filter(Boolean);
+        }
+    }
     if (req.body.headteacherRemarksPass !== undefined) db.settings.headteacherRemarksPass = req.body.headteacherRemarksPass;
     if (req.body.headteacherRemarksFail !== undefined) db.settings.headteacherRemarksFail = req.body.headteacherRemarksFail;
     if (req.body.nextTermFees !== undefined) db.settings.nextTermFees = req.body.nextTermFees;

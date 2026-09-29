@@ -1364,6 +1364,22 @@ async function loadSettings() {
     document.getElementById('school-subtitle').value = settings.subtitle || '';
     document.getElementById('theme-color').value = settings.themeColor || '#142e5c';
     
+    // Public Location & Profile
+    if (document.getElementById('school-district')) {
+        document.getElementById('school-district').value = settings.district || 'Blantyre';
+        document.getElementById('school-address').value = settings.address || '';
+        document.getElementById('school-motto').value = settings.motto || '';
+        document.getElementById('school-lat').value = settings.latitude !== undefined && settings.latitude !== null ? settings.latitude : '';
+        document.getElementById('school-lng').value = settings.longitude !== undefined && settings.longitude !== null ? settings.longitude : '';
+
+        const facs = settings.facilities || [];
+        if (document.getElementById('fac-science')) document.getElementById('fac-science').checked = facs.includes('Science Lab');
+        if (document.getElementById('fac-ict')) document.getElementById('fac-ict').checked = facs.includes('Computer Lab');
+        if (document.getElementById('fac-boarding')) document.getElementById('fac-boarding').checked = facs.includes('Boarding');
+        if (document.getElementById('fac-library')) document.getElementById('fac-library').checked = facs.includes('Library');
+        if (document.getElementById('fac-sports')) document.getElementById('fac-sports').checked = facs.includes('Sports Ground');
+    }
+
     if (document.getElementById('headteacher-remarks-pass')) {
         document.getElementById('headteacher-remarks-pass').value = settings.headteacherRemarksPass || '';
         document.getElementById('headteacher-remarks-fail').value = settings.headteacherRemarksFail || '';
@@ -1392,6 +1408,30 @@ async function loadSettings() {
         mtbody.innerHTML = '';
         (settings.masterSubjects || []).forEach(sub => addMasterSubjectRow(sub));
     }
+}
+
+// GPS detection button in Settings
+const btnDetectGps = document.getElementById('btn-detect-gps');
+if (btnDetectGps) {
+    btnDetectGps.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+            alert('Geolocation not supported by this browser.');
+            return;
+        }
+        btnDetectGps.innerText = 'Detecting...';
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                document.getElementById('school-lat').value = pos.coords.latitude.toFixed(6);
+                document.getElementById('school-lng').value = pos.coords.longitude.toFixed(6);
+                btnDetectGps.innerText = '✅ Location Detected!';
+                setTimeout(() => { btnDetectGps.innerText = '📍 Detect School\'s Current GPS Location'; }, 3000);
+            },
+            () => {
+                alert('Could not retrieve GPS coordinates. Check browser permissions.');
+                btnDetectGps.innerText = '📍 Detect School\'s Current GPS Location';
+            }
+        );
+    });
 }
 
 function addMasterSubjectRow(sub = {name: '', abbr: '', active: true}) {
@@ -1443,6 +1483,15 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
     e.preventDefault();
     const formData = new FormData(e.target);
     
+    // Facilities checklist
+    const facilities = [];
+    if (document.getElementById('fac-science')?.checked) facilities.push('Science Lab');
+    if (document.getElementById('fac-ict')?.checked) facilities.push('Computer Lab');
+    if (document.getElementById('fac-boarding')?.checked) facilities.push('Boarding');
+    if (document.getElementById('fac-library')?.checked) facilities.push('Library');
+    if (document.getElementById('fac-sports')?.checked) facilities.push('Sports Ground');
+    formData.append('facilities', JSON.stringify(facilities));
+
     const rules = [];
     document.querySelectorAll('#grading-tbody tr').forEach(tr => {
         rules.push({

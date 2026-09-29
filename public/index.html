@@ -639,6 +639,82 @@
                         </div>
 
                         <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border-color);">
+
+                        <h3>📍 Public School Profile & Location</h3>
+                        <p class="subtitle" style="margin-bottom:15px;">Information displayed on the public school explorer (<a href="/explore.html" target="_blank" style="color:var(--accent-blue);">Explore Schools</a>).</p>
+
+                        <div class="input-group">
+                            <label for="school-district">District (Malawi)</label>
+                            <select id="school-district" name="district" style="width:100%; padding:10px; border-radius:6px; background:var(--bg-primary); color:white; border:1px solid var(--border-color);">
+                                <option value="Balaka">Balaka</option>
+                                <option value="Blantyre" selected>Blantyre</option>
+                                <option value="Chikwawa">Chikwawa</option>
+                                <option value="Chiradzulu">Chiradzulu</option>
+                                <option value="Chitipa">Chitipa</option>
+                                <option value="Dedza">Dedza</option>
+                                <option value="Dowa">Dowa</option>
+                                <option value="Karonga">Karonga</option>
+                                <option value="Kasungu">Kasungu</option>
+                                <option value="Likoma">Likoma</option>
+                                <option value="Lilongwe">Lilongwe</option>
+                                <option value="Machinga">Machinga</option>
+                                <option value="Mangochi">Mangochi</option>
+                                <option value="Mchinji">Mchinji</option>
+                                <option value="Mulanje">Mulanje</option>
+                                <option value="Mwanza">Mwanza</option>
+                                <option value="Mzimba">Mzimba</option>
+                                <option value="Mzuzu">Mzuzu</option>
+                                <option value="Neno">Neno</option>
+                                <option value="Nkhata Bay">Nkhata Bay</option>
+                                <option value="Nkhotakota">Nkhotakota</option>
+                                <option value="Nsanje">Nsanje</option>
+                                <option value="Ntcheu">Ntcheu</option>
+                                <option value="Ntchisi">Ntchisi</option>
+                                <option value="Phalombe">Phalombe</option>
+                                <option value="Rumphi">Rumphi</option>
+                                <option value="Salima">Salima</option>
+                                <option value="Thyolo">Thyolo</option>
+                                <option value="Zomba">Zomba</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group" style="margin-top:10px;">
+                            <label for="school-address">Physical Campus Address</label>
+                            <input type="text" id="school-address" name="address" placeholder="e.g. Along M1 Road, Area 47, Lilongwe">
+                        </div>
+
+                        <div class="input-group" style="margin-top:10px;">
+                            <label for="school-motto">School Motto</label>
+                            <input type="text" id="school-motto" name="motto" placeholder="e.g. Discipline, Integrity & Academic Excellence">
+                        </div>
+
+                        <div class="input-group" style="margin-top:10px; display: flex; gap: 15px;">
+                            <div style="flex: 1;">
+                                <label for="school-lat">GPS Latitude (optional)</label>
+                                <input type="number" step="any" id="school-lat" name="latitude" placeholder="e.g. -15.7861">
+                            </div>
+                            <div style="flex: 1;">
+                                <label for="school-lng">GPS Longitude (optional)</label>
+                                <input type="number" step="any" id="school-lng" name="longitude" placeholder="e.g. 35.0058">
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 6px;">
+                            <button type="button" id="btn-detect-gps" class="btn outline-btn" style="padding: 6px 12px; font-size: 0.8rem;">📍 Detect School's Current GPS Location</button>
+                        </div>
+
+                        <div class="input-group" style="margin-top:15px;">
+                            <label style="display:block; margin-bottom:6px;">Campus Facilities (Checked items earn verified badges on Explore)</label>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; font-size:0.88rem;">
+                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="fac-science" value="Science Lab"> 🔬 Science Lab</label>
+                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="fac-ict" value="Computer Lab"> 💻 Computer Lab (ICT)</label>
+                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="fac-boarding" value="Boarding"> 🏠 Boarding Available</label>
+                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="fac-library" value="Library"> 📚 Library</label>
+                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="fac-sports" value="Sports Ground"> ⚽ Sports Grounds</label>
+                            </div>
+                        </div>
+
+                        <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border-color);">
                         
                         <h3>Report Card Footer Details</h3>
                         <p class="subtitle" style="margin-bottom:15px;">Information displayed at the bottom of every report card.</p>
