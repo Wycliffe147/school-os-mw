@@ -21,10 +21,10 @@ router.post('/parent-portal/login', (req, res) => {
     const db = readDb(schoolId);
     const phoneSuffix = normPhone(phone);
 
-    // Find a student whose parent phone matches
+    // Find a student whose parent phone matches (supports parentPhone or phone)
     const student = (db.students || []).find(s => {
-        const sp = normPhone(s.parentPhone);
-        return sp && sp.endsWith(phoneSuffix);
+        const sp = normPhone(s.parentPhone || s.phone);
+        return sp && (sp.endsWith(phoneSuffix) || phoneSuffix.endsWith(sp));
     });
 
     if (!student) {
