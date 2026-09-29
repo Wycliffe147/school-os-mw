@@ -139,26 +139,110 @@
             font-size: 0.95rem;
         }
 
-        .search-select {
+        /* ── Custom Dropdown ── */
+        .custom-dropdown {
+            position: relative;
             flex: 1;
-            min-width: 170px;
+            min-width: 220px;
+            user-select: none;
+        }
+
+        .custom-dropdown-toggle {
             height: 48px;
-            padding: 10px 36px 10px 14px;
+            padding: 10px 14px;
             background-color: var(--bg-secondary);
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            background-size: 16px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             color: #ffffff;
             font-size: 0.92rem;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            transition: border-color 0.2s;
+        }
+
+        .custom-dropdown-toggle:hover,
+        .custom-dropdown.open .custom-dropdown-toggle {
+            border-color: var(--accent-blue);
+        }
+
+        .custom-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: #1a1d26;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.7);
+            z-index: 150;
+            display: none;
+            max-height: 280px;
+            overflow-y: auto;
+            padding: 6px;
+        }
+
+        .custom-dropdown.open .custom-dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-search-box {
+            padding: 4px 4px 8px 4px;
+            position: sticky;
+            top: 0;
+            background: #1a1d26;
+            z-index: 2;
+        }
+
+        .dropdown-search-box input {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: white;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .dropdown-option {
+            padding: 9px 12px;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dropdown-option:hover,
+        .dropdown-option.active {
+            background: rgba(79, 142, 247, 0.15);
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        .search-select {
+            height: 48px;
+            padding: 10px 32px 10px 12px;
+            background-color: var(--bg-secondary);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 0.88rem;
+            cursor: pointer;
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
             outline: none;
-            line-height: normal;
         }
 
         .search-select:focus {
@@ -425,38 +509,51 @@
         <div class="search-bar-container">
             <div class="search-inputs">
                 <input type="text" id="search-q" class="search-input-text" placeholder="Search school name or keyword...">
-                <select id="search-district" class="search-select">
-                    <option value="All">All Districts (Nationwide)</option>
-                    <option value="Balaka">Balaka</option>
-                    <option value="Blantyre">Blantyre</option>
-                    <option value="Chikwawa">Chikwawa</option>
-                    <option value="Chiradzulu">Chiradzulu</option>
-                    <option value="Chitipa">Chitipa</option>
-                    <option value="Dedza">Dedza</option>
-                    <option value="Dowa">Dowa</option>
-                    <option value="Karonga">Karonga</option>
-                    <option value="Kasungu">Kasungu</option>
-                    <option value="Likoma">Likoma</option>
-                    <option value="Lilongwe">Lilongwe</option>
-                    <option value="Machinga">Machinga</option>
-                    <option value="Mangochi">Mangochi</option>
-                    <option value="Mchinji">Mchinji</option>
-                    <option value="Mulanje">Mulanje</option>
-                    <option value="Mwanza">Mwanza</option>
-                    <option value="Mzimba">Mzimba</option>
-                    <option value="Mzuzu">Mzuzu</option>
-                    <option value="Neno">Neno</option>
-                    <option value="Nkhata Bay">Nkhata Bay</option>
-                    <option value="Nkhotakota">Nkhotakota</option>
-                    <option value="Nsanje">Nsanje</option>
-                    <option value="Ntcheu">Ntcheu</option>
-                    <option value="Ntchisi">Ntchisi</option>
-                    <option value="Phalombe">Phalombe</option>
-                    <option value="Rumphi">Rumphi</option>
-                    <option value="Salima">Salima</option>
-                    <option value="Thyolo">Thyolo</option>
-                    <option value="Zomba">Zomba</option>
-                </select>
+                <!-- Custom Searchable District Dropdown -->
+                <div class="custom-dropdown" id="district-dropdown">
+                    <div class="custom-dropdown-toggle" id="district-toggle">
+                        <span id="district-selected-text">📍 All Districts (Nationwide)</span>
+                        <span style="font-size:0.75rem; color:var(--text-secondary);">▼</span>
+                    </div>
+                    <div class="custom-dropdown-menu" id="district-menu">
+                        <div class="dropdown-search-box">
+                            <input type="text" id="district-search-input" placeholder="🔍 Search district...">
+                        </div>
+                        <div id="district-options-list">
+                            <div class="dropdown-option active" data-val="All">📍 All Districts (Nationwide)</div>
+                            <div class="dropdown-option" data-val="Balaka">Balaka</div>
+                            <div class="dropdown-option" data-val="Blantyre">Blantyre</div>
+                            <div class="dropdown-option" data-val="Chikwawa">Chikwawa</div>
+                            <div class="dropdown-option" data-val="Chiradzulu">Chiradzulu</div>
+                            <div class="dropdown-option" data-val="Chitipa">Chitipa</div>
+                            <div class="dropdown-option" data-val="Dedza">Dedza</div>
+                            <div class="dropdown-option" data-val="Dowa">Dowa</div>
+                            <div class="dropdown-option" data-val="Karonga">Karonga</div>
+                            <div class="dropdown-option" data-val="Kasungu">Kasungu</div>
+                            <div class="dropdown-option" data-val="Likoma">Likoma</div>
+                            <div class="dropdown-option" data-val="Lilongwe">Lilongwe</div>
+                            <div class="dropdown-option" data-val="Machinga">Machinga</div>
+                            <div class="dropdown-option" data-val="Mangochi">Mangochi</div>
+                            <div class="dropdown-option" data-val="Mchinji">Mchinji</div>
+                            <div class="dropdown-option" data-val="Mulanje">Mulanje</div>
+                            <div class="dropdown-option" data-val="Mwanza">Mwanza</div>
+                            <div class="dropdown-option" data-val="Mzimba">Mzimba</div>
+                            <div class="dropdown-option" data-val="Mzuzu">Mzuzu</div>
+                            <div class="dropdown-option" data-val="Neno">Neno</div>
+                            <div class="dropdown-option" data-val="Nkhata Bay">Nkhata Bay</div>
+                            <div class="dropdown-option" data-val="Nkhotakota">Nkhotakota</div>
+                            <div class="dropdown-option" data-val="Nsanje">Nsanje</div>
+                            <div class="dropdown-option" data-val="Ntcheu">Ntcheu</div>
+                            <div class="dropdown-option" data-val="Ntchisi">Ntchisi</div>
+                            <div class="dropdown-option" data-val="Phalombe">Phalombe</div>
+                            <div class="dropdown-option" data-val="Rumphi">Rumphi</div>
+                            <div class="dropdown-option" data-val="Salima">Salima</div>
+                            <div class="dropdown-option" data-val="Thyolo">Thyolo</div>
+                            <div class="dropdown-option" data-val="Zomba">Zomba</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="search-district" value="All">
+                </div>
                 <button class="btn-gps" id="btn-gps-search">📍 Near Me (GPS)</button>
             </div>
             <div class="filter-tags">
@@ -739,9 +836,59 @@
         );
     });
 
+    // ── Custom District Dropdown ──
+    const districtDropdown = document.getElementById('district-dropdown');
+    const districtToggle = document.getElementById('district-toggle');
+    const districtSelectedText = document.getElementById('district-selected-text');
+    const districtSearchInput = document.getElementById('district-search-input');
+    const districtHiddenInput = document.getElementById('search-district');
+    const districtOptions = document.querySelectorAll('#district-options-list .dropdown-option');
+
+    districtToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        districtDropdown.classList.toggle('open');
+        if (districtDropdown.classList.contains('open')) {
+            districtSearchInput.focus();
+            districtSearchInput.value = '';
+            filterDistrictList('');
+        }
+    });
+
+    districtSearchInput.addEventListener('click', (e) => e.stopPropagation());
+    districtSearchInput.addEventListener('input', (e) => {
+        filterDistrictList(e.target.value.toLowerCase());
+    });
+
+    function filterDistrictList(filter) {
+        districtOptions.forEach(opt => {
+            const text = opt.innerText.toLowerCase();
+            opt.style.display = text.includes(filter) ? 'flex' : 'none';
+        });
+    }
+
+    districtOptions.forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const val = opt.getAttribute('data-val');
+            districtHiddenInput.value = val;
+            districtSelectedText.innerText = opt.innerText;
+
+            districtOptions.forEach(o => o.classList.remove('active'));
+            opt.classList.add('active');
+
+            districtDropdown.classList.remove('open');
+            loadSchools();
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (districtDropdown && !districtDropdown.contains(e.target)) {
+            districtDropdown.classList.remove('open');
+        }
+    });
+
     // Event listeners
     document.getElementById('search-q').addEventListener('input', loadSchools);
-    document.getElementById('search-district').addEventListener('change', loadSchools);
     document.getElementById('chk-boarding').addEventListener('change', loadSchools);
     document.getElementById('chk-science').addEventListener('change', loadSchools);
     document.getElementById('chk-ict').addEventListener('change', loadSchools);
