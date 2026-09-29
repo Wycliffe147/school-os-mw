@@ -54,7 +54,7 @@ const DISTRICT_COORDS = {
 router.get('/public/explore', (req, res) => {
     readDb('default');
     const dbCache = getDbCache();
-    const { district, userLat, userLng, search, boarding, lab } = req.query;
+    const { district, userLat, userLng, search, boarding, scienceLab, computerLab, library, sports, sortBy } = req.query;
 
     const uLat = userLat ? parseFloat(userLat) : null;
     const uLng = userLng ? parseFloat(userLng) : null;
@@ -87,9 +87,11 @@ router.get('/public/explore', (req, res) => {
             // Automatic verified achievement badges
             const badges = [];
             if (totalStudents > 50) badges.push(' Verified Secondary Institution');
-            if (settings.facilities && settings.facilities.includes('Science Lab')) badges.push('🔬 Science Lab Equipped');
-            if (settings.facilities && settings.facilities.includes('Computer Lab')) badges.push('💻 ICT Center');
-            if (settings.facilities && settings.facilities.includes('Boarding')) badges.push('🏠 Full Boarding Available');
+            if (settings.facilities && settings.facilities.includes('Science Lab')) badges.push('🔬 Science Lab');
+            if (settings.facilities && settings.facilities.includes('Computer Lab')) badges.push('💻 Computer Lab');
+            if (settings.facilities && settings.facilities.includes('Boarding')) badges.push('🏠 Full Boarding');
+            if (settings.facilities && settings.facilities.includes('Library')) badges.push('📚 Library');
+            if (settings.facilities && settings.facilities.includes('Sports Ground')) badges.push('⚽ Sports Grounds');
 
             // Fee estimate
             const sampleStudent = students.find(s => s.totalFees > 0);
@@ -126,22 +128,43 @@ router.get('/public/explore', (req, res) => {
 
     if (search) {
         const q = search.toLowerCase();
-        filtered = filtered.filter(s => s.schoolName.toLowerCase().includes(q) || s.district.toLowerCase().includes(q) || s.motto.toLowerCase().includes(q));
+        filtered = filtered.filter(s => s.schoolName.toLowerCase().includes(q) || s.district.toLowerCase().includes(q) || s.motto.toLowerCase().includes(q) || s.address.toLowerCase().includes(q));
     }
 
     if (boarding === 'true') {
-        filtered = filtered.filter(s => s.facilities.includes('Boarding'));
+        filtered = filtered.filter(s => s.facilities && s.facilities.includes('Boarding'));
     }
 
-    if (lab === 'true') {
-        filtered = filtered.filter(s => s.facilities.includes('Science Lab') || s.facilities.includes('Computer Lab'));
+    if (scienceLab === 'true') {
+        filtered = filtered.filter(s => s.facilities && s.facilities.includes('Science Lab'));
     }
 
-    // Sort by distance if GPS is provided, else by rating
-    if (uLat && uLng) {
+    if (computerLab === 'true') {
+        filtered = filtered.filter(s => s.facilities && s.facilities.includes('Computer Lab'));
+    }
+
+    if (library === 'true') {
+        filtered = filtered.filter(s => s.facilities && s.facilities.includes('Library'));
+    }
+
+    if (sports === 'true') {
+        filtered = filtered.filter(s => s.facilities && s.facilities.includes('Sports Ground'));
+    }
+
+    // Sorting
+    if (sortBy === 'distance' && uLat && uLng) {
         filtered.sort((a, b) => (a.distanceKm || 9999) - (b.distanceKm || 9999));
+    } else if (sortBy === 'fees_asc') {
+        filtered.sort((a, b) => a.approxFees - b.approxFees);
+    } else if (sortBy === 'fees_desc') {
+        filtered.sort((a, b) => b.approxFees - a.approxFees);
     } else {
-        filtered.sort((a, b) => b.rating - a.rating);
+        // Default sort: Nearest if GPS active, else highest rating
+        if (uLat && uLng) {
+            filtered.sort((a, b) => (a.distanceKm || 9999) - (b.distanceKm || 9999));
+        } else {
+            filtered.sort((a, b) => b.rating - a.rating);
+        }
     }
 
     res.json({ count: filtered.length, schools: filtered });

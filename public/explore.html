@@ -141,16 +141,28 @@
 
         .search-select {
             flex: 1;
-            min-width: 150px;
-            padding: 12px 14px;
+            min-width: 170px;
+            height: 48px;
+            padding: 10px 36px 10px 14px;
             background-color: var(--bg-secondary);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             color: #ffffff;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             cursor: pointer;
-            -webkit-appearance: menulist;
-            appearance: menulist;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            outline: none;
+            line-height: normal;
+        }
+
+        .search-select:focus {
+            border-color: var(--accent-blue);
         }
 
         .btn-gps {
@@ -167,24 +179,45 @@
             gap: 6px;
             font-size: 0.9rem;
             white-space: nowrap;
+            height: 48px;
         }
 
         .btn-gps:hover { background: rgba(34,197,94,0.25); }
 
         .filter-tags {
             display: flex;
-            gap: 14px;
+            gap: 10px;
             align-items: center;
             font-size: 0.85rem;
             color: var(--text-secondary);
             flex-wrap: wrap;
-            padding-top: 4px;
+            padding-top: 6px;
         }
 
         .filter-checkbox {
             display: flex;
             align-items: center;
             gap: 6px;
+            cursor: pointer;
+            padding: 6px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            user-select: none;
+            transition: all 0.2s;
+            font-size: 0.83rem;
+            color: var(--text-primary);
+        }
+
+        .filter-checkbox:hover {
+            border-color: var(--accent-blue);
+            background: rgba(79,142,247,0.1);
+        }
+
+        .filter-checkbox input[type="checkbox"] {
+            accent-color: var(--accent-blue);
+            width: 15px;
+            height: 15px;
             cursor: pointer;
         }
 
@@ -427,10 +460,23 @@
                 <button class="btn-gps" id="btn-gps-search">📍 Near Me (GPS)</button>
             </div>
             <div class="filter-tags">
-                <span>Filter by:</span>
-                <label class="filter-checkbox"><input type="checkbox" id="chk-boarding"> 🏠 Boarding Available</label>
-                <label class="filter-checkbox"><input type="checkbox" id="chk-lab"> 🔬 Science/ICT Lab</label>
-                <span id="gps-status" style="margin-left:auto; color:var(--accent-green); font-size:0.8rem; display:none;">📍 Using your GPS location</span>
+                <span style="font-weight:700; color:var(--text-primary); font-size:0.85rem;">Filters:</span>
+                <label class="filter-checkbox"><input type="checkbox" id="chk-boarding"> 🏠 Boarding</label>
+                <label class="filter-checkbox"><input type="checkbox" id="chk-science"> 🔬 Science Lab</label>
+                <label class="filter-checkbox"><input type="checkbox" id="chk-ict"> 💻 Computer Lab</label>
+                <label class="filter-checkbox"><input type="checkbox" id="chk-library"> 📚 Library</label>
+                <label class="filter-checkbox"><input type="checkbox" id="chk-sports"> ⚽ Sports</label>
+
+                <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:600;">Sort:</span>
+                    <select id="sort-by" class="search-select" style="min-width:145px; height:36px; padding:4px 28px 4px 10px; font-size:0.82rem;">
+                        <option value="rating">🌟 Top Rated</option>
+                        <option value="distance">📍 Nearest (GPS)</option>
+                        <option value="fees_asc">💰 Lowest Fees</option>
+                        <option value="fees_desc">💎 Highest Fees</option>
+                    </select>
+                </div>
+                <span id="gps-status" style="width:100%; color:var(--accent-green); font-size:0.8rem; display:none; margin-top:2px;">📍 Sorting by nearest distance from your GPS location</span>
             </div>
         </div>
     </section>
@@ -510,9 +556,13 @@
         const q = document.getElementById('search-q').value;
         const district = document.getElementById('search-district').value;
         const boarding = document.getElementById('chk-boarding').checked;
-        const lab = document.getElementById('chk-lab').checked;
+        const scienceLab = document.getElementById('chk-science').checked;
+        const computerLab = document.getElementById('chk-ict').checked;
+        const library = document.getElementById('chk-library').checked;
+        const sports = document.getElementById('chk-sports').checked;
+        const sortBy = document.getElementById('sort-by').value;
 
-        let url = `/api/public/explore?search=${encodeURIComponent(q)}&district=${encodeURIComponent(district)}&boarding=${boarding}&lab=${lab}`;
+        let url = `/api/public/explore?search=${encodeURIComponent(q)}&district=${encodeURIComponent(district)}&boarding=${boarding}&scienceLab=${scienceLab}&computerLab=${computerLab}&library=${library}&sports=${sports}&sortBy=${sortBy}`;
         if (userCoords) {
             url += `&userLat=${userCoords.lat}&userLng=${userCoords.lng}`;
         }
@@ -693,7 +743,11 @@
     document.getElementById('search-q').addEventListener('input', loadSchools);
     document.getElementById('search-district').addEventListener('change', loadSchools);
     document.getElementById('chk-boarding').addEventListener('change', loadSchools);
-    document.getElementById('chk-lab').addEventListener('change', loadSchools);
+    document.getElementById('chk-science').addEventListener('change', loadSchools);
+    document.getElementById('chk-ict').addEventListener('change', loadSchools);
+    document.getElementById('chk-library').addEventListener('change', loadSchools);
+    document.getElementById('chk-sports').addEventListener('change', loadSchools);
+    document.getElementById('sort-by').addEventListener('change', loadSchools);
 
     // Initial load
     loadSchools();
