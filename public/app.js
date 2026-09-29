@@ -327,17 +327,21 @@ document.querySelectorAll('.nav-links li').forEach(item => {
         document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
         
         item.classList.add('active');
-        const targetTab = item.getAttribute('data-tab');
-        document.getElementById(targetTab).classList.add('active');
-        
         const tabId = item.getAttribute('data-tab');
         if (tabId === 'students-tab') renderStudentsTab();
+        if (tabId === 'fees-tab') renderFeesTab();
+        if (tabId === 'attendance-tab') renderAttendanceTab();
+        if (tabId === 'timetable-tab') renderTimetableTab();
+        if (tabId === 'payroll-tab') renderPayrollTab();
+        if (tabId === 'mobilemoney-tab') renderMobileMoneyTab();
         if (tabId === 'staff-tab') renderStaffTab();
         if (tabId === 'marks-tab') renderMarksTab();
-        if (targetTab === 'rankings-tab') renderRankingsTab();
-        if (targetTab === 'whatsapp-tab') setupWhatsAppStatusPolling();
-        if (targetTab === 'settings-tab') loadSettings();
-        if (targetTab === 'superadmin-tab') loadSuperAdmin();
+        if (tabId === 'rankings-tab') renderRankingsTab();
+        if (tabId === 'whatsapp-tab') setupWhatsAppStatusPolling();
+        if (tabId === 'notices-tab') renderNoticesTab();
+        if (tabId === 'applications-tab') renderApplicationsTab();
+        if (tabId === 'settings-tab') loadSettings();
+        if (tabId === 'superadmin-tab') loadSuperAdmin();
     });
 });
 
@@ -1543,6 +1547,10 @@ document.getElementById('preview-design-btn').addEventListener('click', () => {
 });
 
 // ── 💰 Fee Ledger UI Implementation ────────────────────────────────
+let feeLedgerSearchTerm = '';
+let feeLedgerClassFilter = 'SELECTED';
+let feeLedgerStatusFilter = 'ALL';
+
 async function renderFeesTab() {
     try {
         const res = await apiFetch('/api/students');
@@ -1552,22 +1560,77 @@ async function renderFeesTab() {
         return;
     }
 
-    const classStudents = students.filter(s => (s.classLevel || 'Form 1') === currentClass);
+    // Update class filter dropdown option text
+    const classFilterSelect = document.getElementById('fee-class-filter');
+    if (classFilterSelect && classFilterSelect.options.length > 0) {
+        classFilterSelect.options[0].text = `Current Class (${currentClass})`;
+    }
+
+    // Determine target students
+    let targetStudents = students;
+    if (feeLedgerClassFilter === 'SELECTED') {
+        targetStudents = students.filter(s => (s.classLevel || 'Form 1') === currentClass);
+    } else if (feeLedgerClassFilter !== 'ALL') {
+        targetStudents = students.filter(s => (s.classLevel || 'Form 1') === feeLedgerClassFilter);
+    }
+
+    // Filter by search term
+    if (feeLedgerSearchTerm) {
+        const term = feeLedgerSearchTerm.toLowerCase();
+        targetStudents = targetStudents.filter(s => s.name && s.name.toLowerCase().includes(term));
+    }
+
+    // Filter by payment / lock status
+    if (feeLedgerStatusFilter === 'HAS_BALANCE') {
+        targetStudents = targetStudents.filter(s => {
+            const tf = Number(s.totalFees || 0);
+            const pa = Number(s.paidAmount || 0);
+            return (tf - pa) > 0;
+        });
+    } else if (feeLedgerStatusFilter === 'CLEARED') {
+        targetStudents = targetStudents.filter(s => {
+            const tf = Number(s.totalFees || 0);
+            const pa = Number(s.paidAmount || 0);
+            return (tf - pa) <= 0;
+        });
+    } else if (feeLedgerStatusFilter === 'BURSARY') {
+        targetStudents = targetStudents.filter(s => Boolean(s.bursaryName && s.bursaryName.trim()));
+    } else if (feeLedgerStatusFilter === 'LOCKED') {
+        targetStudents = targetStudents.filter(s => {
+            const tf = Number(s.totalFees || 0);
+            const pa = Number(s.paidAmount || 0);
+            return (tf - pa) > 0 && !s.feeLockOverride;
+        });
+    } else if (feeLedgerStatusFilter === 'OVERRIDDEN') {
+        targetStudents = targetStudents.filter(s => Boolean(s.feeLockOverride));
+    }
+
     const tbody = document.getElementById('fees-table-tbody');
     tbody.innerHTML = '';
 
     let totalExpected = 0;
     let totalCollected = 0;
     let totalOutstanding = 0;
+    let clearedCount = 0;
+    let balanceCount = 0;
+    let bursaryCount = 0;
 
-    classStudents.forEach(student => {
+    if (targetStudents.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 30px;">No students match the current fee filter criteria.</td></tr>`;
+    }
+
+    targetStudents.forEach(student => {
         const tf = Number(student.totalFees || 0);
         const pa = Number(student.paidAmount || 0);
         const bal = tf - pa;
+        const isBursary = Boolean(student.bursaryName && student.bursaryName.trim());
 
         totalExpected += tf;
         totalCollected += pa;
         totalOutstanding += Math.max(0, bal);
+        if (bal <= 0) clearedCount++;
+        else balanceCount++;
+        if (isBursary) bursaryCount++;
 
         const tr = document.createElement('tr');
 
@@ -1581,20 +1644,28 @@ async function renderFeesTab() {
             lockBadge = '<span class="badge" style="background: var(--accent-danger); color: white;">🔒 Locked</span>';
         }
 
+        const paymentCount = (student.paymentHistory || []).length;
+        const bursaryTag = isBursary ? `<div style="margin-top: 3px;"><span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #c4b5fd; border: 1px solid #8b5cf6; font-size: 0.72rem; padding: 2px 6px;">🎓 ${student.bursaryName}</span></div>` : '';
+
         tr.innerHTML = `
-            <td><strong>${student.name}</strong></td>
+            <td>
+                <strong>${student.name}</strong>
+                ${bursaryTag}
+            </td>
             <td>${student.classLevel || 'Form 1'}</td>
             <td>
-                <input type="number" class="fee-input" value="${tf}" min="0" style="width: 110px; padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-primary); color: white;" data-id="${student.id}">
+                <input type="number" class="fee-input" value="${tf}" min="0" style="width: 110px; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-primary); color: white; font-weight: 600;" data-id="${student.id}">
             </td>
-            <td>MK ${pa.toLocaleString()}</td>
+            <td style="color: var(--text-primary);">MK ${pa.toLocaleString()}</td>
             <td style="color: ${bal > 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}; font-weight: bold;">
                 MK ${bal.toLocaleString()}
             </td>
             <td>${lockBadge}</td>
             <td>
                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                    <button class="btn btn-pay success-btn" style="padding: 4px 8px; font-size: 0.8rem;" data-id="${student.id}" data-name="${student.name}">+ Record Payment</button>
+                    <button class="btn btn-pay success-btn" style="padding: 4px 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;" data-id="${student.id}" data-name="${student.name}">
+                        💵 Record Pay ${paymentCount > 0 ? `(${paymentCount})` : ''}
+                    </button>
                     <button class="btn btn-override outline-btn" style="padding: 4px 8px; font-size: 0.8rem;" data-id="${student.id}" data-override="${student.feeLockOverride ? 'false' : 'true'}">
                         ${student.feeLockOverride ? 'Lock' : 'Override Lock'}
                     </button>
@@ -1605,7 +1676,8 @@ async function renderFeesTab() {
         // Update fee amount change handler
         tr.querySelector('.fee-input').addEventListener('change', async (e) => {
             const sid = e.target.getAttribute('data-id');
-            const newFee = Number(e.target.value);
+            const newFee = Math.max(0, Number(e.target.value));
+            e.target.value = newFee;
             const updates = {};
             updates[sid] = { totalFees: newFee };
             await apiFetch('/api/students', {
@@ -1617,10 +1689,8 @@ async function renderFeesTab() {
         });
 
         // Record payment click handler
-        tr.querySelector('.btn-pay').addEventListener('click', (e) => {
-            const sid = e.target.getAttribute('data-id');
-            const sname = e.target.getAttribute('data-name');
-            openPaymentModal(sid, sname);
+        tr.querySelector('.btn-pay').addEventListener('click', () => {
+            openPaymentModal(student.id, student.name);
         });
 
         // Override toggle click handler
@@ -1639,56 +1709,203 @@ async function renderFeesTab() {
     });
 
     // Update summary cards
+    const ratePercent = totalExpected > 0 ? Math.min(100, Math.round((totalCollected / totalExpected) * 100)) : (targetStudents.length > 0 ? 100 : 0);
     document.getElementById('fee-summary-total').innerText = `MK ${totalExpected.toLocaleString()}`;
+    document.getElementById('fee-summary-total-count').innerText = `${targetStudents.length} Students`;
+
     document.getElementById('fee-summary-collected').innerText = `MK ${totalCollected.toLocaleString()}`;
+    document.getElementById('fee-summary-collected-count').innerText = `${clearedCount} Fully Cleared`;
+
     document.getElementById('fee-summary-outstanding').innerText = `MK ${totalOutstanding.toLocaleString()}`;
+    document.getElementById('fee-summary-outstanding-count').innerText = `${balanceCount} With Balance`;
+
+    document.getElementById('fee-summary-rate').innerText = `${ratePercent}%`;
+    document.getElementById('fee-summary-bursary-count').innerText = `${bursaryCount} on Bursary`;
 }
+
+// Fee Search & Filter Listeners
+document.getElementById('fee-student-search')?.addEventListener('input', (e) => {
+    feeLedgerSearchTerm = e.target.value.trim();
+    renderFeesTab();
+});
+
+document.getElementById('fee-class-filter')?.addEventListener('change', (e) => {
+    feeLedgerClassFilter = e.target.value;
+    renderFeesTab();
+});
+
+document.getElementById('fee-status-filter')?.addEventListener('change', (e) => {
+    feeLedgerStatusFilter = e.target.value;
+    renderFeesTab();
+});
+
+// Export Fee Ledger CSV
+document.getElementById('btn-export-fees')?.addEventListener('click', () => {
+    if (!students || students.length === 0) return alert('No student data to export.');
+    
+    let target = students;
+    if (feeLedgerClassFilter === 'SELECTED') target = students.filter(s => (s.classLevel || 'Form 1') === currentClass);
+    else if (feeLedgerClassFilter !== 'ALL') target = students.filter(s => (s.classLevel || 'Form 1') === feeLedgerClassFilter);
+    
+    let csv = 'Student ID,Full Name,Class Level,Bursary,Total Fees (MK),Paid Amount (MK),Balance (MK),Fee Lock Override\n';
+    target.forEach(s => {
+        const tf = Number(s.totalFees || 0);
+        const pa = Number(s.paidAmount || 0);
+        const bal = tf - pa;
+        const bursary = (s.bursaryName || '').replace(/,/g, ' ');
+        const name = (s.name || '').replace(/,/g, ' ');
+        csv += `"${s.id}","${name}","${s.classLevel || 'Form 1'}","${bursary}",${tf},${pa},${bal},${s.feeLockOverride ? 'YES' : 'NO'}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Fee_Ledger_${(feeLedgerClassFilter === 'SELECTED' ? currentClass : feeLedgerClassFilter).replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+});
+
+// Print Fee Ledger Sheet
+document.getElementById('btn-print-fees')?.addEventListener('click', () => {
+    window.print();
+});
 
 // Payment Modal Logic
 function openPaymentModal(studentId, studentName) {
+    const s = students.find(x => x.id === studentId);
+    if (!s) return;
+
     document.getElementById('payment-student-id').value = studentId;
-    document.getElementById('payment-student-name').innerText = `Student: ${studentName}`;
+    document.getElementById('payment-student-name').innerText = `${studentName} (${s.classLevel || 'Form 1'})`;
+    
+    const tf = Number(s.totalFees || 0);
+    const pa = Number(s.paidAmount || 0);
+    const bal = tf - pa;
+
+    document.getElementById('pay-modal-term-fee').innerText = `MK ${tf.toLocaleString()}`;
+    document.getElementById('pay-modal-paid').innerText = `MK ${pa.toLocaleString()}`;
+    document.getElementById('pay-modal-balance').innerText = `MK ${bal.toLocaleString()}`;
+
     document.getElementById('payment-amount').value = '';
+    document.getElementById('payment-method').value = 'Cash';
     document.getElementById('payment-note').value = '';
     document.getElementById('payment-error').style.display = 'none';
 
-    const s = students.find(x => x.id === studentId);
-    const hist = document.getElementById('payment-history-list');
-    hist.innerHTML = '';
-
-    if (s && s.paymentHistory && s.paymentHistory.length > 0) {
-        s.paymentHistory.slice().reverse().forEach(p => {
-            const div = document.createElement('div');
-            div.style.cssText = 'padding: 6px 0; border-bottom: 1px solid var(--border-color); color: var(--text-secondary);';
-            div.innerHTML = `<strong>MK ${Number(p.amount).toLocaleString()}</strong> - ${new Date(p.date).toLocaleDateString()} (${p.receiptNo}) <br><small>${p.note || ''}</small>`;
-            hist.appendChild(div);
-        });
-    } else {
-        hist.innerHTML = '<p style="color: var(--text-secondary);">No previous payment records.</p>';
+    // Quick pay full balance button
+    const payFullBtn = document.getElementById('btn-pay-full-balance');
+    if (payFullBtn) {
+        payFullBtn.onclick = () => {
+            document.getElementById('payment-amount').value = Math.max(0, bal);
+        };
     }
 
+    renderPaymentHistoryList(s);
     document.getElementById('payment-modal').style.display = 'flex';
 }
 
-document.getElementById('payment-cancel-btn').addEventListener('click', () => {
+function renderPaymentHistoryList(student) {
+    const hist = document.getElementById('payment-history-list');
+    hist.innerHTML = '';
+
+    if (student && student.paymentHistory && student.paymentHistory.length > 0) {
+        student.paymentHistory.slice().reverse().forEach(p => {
+            const div = document.createElement('div');
+            div.style.cssText = 'padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); display: flex; justify-content: space-between; align-items: center; gap: 10px;';
+            
+            const methodBadge = `<span class="badge" style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); font-size: 0.75rem; padding: 2px 6px;">${p.method || 'Cash'}</span>`;
+            
+            div.innerHTML = `
+                <div>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
+                        <strong style="color: var(--accent-success); font-size: 0.95rem;">MK ${Number(p.amount).toLocaleString()}</strong>
+                        ${methodBadge}
+                        <span style="font-size: 0.78rem; color: var(--text-secondary);">${p.receiptNo}</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                        ${new Date(p.date).toLocaleDateString()} ${p.note ? `· ${p.note}` : ''} <span style="opacity: 0.7;">(by ${p.recordedBy || 'Admin'})</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                    <button class="btn outline-btn btn-print-rec" style="padding: 4px 8px; font-size: 0.75rem;">🖨️ Receipt</button>
+                    <button class="btn danger-btn btn-void-pay" style="padding: 4px 8px; font-size: 0.75rem;">🗑️</button>
+                </div>
+            `;
+
+            // Print Receipt handler
+            div.querySelector('.btn-print-rec').addEventListener('click', () => {
+                openReceiptModal(student, p);
+            });
+
+            // Void payment handler
+            div.querySelector('.btn-void-pay').addEventListener('click', async () => {
+                if (!confirm(`⚠️ Are you sure you want to VOID and DELETE payment ${p.receiptNo} of MK ${Number(p.amount).toLocaleString()}?`)) return;
+                
+                try {
+                    const delRes = await apiFetch(`/api/students/${student.id}/payments/${p.receiptNo}`, {
+                        method: 'DELETE'
+                    });
+                    if (delRes.ok) {
+                        const updatedData = await delRes.json();
+                        // Update local student object
+                        student.paidAmount = updatedData.paidAmount;
+                        student.paymentHistory = student.paymentHistory.filter(x => x.receiptNo !== p.receiptNo);
+                        
+                        // Update modal numbers
+                        const newBal = (student.totalFees || 0) - student.paidAmount;
+                        document.getElementById('pay-modal-paid').innerText = `MK ${student.paidAmount.toLocaleString()}`;
+                        document.getElementById('pay-modal-balance').innerText = `MK ${newBal.toLocaleString()}`;
+                        
+                        renderPaymentHistoryList(student);
+                        renderFeesTab();
+                    } else {
+                        const err = await delRes.json();
+                        alert(err.error || 'Failed to void payment.');
+                    }
+                } catch(e) {
+                    alert('Network error voiding payment.');
+                }
+            });
+
+            hist.appendChild(div);
+        });
+    } else {
+        hist.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 10px;">No previous payment records.</p>';
+    }
+}
+
+document.getElementById('payment-close-x')?.addEventListener('click', () => {
     document.getElementById('payment-modal').style.display = 'none';
 });
 
-document.getElementById('payment-form').addEventListener('submit', async (e) => {
+document.getElementById('payment-cancel-btn')?.addEventListener('click', () => {
+    document.getElementById('payment-modal').style.display = 'none';
+});
+
+document.getElementById('payment-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const studentId = document.getElementById('payment-student-id').value;
     const amount = Number(document.getElementById('payment-amount').value);
+    const method = document.getElementById('payment-method').value;
     const note = document.getElementById('payment-note').value;
 
     const res = await apiFetch(`/api/students/${studentId}/payments`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ amount, note })
+        body: JSON.stringify({ amount, method, note })
     });
 
     if (res.ok) {
+        const data = await res.json();
         document.getElementById('payment-modal').style.display = 'none';
-        renderFeesTab();
+        await renderFeesTab();
+        
+        // Find updated student and offer to show receipt
+        const s = students.find(x => x.id === studentId);
+        if (s && data.receipt && confirm('✅ Payment recorded successfully! Would you like to view/print the official receipt now?')) {
+            openReceiptModal(s, data.receipt);
+        }
     } else {
         const err = await res.json();
         document.getElementById('payment-error').innerText = err.error || 'Failed to record payment.';
@@ -1696,27 +1913,100 @@ document.getElementById('payment-form').addEventListener('submit', async (e) => 
     }
 });
 
-// Batch Set Fee Modal
-document.getElementById('btn-batch-set-fees').addEventListener('click', () => {
+// Printable Receipt Modal Logic
+function openReceiptModal(student, payment) {
+    const schoolNameEl = document.getElementById('sidebar-school-name');
+    const schoolName = (schoolNameEl && schoolNameEl.innerText) ? schoolNameEl.innerText : 'EXCEL ACADEMY';
+    
+    document.getElementById('receipt-school-name').innerText = schoolName.toUpperCase();
+    document.getElementById('receipt-no').innerText = payment.receiptNo;
+    document.getElementById('receipt-date').innerText = new Date(payment.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    document.getElementById('receipt-student-name').innerText = student.name;
+    document.getElementById('receipt-student-class').innerText = student.classLevel || 'Form 1';
+    document.getElementById('receipt-method').innerText = payment.method || 'Cash';
+    document.getElementById('receipt-note').innerText = payment.note || 'Term Tuition Fee Payment';
+    document.getElementById('receipt-amount').innerText = `MK ${Number(payment.amount).toLocaleString()}`;
+    
+    const tf = Number(student.totalFees || 0);
+    const pa = Number(student.paidAmount || 0);
+    const bal = tf - pa;
+    document.getElementById('receipt-total-fee').innerText = `MK ${tf.toLocaleString()}`;
+    document.getElementById('receipt-balance').innerText = `MK ${bal.toLocaleString()}`;
+    document.getElementById('receipt-recorded-by').innerText = payment.recordedBy || 'Admin';
+
+    document.getElementById('receipt-modal').style.display = 'flex';
+}
+
+document.getElementById('btn-close-receipt-modal')?.addEventListener('click', () => {
+    document.getElementById('receipt-modal').style.display = 'none';
+});
+
+document.getElementById('btn-print-receipt-action')?.addEventListener('click', () => {
+    const receiptContent = document.getElementById('printable-receipt-area').innerHTML;
+    const printWindow = window.open('', '', 'width=650,height=750');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Fee Payment Receipt</title>
+            <style>
+                body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 25px; color: #1e293b; }
+                @media print { body { padding: 0; } }
+            </style>
+        </head>
+        <body>
+            <div style="max-width: 480px; margin: 0 auto; border: 1px solid #cbd5e1; padding: 25px; border-radius: 8px;">
+                ${receiptContent}
+            </div>
+            <script>
+                window.onload = function() { window.print(); window.close(); }
+            </script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+});
+
+// Batch Set Fee Modal Logic
+document.getElementById('btn-batch-set-fees')?.addEventListener('click', () => {
     document.getElementById('batch-fee-amount').value = '';
+    const classScopeLabel = document.getElementById('batch-scope-class-name');
+    if (classScopeLabel) classScopeLabel.innerText = currentClass;
     document.getElementById('batch-fee-modal').style.display = 'flex';
 });
 
-document.getElementById('batch-fee-cancel-btn').addEventListener('click', () => {
+document.getElementById('batch-fee-cancel-btn')?.addEventListener('click', () => {
     document.getElementById('batch-fee-modal').style.display = 'none';
 });
 
-document.getElementById('batch-fee-form').addEventListener('submit', async (e) => {
+document.getElementById('batch-fee-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const defaultFee = Number(document.getElementById('batch-fee-amount').value);
-    if (isNaN(defaultFee) || defaultFee < 0) return;
+    if (isNaN(defaultFee) || defaultFee < 0) return alert('Please enter a valid non-negative fee amount.');
+
+    const scopeRadio = document.querySelector('input[name="batchScope"]:checked');
+    const isEntireSchool = scopeRadio && scopeRadio.value === 'all';
+    const excludeBursary = document.getElementById('batch-exclude-bursary')?.checked;
 
     const updates = {};
+    let affectedCount = 0;
+
     students.forEach(s => {
-        if ((s.classLevel || 'Form 1') === currentClass) {
+        const matchesScope = isEntireSchool || (s.classLevel || 'Form 1') === currentClass;
+        const isBursary = Boolean(s.bursaryName && s.bursaryName.trim());
+        
+        if (matchesScope) {
+            if (excludeBursary && isBursary) {
+                // Skip students on bursary
+                return;
+            }
             updates[s.id] = { totalFees: defaultFee };
+            affectedCount++;
         }
     });
+
+    if (affectedCount === 0) {
+        return alert('No students met the criteria to update.');
+    }
 
     await apiFetch('/api/students', {
         method: 'POST',
@@ -1725,7 +2015,8 @@ document.getElementById('batch-fee-form').addEventListener('submit', async (e) =
     });
 
     document.getElementById('batch-fee-modal').style.display = 'none';
-    renderFeesTab();
+    await renderFeesTab();
+    alert(`✅ Default fee of MK ${defaultFee.toLocaleString()} applied to ${affectedCount} student(s).`);
 });
 
 // ── 📅 Daily Attendance UI Implementation ─────────────────────────────

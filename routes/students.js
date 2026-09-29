@@ -3,7 +3,7 @@ const router = express.Router();
 
 const { readDb, writeDb } = require('../db');
 const { rankStudents } = require('../services/pdfService');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { authenticateToken, requireAdmin, requireBursarOrAdmin } = require('../middleware/auth');
 
 router.use(authenticateToken);
 
@@ -29,7 +29,7 @@ router.get('/students', (req, res) => {
     res.json(ranked);
 });
 
-router.post('/students', requireAdmin, (req, res) => {
+router.post('/students', requireBursarOrAdmin, (req, res) => {
     const db = readDb(req.user ? req.user.schoolId : 'default');
     
     if (req.body.updates) {
@@ -68,7 +68,7 @@ router.post('/students', requireAdmin, (req, res) => {
 });
 
 // Record a Fee Payment for a student
-router.post('/students/:id/payments', requireAdmin, (req, res) => {
+router.post('/students/:id/payments', requireBursarOrAdmin, (req, res) => {
     const db = readDb(req.user ? req.user.schoolId : 'default');
     const student = db.students.find(s => s.id === req.params.id);
     if (!student) return res.status(404).json({ error: "Student not found" });
@@ -85,6 +85,7 @@ router.post('/students/:id/payments', requireAdmin, (req, res) => {
     const paymentRecord = {
         receiptNo,
         amount,
+        method: req.body.method || 'Cash',
         date: new Date().toISOString(),
         note: req.body.note || 'Term Fee Payment',
         recordedBy: req.user.username
@@ -97,6 +98,30 @@ router.post('/students/:id/payments', requireAdmin, (req, res) => {
     res.json({
         success: true,
         receipt: paymentRecord,
+        paidAmount: student.paidAmount,
+        totalFees: student.totalFees || 0,
+        balance: (student.totalFees || 0) - student.paidAmount
+    });
+});
+
+// Void / Delete a Fee Payment record
+router.delete('/students/:id/payments/:receiptNo', requireBursarOrAdmin, (req, res) => {
+    const db = readDb(req.user ? req.user.schoolId : 'default');
+    const student = db.students.find(s => s.id === req.params.id);
+    if (!student) return res.status(404).json({ error: "Student not found" });
+
+    if (!student.paymentHistory) student.paymentHistory = [];
+    const prevCount = student.paymentHistory.length;
+    student.paymentHistory = student.paymentHistory.filter(p => p.receiptNo !== req.params.receiptNo);
+
+    if (student.paymentHistory.length === prevCount) {
+        return res.status(404).json({ error: "Payment record not found" });
+    }
+
+    student.paidAmount = student.paymentHistory.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    writeDb();
+    res.json({
+        success: true,
         paidAmount: student.paidAmount,
         totalFees: student.totalFees || 0,
         balance: (student.totalFees || 0) - student.paidAmount
@@ -165,7 +190,7 @@ router.get('/students/:id/attendance-summary', (req, res) => {
 });
 
 // Toggle Fee Lock Override for a student
-router.post('/students/:id/fee-lock-override', requireAdmin, (req, res) => {
+router.post('/students/:id/fee-lock-override', requireBursarOrAdmin, (req, res) => {
     const db = readDb(req.user ? req.user.schoolId : 'default');
     const student = db.students.find(s => s.id === req.params.id);
     if (!student) return res.status(404).json({ error: "Student not found" });
