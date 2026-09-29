@@ -332,14 +332,17 @@ td input[type="number"]:disabled {
     }
 }
 
-/* Checkbox labels inside staff subjects must not inherit block/full-width rules */
-#staff-subjects-checkboxes {
+/* Checkbox labels inside staff subjects & facilities must not inherit block/full-width rules */
+#staff-subjects-checkboxes,
+#facilities-checkboxes {
     display: grid !important;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
     gap: 10px !important;
+    margin-top: 8px !important;
 }
 
-#staff-subjects-checkboxes label {
+#staff-subjects-checkboxes label,
+#facilities-checkboxes label {
     display: flex !important;
     align-items: center !important;
     gap: 8px;
@@ -355,12 +358,14 @@ td input[type="number"]:disabled {
     margin-bottom: 0 !important;
 }
 
-#staff-subjects-checkboxes label:hover {
+#staff-subjects-checkboxes label:hover,
+#facilities-checkboxes label:hover {
     border-color: var(--accent-blue);
     background: rgba(59, 130, 246, 0.1);
 }
 
-#staff-subjects-checkboxes input[type="checkbox"] {
+#staff-subjects-checkboxes input[type="checkbox"],
+#facilities-checkboxes input[type="checkbox"] {
     width: 16px !important;
     height: 16px !important;
     margin: 0 !important;
