@@ -324,6 +324,10 @@
         <div>
             <div class="school-name" id="ph-school-name">—</div>
             <div class="student-name" id="ph-student-name">—</div>
+            <div id="child-switcher-container" style="display:none; margin-top: 6px;">
+                <label style="font-size: 0.75rem; color: var(--accent-blue); font-weight:600; margin-right: 6px;">🧒 Switch Child:</label>
+                <select id="child-switcher" style="padding: 4px 10px; border-radius: 6px; background: var(--bg-secondary); color: white; border: 1px solid var(--accent-blue); font-size: 0.85rem; cursor:pointer;"></select>
+            </div>
         </div>
         <button class="btn-logout" id="btn-portal-logout">Logout</button>
     </header>
@@ -400,6 +404,7 @@
     let portalStudent = null;
     let portalSchool = null;
     let portalSchoolId = null;
+    let portalSiblings = [];
 
     const API_BASE = window.location.origin;
 
@@ -413,6 +418,7 @@
     document.getElementById('btn-portal-login').addEventListener('click', handleLogin);
     document.getElementById('login-phone').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
     document.getElementById('login-school-code').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+    document.getElementById('child-switcher').addEventListener('change', (e) => selectStudent(e.target.value));
 
     async function handleLogin() {
         const phone = document.getElementById('login-phone').value.trim();
@@ -447,15 +453,19 @@
             }
 
             portalToken   = data.token;
-            portalStudent = data.student;
             portalSchool  = data.school;
             portalSchoolId = schoolCode;
 
             sessionStorage.setItem('parentPortalToken', portalToken);
             sessionStorage.setItem('parentPortalSchoolId', portalSchoolId);
-            sessionStorage.setItem('parentPortalStudentId', portalStudent.id);
 
-            enterPortal();
+            const initialStudentId = (data.students && data.students[0]) ? data.students[0].id : null;
+            if (initialStudentId) {
+                sessionStorage.setItem('parentPortalStudentId', initialStudentId);
+                await selectStudent(initialStudentId);
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('portal-app').style.display = 'block';
+            }
 
         } catch (e) {
             errorEl.textContent = 'Network error. Please try again.';
@@ -466,14 +476,48 @@
         }
     }
 
-    function enterPortal() {
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('portal-app').style.display = 'block';
+    async function selectStudent(studentId) {
+        document.getElementById('overview-loading').style.display = 'block';
+        document.getElementById('overview-content').style.display = 'none';
 
-        document.getElementById('ph-school-name').textContent = portalSchool.name || 'Your School';
-        document.getElementById('ph-student-name').textContent = `Viewing: ${portalStudent.name} · ${portalStudent.classLevel || ''}`;
+        try {
+            const res = await apiFetch(`/api/parent-portal/me?studentId=${studentId}`);
+            if (!res.ok) return;
+            const data = await res.json();
 
-        loadOverview();
+            portalStudent = data.student;
+            portalSchool  = data.school;
+            portalSiblings = data.siblings || [];
+            sessionStorage.setItem('parentPortalStudentId', portalStudent.id);
+
+            // Update UI headers
+            document.getElementById('ph-school-name').textContent = portalSchool.name || 'Your School';
+            document.getElementById('ph-student-name').textContent = `Viewing: ${portalStudent.name} · ${portalStudent.classLevel || ''}`;
+
+            // Populate child switcher if parent has multiple children
+            const switcherContainer = document.getElementById('child-switcher-container');
+            const switcherSelect = document.getElementById('child-switcher');
+            if (portalSiblings && portalSiblings.length > 1) {
+                switcherContainer.style.display = 'block';
+                switcherSelect.innerHTML = portalSiblings.map(s => `
+                    <option value="${s.id}" ${s.id === portalStudent.id ? 'selected' : ''}>${s.name} (${s.classLevel || 'Form 1'})</option>
+                `).join('');
+            } else {
+                switcherContainer.style.display = 'none';
+            }
+
+            // Reload currently active panel
+            const activeTab = document.querySelector('.portal-tab.active');
+            const panelId = activeTab ? activeTab.getAttribute('data-panel') : 'panel-overview';
+            if (panelId === 'panel-overview') loadOverview();
+            else if (panelId === 'panel-fees') loadFees();
+            else if (panelId === 'panel-attendance') loadAttendance();
+            else if (panelId === 'panel-marks') loadMarks();
+            else if (panelId === 'panel-notices') loadNotices();
+
+        } catch (e) {
+            console.error('Error switching student:', e);
+        }
     }
 
     // ── Logout ──
@@ -481,6 +525,7 @@
         portalToken = null;
         portalStudent = null;
         portalSchool = null;
+        portalSiblings = [];
         sessionStorage.clear();
         document.getElementById('login-screen').style.display = 'flex';
         document.getElementById('portal-app').style.display = 'none';
@@ -740,17 +785,14 @@
         const savedStudentId = sessionStorage.getItem('parentPortalStudentId');
         if (!savedToken || !savedSchoolId || !savedStudentId) return;
 
-        portalToken   = savedToken;
+        portalToken    = savedToken;
         portalSchoolId = savedSchoolId;
+        document.getElementById('login-school-code').value = savedSchoolId;
 
         try {
-            const res = await apiFetch('/api/parent-portal/me');
-            if (!res.ok) return;
-            const data = await res.json();
-            portalStudent = data.student;
-            portalSchool  = data.school;
-            document.getElementById('login-school-code').value = savedSchoolId;
-            enterPortal();
+            await selectStudent(savedStudentId);
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('portal-app').style.display = 'block';
         } catch(e) { /* session expired */ }
     })();
 </script>

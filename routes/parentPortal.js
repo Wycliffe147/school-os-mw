@@ -21,18 +21,19 @@ router.post('/parent-portal/login', (req, res) => {
     const db = readDb(schoolId);
     const phoneSuffix = normPhone(phone);
 
-    // Find a student whose parent phone matches (supports parentPhone or phone)
-    const student = (db.students || []).find(s => {
+    // Find ALL students whose parent phone matches (a parent may have multiple children)
+    const students = (db.students || []).filter(s => {
         const sp = normPhone(s.parentPhone || s.phone);
         return sp && (sp.endsWith(phoneSuffix) || phoneSuffix.endsWith(sp));
     });
 
-    if (!student) {
+    if (!students.length) {
         return res.status(401).json({ error: 'No student found for this phone number in this school. Please contact your school office.' });
     }
 
+    // JWT carries all matched student IDs so parent can switch between children
     const token = jwt.sign(
-        { parentPhone: phone, studentId: student.id, schoolId },
+        { parentPhone: phone, studentIds: students.map(s => s.id), schoolId },
         JWT_SECRET,
         { expiresIn: '24h' }
     );
@@ -40,7 +41,13 @@ router.post('/parent-portal/login', (req, res) => {
     const schoolSettings = db.settings || {};
     res.json({
         token,
-        student: sanitiseStudent(student),
+        // Return minimal info for all children so the frontend can show a picker
+        students: students.map(s => ({
+            id: s.id,
+            name: s.name,
+            classLevel: s.classLevel,
+            gender: s.gender
+        })),
         school: {
             name: schoolSettings.schoolName || schoolId,
             term: schoolSettings.currentTerm || '',
@@ -85,16 +92,28 @@ function sanitiseStudent(s) {
     };
 }
 
-// ── GET /api/parent-portal/me ──────────────────────────────────────────
+// ── GET /api/parent-portal/me?studentId=xxx ───────────────────────────
+// studentId param selects which child to view (defaults to first in list)
 router.get('/parent-portal/me', authenticateParent, (req, res) => {
-    const { studentId, schoolId } = req.parentUser;
+    const { studentIds, schoolId } = req.parentUser;
+    const ids = studentIds || [];
+    const requestedId = req.query.studentId || ids[0];
+
+    // Security: parent can only view children linked to their token
+    if (!ids.includes(requestedId)) return res.status(403).json({ error: 'Forbidden' });
+
     const db = readDb(schoolId);
-    const student = (db.students || []).find(s => s.id === studentId);
+    const student = (db.students || []).find(s => s.id === requestedId);
     if (!student) return res.status(404).json({ error: 'Student not found' });
 
     const settings = db.settings || {};
     res.json({
         student: sanitiseStudent(student),
+        // Include all siblings so the portal can show a switcher
+        siblings: ids.map(id => {
+            const sib = (db.students || []).find(s => s.id === id);
+            return sib ? { id: sib.id, name: sib.name, classLevel: sib.classLevel } : null;
+        }).filter(Boolean),
         school: {
             name: settings.schoolName || schoolId,
             term: settings.currentTerm || '',
@@ -105,15 +124,16 @@ router.get('/parent-portal/me', authenticateParent, (req, res) => {
 
 // ── GET /api/parent-portal/attendance/:studentId ───────────────────────
 router.get('/parent-portal/attendance/:studentId', authenticateParent, (req, res) => {
-    const { studentId: tokenStudentId, schoolId } = req.parentUser;
+    const { studentIds, schoolId } = req.parentUser;
+    const ids = studentIds || [];
 
-    // Security: parent can only see their own child's data
-    if (req.params.studentId !== tokenStudentId) {
+    // Security: parent can only see their own children's data
+    if (!ids.includes(req.params.studentId)) {
         return res.status(403).json({ error: 'Forbidden' });
     }
 
     const db = readDb(schoolId);
-    const student = (db.students || []).find(s => s.id === tokenStudentId);
+    const student = (db.students || []).find(s => s.id === req.params.studentId);
     if (!student) return res.status(404).json({ error: 'Student not found' });
 
     const allAttendance = db.attendance || [];
