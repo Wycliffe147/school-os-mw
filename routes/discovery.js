@@ -113,9 +113,7 @@ router.get('/public/explore', (req, res) => {
                 approxFees,
                 facilities: settings.facilities || ['Classrooms', 'Sports Ground'],
                 subjects: settings.subjects || ['Mathematics', 'English', 'Biology', 'Physical Science', 'Chichewa', 'Geography', 'History'],
-                badges,
-                rating: settings.rating || 4.8,
-                reviewsCount: (schoolData.reviews || []).length
+                badges
             };
         });
 
@@ -158,12 +156,14 @@ router.get('/public/explore', (req, res) => {
         filtered.sort((a, b) => a.approxFees - b.approxFees);
     } else if (sortBy === 'fees_desc') {
         filtered.sort((a, b) => b.approxFees - a.approxFees);
+    } else if (sortBy === 'name_desc') {
+        filtered.sort((a, b) => b.schoolName.localeCompare(a.schoolName));
     } else {
-        // Default sort: Nearest if GPS active, else highest rating
+        // Default: Nearest if GPS active, else Alphabetical (A-Z)
         if (uLat && uLng) {
             filtered.sort((a, b) => (a.distanceKm || 9999) - (b.distanceKm || 9999));
         } else {
-            filtered.sort((a, b) => b.rating - a.rating);
+            filtered.sort((a, b) => a.schoolName.localeCompare(b.schoolName));
         }
     }
 
@@ -181,11 +181,6 @@ router.get('/public/explore/:schoolId', (req, res) => {
     const settings = schoolData.settings || {};
     const students = schoolData.students || [];
 
-    const reviews = schoolData.reviews || [
-        { name: 'Chifundo Banda (Parent)', rating: 5, date: '2026-02-14', comment: 'Excellent academic standards and disciplined teachers.' },
-        { name: 'Mary Phiri (Alumni)', rating: 5, date: '2025-11-20', comment: 'Prepared me well for my MSCE exams.' }
-    ];
-
     res.json({
         schoolId,
         schoolName: settings.schoolName || 'Malawi Academy',
@@ -196,8 +191,7 @@ router.get('/public/explore/:schoolId', (req, res) => {
         email: settings.email || `info@${schoolId}.ac.mw`,
         facilities: settings.facilities || ['Science Lab', 'Computer Lab', 'Library', 'Sports Ground'],
         subjects: settings.subjects || ['Mathematics', 'English', 'Biology', 'Physical Science', 'Chichewa', 'Geography', 'History', 'Agriculture'],
-        gradingSystem: settings.gradingSystem || 'Senior MSCE (1-9 Points)',
-        reviews
+        gradingSystem: settings.gradingSystem || 'Senior MSCE (1-9 Points)'
     });
 });
 

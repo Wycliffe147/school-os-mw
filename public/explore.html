@@ -567,18 +567,18 @@
                 <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
                     <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:600;">Sort:</span>
                     <!-- Custom Sort Dropdown -->
-                    <div class="custom-dropdown" id="sort-dropdown" style="min-width:150px;">
+                    <div class="custom-dropdown" id="sort-dropdown" style="min-width:165px;">
                         <div class="custom-dropdown-toggle" id="sort-toggle" style="height:36px; padding:4px 10px; font-size:0.82rem;">
-                            <span id="sort-selected-text">🌟 Top Rated</span>
+                            <span id="sort-selected-text">🏛️ All Schools (A-Z)</span>
                             <span style="font-size:0.7rem; color:var(--text-secondary);">▼</span>
                         </div>
-                        <div class="custom-dropdown-menu" id="sort-menu" style="min-width:150px;">
-                            <div class="dropdown-option active" data-val="rating">🌟 Top Rated</div>
+                        <div class="custom-dropdown-menu" id="sort-menu" style="min-width:165px;">
+                            <div class="dropdown-option active" data-val="name_asc">🏛️ All Schools (A-Z)</div>
                             <div class="dropdown-option" data-val="distance">📍 Nearest (GPS)</div>
                             <div class="dropdown-option" data-val="fees_asc">💰 Lowest Fees</div>
                             <div class="dropdown-option" data-val="fees_desc">💎 Highest Fees</div>
                         </div>
-                        <input type="hidden" id="sort-by" value="rating">
+                        <input type="hidden" id="sort-by" value="name_asc">
                     </div>
                 </div>
                 <span id="gps-status" style="width:100%; color:var(--accent-green); font-size:0.8rem; display:none; margin-top:2px;">📍 Sorting by nearest distance from your GPS location</span>
