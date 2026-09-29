@@ -328,6 +328,7 @@ document.querySelectorAll('.nav-links li').forEach(item => {
         
         item.classList.add('active');
         const tabId = item.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
         if (tabId === 'students-tab') renderStudentsTab();
         if (tabId === 'fees-tab') renderFeesTab();
         if (tabId === 'attendance-tab') renderAttendanceTab();
