@@ -1403,23 +1403,30 @@ async function loadSettings() {
     document.getElementById('school-subtitle').value = settings.subtitle || '';
     document.getElementById('theme-color').value = settings.themeColor || '#142e5c';
 
-    // Logo preview
+    // Logo preview — use Base64 (new) or URL (legacy)
     const logoWrap = document.getElementById('logo-preview-wrap');
     const logoImg  = document.getElementById('logo-preview-img');
     if (logoWrap && logoImg) {
-        if (settings.logoPath) {
-            logoImg.src = settings.logoPath + '?t=' + Date.now(); // cache-bust
+        const logoSrc = settings.logoBase64 || (settings.logoPath ? settings.logoPath + '?t=' + Date.now() : null);
+        if (logoSrc) {
+            logoImg.src = logoSrc;
             logoWrap.style.display = 'block';
         } else {
             logoWrap.style.display = 'none';
         }
     }
-    // Reset file input so "Leave blank to keep logo" hint is accurate
+    // Reset file input; add client-side size guard (500 KB)
     const logoInput = document.getElementById('school-logo');
     if (logoInput) {
         logoInput.value = '';
         logoInput.addEventListener('change', () => {
-            if (logoWrap) logoWrap.style.display = 'none'; // hide old preview while new one pending
+            const file = logoInput.files[0];
+            if (file && file.size > 500 * 1024) {
+                alert(`Logo is too large (${(file.size / 1024).toFixed(0)} KB). Maximum allowed size is 500 KB.`);
+                logoInput.value = '';
+                return;
+            }
+            if (logoWrap) logoWrap.style.display = 'none'; // hide old preview until saved
         }, { once: true });
     }
     
@@ -1662,6 +1669,10 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
             alert('Settings saved successfully!');
             document.getElementById('school-logo').value = '';
             await loadGlobals();
+            await loadSettings(); // refresh logo preview
+        } else {
+            const err = await res.json().catch(() => ({}));
+            alert(err.error || 'Error saving settings.');
         }
     } catch(e) {
         alert('Error saving settings.');

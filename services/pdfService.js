@@ -99,21 +99,28 @@ async function generatePDF(student, db) {
         color: rgb(theme.r, theme.g, theme.b),
     });
 
-    const logoPathRaw = db.settings.logoPath;
-    // Support both legacy absolute paths and new web-URL format (/uploads/filename)
-    const resolvedLogoPath = logoPathRaw
-        ? (logoPathRaw.startsWith('/uploads/')
-            ? path.join(__dirname, '..', logoPathRaw)
-            : logoPathRaw)
-        : null;
+    // Logo: prefer Base64 (new), fall back to file path (legacy)
+    let logoBytes = null;
+    if (db.settings.logoBase64) {
+        // Strip the data-URL prefix and decode
+        const b64Data = db.settings.logoBase64.replace(/^data:image\/\w+;base64,/, '');
+        logoBytes = Buffer.from(b64Data, 'base64');
+    } else {
+        const logoPathRaw = db.settings.logoPath;
+        const resolvedLogoPath = logoPathRaw
+            ? (logoPathRaw.startsWith('/uploads/')
+                ? path.join(__dirname, '..', logoPathRaw)
+                : logoPathRaw)
+            : null;
+        if (resolvedLogoPath && fs.existsSync(resolvedLogoPath)) {
+            logoBytes = fs.readFileSync(resolvedLogoPath);
+        }
+    }
 
-    if (resolvedLogoPath && fs.existsSync(resolvedLogoPath)) {
+    if (logoBytes) {
         try {
-            const logoBytes = fs.readFileSync(resolvedLogoPath);
             let logoImage;
-            
             const isPng = logoBytes[0] === 0x89 && logoBytes[1] === 0x50 && logoBytes[2] === 0x4E && logoBytes[3] === 0x47;
-            
             if (isPng) {
                 logoImage = await pdfDoc.embedPng(logoBytes);
             } else {

@@ -6,8 +6,17 @@ const path = require('path');
 const { readDb, writeDb } = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
-const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
-const upload = multer({ dest: UPLOADS_DIR });
+const LOGO_SIZE_LIMIT = 500 * 1024; // 500 KB
+// memoryStorage — no disk writes; file lives in req.file.buffer only
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: LOGO_SIZE_LIMIT },
+    fileFilter: (req, file, cb) => {
+        const allowed = ['image/png', 'image/jpeg', 'image/jpg'];
+        if (allowed.includes(file.mimetype)) cb(null, true);
+        else cb(new Error('Only PNG and JPG images are allowed.'));
+    }
+});
 
 router.use(authenticateToken);
 
@@ -96,18 +105,26 @@ router.post('/settings', requireAdmin, upload.single('logo'), (req, res) => {
     }
     
     if (req.file) {
-        // Rename file to include original extension (multer strips it by default)
-        const ext = path.extname(req.file.originalname).toLowerCase() || '.png';
-        const newFilename = req.file.filename + ext;
-        const newPath = path.join(UPLOADS_DIR, newFilename);
-        const fs = require('fs');
-        fs.renameSync(req.file.path, newPath);
-        // Store a web-accessible URL, not the raw filesystem path
-        db.settings.logoPath = `/uploads/${newFilename}`;
+        // Convert buffer to Base64 data-URL — stored in MongoDB, survives server restarts
+        const mime = req.file.mimetype;
+        const b64 = req.file.buffer.toString('base64');
+        db.settings.logoBase64 = `data:${mime};base64,${b64}`;
+        db.settings.logoPath = null; // clear any old file-path reference
     }
     
     writeDb();
     res.json({ success: true, settings: db.settings });
+});
+
+// Handle multer errors (file too large, wrong type) cleanly
+router.use((err, req, res, next) => {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'Logo file is too large. Maximum size is 500 KB.' });
+    }
+    if (err.message === 'Only PNG and JPG images are allowed.') {
+        return res.status(400).json({ error: err.message });
+    }
+    next(err);
 });
 
 // ── POST /api/settings/advance-term ──────────────────────────────────
