@@ -330,9 +330,12 @@
         <div>
             <div class="school-name" id="ph-school-name">—</div>
             <div class="student-name" id="ph-student-name">—</div>
-            <div id="child-switcher-container" style="display:none; margin-top: 6px;">
+            <div id="child-switcher-container" style="display:none; margin-top: 6px; position: relative;">
                 <label style="font-size: 0.75rem; color: var(--accent-blue); font-weight:600; margin-right: 6px;">🧒 Switch Child:</label>
-                <select id="child-switcher" style="padding: 4px 10px; border-radius: 6px; background: var(--bg-secondary); color: white; border: 1px solid var(--accent-blue); font-size: 0.85rem; cursor:pointer;"></select>
+                <button id="child-switcher-btn" onclick="toggleChildSwitcher(event)" style="padding: 4px 10px; border-radius: 6px; background: var(--bg-secondary); color: white; border: 1px solid var(--accent-blue); font-size: 0.85rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                    <span id="child-switcher-label">—</span> <span style="font-size:0.7rem; opacity:0.7;">▼</span>
+                </button>
+                <ul id="child-switcher-list" style="display:none; position:absolute; top:calc(100% + 4px); left:0; z-index:999; list-style:none; margin:0; padding:4px 0; background:var(--bg-secondary); border:1px solid var(--accent-blue); border-radius:8px; min-width:180px; box-shadow:0 8px 24px rgba(0,0,0,0.5);"></ul>
             </div>
         </div>
         <button class="btn-logout" id="btn-portal-logout">Logout</button>
@@ -461,7 +464,16 @@
     document.getElementById('btn-portal-login').addEventListener('click', handleLogin);
     document.getElementById('login-phone').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
     document.getElementById('login-school-code').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
-    document.getElementById('child-switcher').addEventListener('change', (e) => selectStudent(e.target.value));
+    // ── Custom child-switcher dropdown (avoids native-select mousedown race condition) ──
+    function toggleChildSwitcher(e) {
+        e.stopPropagation();
+        const list = document.getElementById('child-switcher-list');
+        list.style.display = list.style.display === 'none' ? 'block' : 'none';
+    }
+    document.addEventListener('click', () => {
+        const list = document.getElementById('child-switcher-list');
+        if (list) list.style.display = 'none';
+    });
 
     async function handleLogin() {
         const phone = document.getElementById('login-phone').value.trim();
@@ -543,11 +555,24 @@
 
             // Populate child switcher if parent has multiple children
             const switcherContainer = document.getElementById('child-switcher-container');
-            const switcherSelect = document.getElementById('child-switcher');
+            const switcherList = document.getElementById('child-switcher-list');
+            const switcherLabel = document.getElementById('child-switcher-label');
             if (portalSiblings && portalSiblings.length > 1) {
                 switcherContainer.style.display = 'block';
-                switcherSelect.innerHTML = portalSiblings.map(s => `
-                    <option value="${s.id}" ${s.id === portalStudent.id ? 'selected' : ''} style="background-color: #1e2130; color: #e8eaf6;">${s.name} (${s.classLevel || 'Form 1'})</option>
+                // Set button label to current child
+                const current = portalSiblings.find(s => s.id === portalStudent.id);
+                if (current) switcherLabel.textContent = `${current.name} (${current.classLevel || 'Form 1'})`;
+                // Build list items — each fires selectStudent on click, no mousedown race
+                switcherList.innerHTML = portalSiblings.map(s => `
+                    <li>
+                        <button onclick="selectStudent('${s.id}')" style="
+                            display:block; width:100%; text-align:left; padding:8px 14px;
+                            background:none; border:none; color:${s.id === portalStudent.id ? 'var(--accent-blue)' : 'white'};
+                            font-size:0.85rem; cursor:pointer; font-weight:${s.id === portalStudent.id ? '700' : '400'};
+                        " onmouseover="this.style.background='rgba(100,130,255,0.15)'" onmouseout="this.style.background='none'">
+                            ${s.id === portalStudent.id ? '✔ ' : ''}${s.name} (${s.classLevel || 'Form 1'})
+                        </button>
+                    </li>
                 `).join('');
             } else {
                 switcherContainer.style.display = 'none';
