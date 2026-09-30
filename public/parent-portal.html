@@ -769,7 +769,7 @@
         const pdfActions = canViewPdf ? `
             <div style="margin-bottom:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                 <button onclick="openPortalPdfModal(null, 'Current Term')" class="btn outline-btn" style="padding:8px 16px; font-size:0.88rem; cursor:pointer;">
-                    👁️ Preview Report Card PDF
+                    Preview Report Card PDF
                 </button>
                 <a href="/api/parent-portal/pdf?token=${encodeURIComponent(portalToken)}&studentId=${encodeURIComponent(s.id)}&download=true" download class="btn primary-btn" style="padding:8px 16px; font-size:0.88rem; text-decoration:none;">
                     📥 Download Report Card PDF
@@ -900,32 +900,18 @@
 
                 return `
                 <div style="margin-bottom:14px; border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-primary);">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                         <div>
                             <h3 style="margin:0 0 4px 0; font-size:1.1rem; color:var(--text-primary);">${a.termName}</h3>
                             <span style="color:var(--text-secondary); font-size:0.88rem;">${a.classLevel || 'Form 1'}</span>
                         </div>
                         <div style="display:flex; gap:8px; flex-wrap:wrap;">
                             <button onclick="openPortalPdfModal(${a.originalIndex}, '${a.termName.replace(/'/g, "\\'")}')" class="btn outline-btn" style="padding:7px 14px; font-size:0.85rem; cursor:pointer;">
-                                👁️ Preview Report Card
+                                Preview Report Card
                             </button>
                             <a href="${downloadUrl}" download class="btn primary-btn" style="padding:7px 14px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
                                 📥 Download
                             </a>
-                        </div>
-                    </div>
-                    <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px;">
-                        <div class="summary-card" style="padding:10px;">
-                            <div class="value" style="font-size:1.2rem;">${a.totalScore}</div>
-                            <div class="label">Total Score</div>
-                        </div>
-                        <div class="summary-card" style="padding:10px;">
-                            <div class="value" style="font-size:1.2rem;">${a.average}%</div>
-                            <div class="label">Average</div>
-                        </div>
-                        <div class="summary-card" style="padding:10px;">
-                            <div class="value" style="font-size:1.2rem;">${posText}</div>
-                            <div class="label">Position in Class</div>
                         </div>
                     </div>
                 </div>`;
