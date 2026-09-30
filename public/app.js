@@ -2163,7 +2163,7 @@ async function renderAttendanceTab() {
     tbody.innerHTML = '';
 
     for (const student of classStudents) {
-        const currentStatus = (existingRegister.records && existingRegister.records[student.id]) || 'present';
+        const currentStatus = (existingRegister.records && existingRegister.records[student.id]) || '';
 
         // Fetch student summary attendance
         let summaryText = '0 / 0 Days';
