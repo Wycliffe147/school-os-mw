@@ -561,7 +561,7 @@
         const s = portalStudent;
 
         // Fee stats
-        const total = Number(s.totalFees || 0);
+        const total = Number(s.expectedFee || 0);
         const paid  = Number(s.paidAmount || 0);
         const bal   = total - paid;
 
@@ -612,7 +612,7 @@
     // ── Fees ──
     async function loadFees() {
         const s = portalStudent;
-        const total = Number(s.totalFees || 0);
+        const total = Number(s.expectedFee || 0);
         const paid  = Number(s.paidAmount || 0);
         const bal   = total - paid;
 

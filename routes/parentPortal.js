@@ -69,7 +69,7 @@ function authenticateParent(req, res, next) {
     }
 }
 
-function sanitiseStudent(s) {
+function sanitiseStudent(s, expectedFee) {
     // Never expose internal DB fields; only expose what parents should see
     return {
         id: String(s.id),
@@ -77,7 +77,7 @@ function sanitiseStudent(s) {
         classLevel: s.classLevel,
         gender: s.gender,
         parentName: s.parentName,
-        totalFees: s.totalFees || 0,
+        expectedFee: expectedFee || 0,
         paidAmount: s.paidAmount || 0,
         paymentHistory: (s.paymentHistory || []).map(p => ({
             date: p.date,
@@ -106,9 +106,15 @@ router.get('/parent-portal/me', authenticateParent, (req, res) => {
     const student = (db.students || []).find(s => String(s.id) === requestedId);
     if (!student) return res.status(404).json({ error: 'Student not found' });
 
+    // Resolve section-based expected fee (mirrors admin fee ledger logic)
+    const sections = db.settings.sections || [];
+    const defaultSection = sections.find(s => s.isDefault) || sections[0] || { fee: 0 };
+    const studentSection = sections.find(s => s.id === student.section) || defaultSection;
+    const expectedFee = Number(studentSection.fee) || 0;
+
     const settings = db.settings || {};
     res.json({
-        student: sanitiseStudent(student),
+        student: sanitiseStudent(student, expectedFee),
         // Include all siblings so the portal can show a switcher
         siblings: ids.map(id => {
             const sib = (db.students || []).find(s => String(s.id) === String(id));
