@@ -247,6 +247,8 @@
                                     <th>Class</th>
                                     <th>Section</th>
                                     <th>Term Fee (MK)</th>
+                                    <th>Opening Arrears (MK)</th>
+                                    <th>Total Due (MK)</th>
                                     <th>Paid Amount (MK)</th>
                                     <th>Balance (MK)</th>
                                     <th>Report Lock Status</th>
@@ -840,14 +842,28 @@
                         <button type="button" id="preview-design-btn" class="btn outline-btn" style="width:100%; margin-top:10px; border: 1px solid var(--primary-color); color: var(--primary-color); background: transparent;">Preview Design (Dummy Student)</button>
                     </form>
 
-                    <hr style="margin: 30px 0; border: none; border-top: 2px solid #f59e0b;">
-                    <div style="background: #fffbeb; border: 2px solid #f59e0b; border-radius: 10px; padding: 20px; margin-top: 10px;">
-                        <h3 style="color: #b45309; margin-bottom: 6px;">🎓 End of Year — Promote All Classes</h3>
-                        <p class="subtitle" style="margin-bottom: 16px; color: #78350f;">
-                            Moves all students up one form. Form 1 → 2, Form 2 → 3, Form 3 → 4. Form 4 students are removed (graduated). All marks are always wiped.
-                        </p>
-                        <button type="button" id="promote-classes-btn" class="btn" style="background-color: #f59e0b; color: white; width: 100%; font-size: 1rem; padding: 14px;">
-                            🎓 Promote All Classes
+                    <hr style="margin: 30px 0; border: none; border-top: 2px solid var(--accent-blue);">
+                    <div id="term-management-card" style="background: var(--bg-card); border: 2px solid var(--accent-blue); border-radius: 10px; padding: 20px; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                            <div>
+                                <h3 style="color: var(--accent-blue); margin:0 0 4px 0;">🎓 Academic Calendar & Term Management</h3>
+                                <p class="subtitle" style="margin:0;">Headteacher / Admin Control Panel to close terms, archive report cards, carry over fee arrears, and trigger end-of-year class promotions.</p>
+                            </div>
+                            <span class="badge" style="background: var(--accent-blue); color: white; font-size:0.85rem; padding:6px 12px;" id="current-academic-badge">Term 1 (2025/2026)</span>
+                        </div>
+                        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.9rem;">
+                                <span>Academic Year:</span> <strong id="term-card-year">2025/2026</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.9rem;">
+                                <span>Active Term:</span> <strong id="term-card-term">Term 1</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
+                                <span>Next Step:</span> <strong id="term-card-next-step" style="color:var(--accent-warning);">Close Term 1 & Advance to Term 2</strong>
+                            </div>
+                        </div>
+                        <button type="button" id="btn-advance-term-action" class="btn" style="background: var(--accent-blue); color: white; width: 100%; font-size: 1rem; padding: 14px; font-weight: bold; cursor: pointer;">
+                            🚀 Close Active Term & Advance Academic Calendar
                         </button>
                     </div>
                 </div>

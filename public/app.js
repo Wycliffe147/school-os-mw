@@ -1456,6 +1456,22 @@ async function loadSettings() {
             : [{ id: 'general', name: 'General', fee: settings.defaultTermFee || 0, isDefault: true }];
         sections.forEach(sec => addSectionRow(sec));
     }
+
+    const year = settings.academicYear || '2025/2026';
+    const term = settings.currentTerm || 'Term 1';
+    
+    if (document.getElementById('current-academic-badge')) {
+        document.getElementById('current-academic-badge').textContent = `${term} (${year})`;
+        document.getElementById('term-card-year').textContent = year;
+        document.getElementById('term-card-term').textContent = term;
+        
+        let nextStep = '';
+        if (term === 'Term 1' || term === 'Term One') nextStep = 'Close Term 1 & Advance to Term 2';
+        else if (term === 'Term 2' || term === 'Term Two') nextStep = 'Close Term 2 & Advance to Term 3';
+        else nextStep = 'Close Term 3, Advance to New Academic Year & Promote Classes';
+        
+        document.getElementById('term-card-next-step').textContent = nextStep;
+    }
 }
 
 // GPS detection button in Settings
@@ -1647,9 +1663,16 @@ function getStudentExpectedFee(student) {
         ? schoolSections
         : [{ id: 'general', name: 'General', fee: 0, isDefault: true }];
     const found = sections.find(s => s.id === student.section);
-    if (found) return { fee: Number(found.fee || 0), name: found.name, id: found.id };
-    const def = sections.find(s => s.isDefault) || sections[0];
-    return { fee: Number(def.fee || 0), name: def.name, id: def.id };
+    const sec = found || (sections.find(s => s.isDefault) || sections[0]);
+    const termFee = Number(sec.fee || 0);
+    const arrears = Number(student.arrears || 0);
+    return {
+        fee: termFee,
+        arrears: arrears,
+        totalDue: termFee + arrears,
+        name: sec.name,
+        id: sec.id
+    };
 }
 
 async function renderFeesTab() {
@@ -1692,23 +1715,23 @@ async function renderFeesTab() {
     // Filter by payment / lock status
     if (feeLedgerStatusFilter === 'HAS_BALANCE') {
         targetStudents = targetStudents.filter(s => {
-            const tf = getStudentExpectedFee(s).fee;
+            const td = getStudentExpectedFee(s).totalDue;
             const pa = Number(s.paidAmount || 0);
-            return (tf - pa) > 0;
+            return (td - pa) > 0;
         });
     } else if (feeLedgerStatusFilter === 'CLEARED') {
         targetStudents = targetStudents.filter(s => {
-            const tf = getStudentExpectedFee(s).fee;
+            const td = getStudentExpectedFee(s).totalDue;
             const pa = Number(s.paidAmount || 0);
-            return (tf - pa) <= 0;
+            return (td - pa) <= 0;
         });
     } else if (feeLedgerStatusFilter === 'BURSARY') {
         targetStudents = targetStudents.filter(s => Boolean(s.bursaryName && s.bursaryName.trim()));
     } else if (feeLedgerStatusFilter === 'LOCKED') {
         targetStudents = targetStudents.filter(s => {
-            const tf = getStudentExpectedFee(s).fee;
+            const td = getStudentExpectedFee(s).totalDue;
             const pa = Number(s.paidAmount || 0);
-            return (tf - pa) > 0 && !s.feeLockOverride;
+            return (td - pa) > 0 && !s.feeLockOverride;
         });
     } else if (feeLedgerStatusFilter === 'OVERRIDDEN') {
         targetStudents = targetStudents.filter(s => Boolean(s.feeLockOverride));
@@ -1725,17 +1748,19 @@ async function renderFeesTab() {
     let bursaryCount = 0;
 
     if (targetStudents.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 30px;">No students match the current fee filter criteria.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-secondary); padding: 30px;">No students match the current fee filter criteria.</td></tr>`;
     }
 
     targetStudents.forEach(student => {
         const secObj = getStudentExpectedFee(student);
         const tf = secObj.fee;
+        const arr = secObj.arrears;
+        const totalDue = secObj.totalDue;
         const pa = Number(student.paidAmount || 0);
-        const bal = tf - pa;
+        const bal = totalDue - pa;
         const isBursary = Boolean(student.bursaryName && student.bursaryName.trim());
 
-        totalExpected += tf;
+        totalExpected += totalDue;
         totalCollected += pa;
         totalOutstanding += Math.max(0, bal);
         if (bal <= 0) clearedCount++;
@@ -1775,7 +1800,9 @@ async function renderFeesTab() {
             <td>${student.classLevel || 'Form 1'}</td>
             <td>${sectionTdHtml}</td>
             <td style="font-weight: 600; color: var(--text-primary);">MK ${tf.toLocaleString()}</td>
-            <td style="color: var(--text-primary);">MK ${pa.toLocaleString()}</td>
+            <td style="color: ${arr > 0 ? 'var(--accent-warning)' : 'var(--text-secondary)'}; font-weight: ${arr > 0 ? 'bold' : 'normal'};">MK ${arr.toLocaleString()}</td>
+            <td style="font-weight: bold; color: var(--text-primary);">MK ${totalDue.toLocaleString()}</td>
+            <td style="color: var(--accent-success); font-weight: 600;">MK ${pa.toLocaleString()}</td>
             <td style="color: ${bal > 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}; font-weight: bold;">
                 MK ${bal.toLocaleString()}
             </td>
@@ -2108,26 +2135,43 @@ document.getElementById('btn-print-receipt-action')?.addEventListener('click', (
     printWindow.document.close();
 });
 
-// Start New Term Action
-document.getElementById('btn-start-new-term')?.addEventListener('click', async () => {
-    const termName = prompt('⚠️ START NEW TERM\n\nThis will archive current payment records to student history and reset balances to MK 0 for all students for the new term.\n\nEnter the name for the new term (e.g. "Term 2 2026"):');
-    if (!termName || !termName.trim()) return;
+// Academic Calendar & Term Advancement Action
+async function handleAdvanceTermAction() {
+    const termBadge = document.getElementById('current-academic-badge')?.textContent || 'Current Term';
+    const nextStepText = document.getElementById('term-card-next-step')?.textContent || 'Advance Term';
+
+    const confirmMsg = `⚠️ ADVANCE ACADEMIC CALENDAR & ARCHIVE TERM\n\nTarget Action: ${nextStepText}\nActive Term: ${termBadge}\n\nThis will execute the following automated steps:\n1. Archive report cards, marks, and ranks into Academic History.\n2. Archive fee ledgers and carry over all unpaid fee balances as opening ARREARS for the new term.\n3. Reset current term marks and paid amounts for all students.\n4. (If closing Term 3): Automatically promote Form 1→2, Form 2→3, Form 3→4, and Form 4→Graduated.\n\nAre you sure you want to proceed?`;
+
+    if (!confirm(confirmMsg)) return;
 
     try {
-        const res = await apiFetch('/api/fee-ledger/start-new-term', {
+        const res = await apiFetch('/api/settings/advance-term', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ termName: termName.trim() })
+            headers: { 'Content-Type': 'application/json' }
         });
         const data = await res.json();
         if (res.ok) {
-            alert(`✅ New term "${data.termName}" started! Archived term history for ${data.studentCount} student(s). All balances reset for the new term.`);
+            alert(`✅ ${data.message}`);
+            await loadSettings();
             await renderFeesTab();
         } else {
-            alert('Error starting new term: ' + (data.error || 'Unknown error'));
+            alert('Error advancing term: ' + (data.error || 'Unknown error'));
         }
     } catch(e) {
-        alert('Network error starting new term.');
+        alert('Network error advancing term.');
+    }
+}
+
+document.getElementById('btn-advance-term-action')?.addEventListener('click', handleAdvanceTermAction);
+
+document.getElementById('btn-start-new-term')?.addEventListener('click', () => {
+    if (currentUser && currentUser.role === 'admin') {
+        const settingsTab = document.querySelector('[data-tab="settings-tab"]');
+        if (settingsTab) settingsTab.click();
+        const card = document.getElementById('term-management-card');
+        if (card) card.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        alert('ℹ️ Term Advancement & Class Promotions are managed by the Headteacher/Admin in Global Settings.');
     }
 });
 
