@@ -115,7 +115,6 @@ function renderActiveTab() {
     if (tabId === 'attendance-tab') renderAttendanceTab();
     if (tabId === 'timetable-tab') renderTimetableTab();
     if (tabId === 'payroll-tab') renderPayrollTab();
-    if (tabId === 'mobilemoney-tab') renderMobileMoneyTab();
     if (tabId === 'notices-tab') renderNoticesTab();
     if (tabId === 'applications-tab') renderApplicationsTab();
     if (tabId === 'staff-tab') renderStaffTab();
@@ -366,7 +365,6 @@ document.querySelectorAll('.nav-links li').forEach(item => {
         if (tabId === 'attendance-tab') renderAttendanceTab();
         if (tabId === 'timetable-tab') renderTimetableTab();
         if (tabId === 'payroll-tab') renderPayrollTab();
-        if (tabId === 'mobilemoney-tab') renderMobileMoneyTab();
         if (tabId === 'staff-tab') renderStaffTab();
         if (tabId === 'marks-tab') renderMarksTab();
         if (tabId === 'rankings-tab') renderRankingsTab();
@@ -2603,91 +2601,6 @@ document.getElementById('btn-print-payslip-action')?.addEventListener('click', (
     printWindow.document.close();
 });
 
-// ── 📱 PHASE 3.1 — Mobile Money Verification UI ──────────────────────
-let mmAllStudents = []; // module-level cache
-
-function filterMmStudents() {
-    const classSel = document.getElementById('mm-class-filter');
-    const searchInput = document.getElementById('mm-student-search');
-    const studentSel = document.getElementById('mm-student-id');
-    if (!classSel || !searchInput || !studentSel) return;
-
-    const classFilter = classSel.value;
-    const query = searchInput.value.trim().toLowerCase();
-
-    const filtered = mmAllStudents.filter(s => {
-        const matchClass = classFilter === 'ALL' || (s.classLevel || '') === classFilter;
-        const matchSearch = !query || (s.name || '').toLowerCase().includes(query);
-        return matchClass && matchSearch;
-    });
-
-    studentSel.innerHTML = '<option value="">— Select Student —</option>';
-    filtered.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.id;
-        opt.textContent = `${s.name} (${s.classLevel || 'Form 1'})`;
-        studentSel.appendChild(opt);
-    });
-}
-
-async function renderMobileMoneyTab() {
-    // Only fetch once; subsequent tab visits just re-wire listeners
-    if (mmAllStudents.length === 0) {
-        try {
-            const res = await apiFetch('/api/students');
-            if (!res.ok) return;
-            mmAllStudents = (await res.json()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-        } catch(e) { return; }
-    }
-
-    // Populate class filter with unique class levels (sorted)
-    const classSel = document.getElementById('mm-class-filter');
-    const classes = [...new Set(mmAllStudents.map(s => s.classLevel || '').filter(Boolean))].sort();
-    classSel.innerHTML = '<option value="ALL">All Students</option>';
-    classes.forEach(cl => {
-        const opt = document.createElement('option');
-        opt.value = cl;
-        opt.textContent = cl;
-        classSel.appendChild(opt);
-    });
-
-    // Wire up filter listeners (safe to re-add since we replace elements each call)
-    classSel.onchange = filterMmStudents;
-    document.getElementById('mm-student-search').oninput = filterMmStudents;
-
-    // Initial population of student dropdown
-    filterMmStudents();
-}
-
-document.getElementById('mobile-money-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const studentId = document.getElementById('mm-student-id').value;
-    const provider = document.getElementById('mm-provider').value;
-    const transactionRef = document.getElementById('mm-ref').value.trim();
-    const amount = Number(document.getElementById('mm-amount').value);
-    const resultEl = document.getElementById('mm-result');
-
-    const res = await apiFetch('/api/payments/verify-mobile-money', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ studentId, provider, transactionRef, amount })
-    });
-
-    if (res.ok) {
-        const data = await res.json();
-        const bal = data.feeBalance;
-        resultEl.style.color = bal <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)';
-        resultEl.innerText = `✅ Payment of MK ${amount.toLocaleString()} recorded! (Ref: ${data.receipt.receiptNo}) | Balance: MK ${bal.toLocaleString()}`;
-        resultEl.style.display = 'block';
-        document.getElementById('mm-ref').value = '';
-        document.getElementById('mm-amount').value = '';
-    } else {
-        const err = await res.json();
-        resultEl.style.color = 'var(--accent-danger)';
-        resultEl.innerText = `❌ Error: ${err.error}`;
-        resultEl.style.display = 'block';
-    }
-});
 
 // ── 📢 PHASE 3.4 — Notices Tab (Admin side) ──────────────────────────
 async function renderNoticesTab() {

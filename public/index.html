@@ -80,7 +80,6 @@
                 <li data-tab="attendance-tab">Attendance</li>
                 <li data-tab="timetable-tab">Timetable</li>
                 <li data-tab="payroll-tab">Payroll & HR</li>
-                <li data-tab="mobilemoney-tab">Mobile Money</li>
                 <li data-tab="staff-tab">Staff</li>
                 <li data-tab="marks-tab">Marks Grid</li>
                 <li data-tab="rankings-tab">Ranks & PDFs</li>
@@ -348,57 +347,6 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </section>
-
-            <!-- Mobile Money Tab -->
-            <section id="mobilemoney-tab" class="tab-panel">
-                <div class="panel-header">
-                    <h1>📱 Mobile Money Verification</h1>
-                    <span class="badge" style="background: #F97316; color: white;">Airtel Money & TNM Mpamba</span>
-                </div>
-                <div class="card full-width-card" style="max-width: 560px;">
-                    <h3 style="margin-bottom: 5px;">Manually Verify a Mobile Money Payment</h3>
-                    <p class="subtitle" style="margin-bottom: 20px;">Once you confirm a mobile money reference via SMS or Airtel/TNM app, record it here to automatically update the student's fee ledger.</p>
-                    <form id="mobile-money-form">
-                        <div style="display:flex; gap:10px; margin-bottom:12px;">
-                            <div class="input-group" style="flex:1; margin-bottom:0;">
-                                <label>Filter by Class</label>
-                                <select id="mm-class-filter" style="width:100%; padding:10px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-primary); color:white;">
-                                    <option value="ALL">All Students</option>
-                                </select>
-                            </div>
-                            <div class="input-group" style="flex:2; margin-bottom:0;">
-                                <label>Search Student</label>
-                                <input type="text" id="mm-student-search" placeholder="Type name to search…" style="width:100%; padding:10px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-primary); color:white; box-sizing:border-box;">
-                            </div>
-                        </div>
-                        <div class="input-group" style="margin-bottom: 12px;">
-                            <label>Student</label>
-                            <select id="mm-student-id" required style="width:100%; padding:10px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-primary); color:white;">
-                                <option value="">— Select Student —</option>
-                            </select>
-                        </div>
-                        <div class="input-group" style="margin-bottom: 12px;">
-                            <label>Provider</label>
-                            <select id="mm-provider" style="width:100%; padding:10px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-primary); color:white;">
-                                <option value="Airtel Money">Airtel Money</option>
-                                <option value="TNM Mpamba">TNM Mpamba</option>
-                            </select>
-                        </div>
-                        <div class="input-group" style="margin-bottom: 12px;">
-                            <label>Transaction Reference No.</label>
-                            <input type="text" id="mm-ref" required placeholder="e.g. ART12345678" style="width:100%;">
-                        </div>
-                        <div class="input-group" style="margin-bottom: 20px;">
-                            <label>Amount Received (MK)</label>
-                            <input type="number" id="mm-amount" required min="1" placeholder="e.g. 25000" style="width:100%;">
-                        </div>
-                        <div style="display:flex; gap:10px;">
-                            <button type="submit" class="btn primary-btn" style="flex:1;">✅ Verify & Record Payment</button>
-                        </div>
-                        <p id="mm-result" style="margin-top:15px; font-weight:bold; display:none;"></p>
-                    </form>
                 </div>
             </section>
 
