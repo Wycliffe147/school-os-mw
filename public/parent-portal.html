@@ -337,7 +337,8 @@
         <div class="portal-tab" data-panel="panel-fees">💳 Fees</div>
         <div class="portal-tab" data-panel="panel-attendance">📋 Attendance</div>
         <div class="portal-tab" data-panel="panel-marks">📝 Marks</div>
-        <div class="portal-tab" data-panel="panel-history">📜 History</div>
+        <div class="portal-tab" data-panel="panel-fee-history">💳 Fee History</div>
+        <div class="portal-tab" data-panel="panel-academic-history">🎓 Academic History</div>
         <div class="portal-tab" data-panel="panel-notices">📢 Notices</div>
     </nav>
 
@@ -387,13 +388,17 @@
             </div>
         </div>
 
-        <!-- History -->
-        <div id="panel-history" class="panel">
+        <!-- Fee History -->
+        <div id="panel-fee-history" class="panel">
             <div class="info-card">
                 <h2>💳 Past Term Fee Records</h2>
                 <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:16px;">Archived fee summaries from previous terms.</p>
                 <div id="history-fees-container"></div>
             </div>
+        </div>
+
+        <!-- Academic History -->
+        <div id="panel-academic-history" class="panel">
             <div class="info-card">
                 <h2>🎓 Past Term Academic Performance</h2>
                 <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:16px;">Subject scores, average, and class position from previous terms.</p>
@@ -532,7 +537,9 @@
             else if (panelId === 'panel-fees') loadFees();
             else if (panelId === 'panel-attendance') loadAttendance();
             else if (panelId === 'panel-marks') loadMarks();
-            else if (panelId === 'panel-history') loadHistory();
+            else if (panelId === 'panel-history') loadFeeHistory();
+            else if (panelId === 'panel-fee-history') loadFeeHistory();
+            else if (panelId === 'panel-academic-history') loadAcademicHistory();
             else if (panelId === 'panel-notices') loadNotices();
 
         } catch (e) {
@@ -565,7 +572,8 @@
             if (panelId === 'panel-fees') loadFees();
             if (panelId === 'panel-attendance') loadAttendance();
             if (panelId === 'panel-marks') loadMarks();
-            if (panelId === 'panel-history') loadHistory();
+            if (panelId === 'panel-fee-history') loadFeeHistory();
+            if (panelId === 'panel-academic-history') loadAcademicHistory();
             if (panelId === 'panel-notices') loadNotices();
         });
     });
@@ -777,14 +785,13 @@
         return { letter: 'F', cls: 'badge-danger' };
     }
 
-    // ── History ──
-    function loadHistory() {
+    // ── Fee History ──
+    function loadFeeHistory() {
         const s = portalStudent;
-        const termHistory     = [...(s.termHistory     || [])].reverse(); // most recent first
-        const academicHistory = [...(s.academicHistory || [])].reverse();
+        const termHistory = [...(s.termHistory || [])].reverse(); // most recent first
 
-        // ── Fee history ──
         const feesEl = document.getElementById('history-fees-container');
+        if (!feesEl) return;
         if (!termHistory.length) {
             feesEl.innerHTML = '<p style="color:var(--text-secondary);">No past term fee records yet. Records appear here after each term is closed.</p>';
         } else {
@@ -819,9 +826,15 @@
                 </details>`;
             }).join('');
         }
+    }
 
-        // ── Academic history ──
+    // ── Academic History ──
+    function loadAcademicHistory() {
+        const s = portalStudent;
+        const academicHistory = [...(s.academicHistory || [])].reverse();
+
         const acEl = document.getElementById('history-academic-container');
+        if (!acEl) return;
         if (!academicHistory.length) {
             acEl.innerHTML = '<p style="color:var(--text-secondary);">No past academic records yet. Records appear here after each term is closed.</p>';
         } else {
