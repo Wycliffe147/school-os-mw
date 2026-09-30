@@ -95,6 +95,12 @@
             border-color: var(--accent-blue);
         }
 
+        select option {
+            background-color: #1e2130 !important;
+            color: #e8eaf6 !important;
+            padding: 8px;
+        }
+
         .btn-login {
             width: 100%;
             padding: 13px;
@@ -541,7 +547,7 @@
             if (portalSiblings && portalSiblings.length > 1) {
                 switcherContainer.style.display = 'block';
                 switcherSelect.innerHTML = portalSiblings.map(s => `
-                    <option value="${s.id}" ${s.id === portalStudent.id ? 'selected' : ''}>${s.name} (${s.classLevel || 'Form 1'})</option>
+                    <option value="${s.id}" ${s.id === portalStudent.id ? 'selected' : ''} style="background-color: #1e2130; color: #e8eaf6;">${s.name} (${s.classLevel || 'Form 1'})</option>
                 `).join('');
             } else {
                 switcherContainer.style.display = 'none';
