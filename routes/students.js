@@ -153,13 +153,68 @@ router.post('/fee-ledger/start-new-term', requireBursarOrAdmin, (req, res) => {
     const getSection = (sectionId) => sections.find(s => s.id === sectionId);
     const defaultSection = sections.find(s => s.isDefault) || sections[0] || { id: 'general', name: 'General', fee: 0 };
 
+    // ── Compute class ranks before archiving ───────────────────────────
+    // Group students by class and compute total score + rank per class
+    const subjectsList = db.subjects || [];
+    const catWeight  = db.settings.catWeight  !== undefined ? Number(db.settings.catWeight)  : 30;
+    const examWeight = db.settings.examWeight !== undefined ? Number(db.settings.examWeight) : 70;
+
+    const classBuckets = {};
+    (db.students || []).forEach(student => {
+        const cl = student.classLevel || 'Form 1';
+        if (!classBuckets[cl]) classBuckets[cl] = [];
+        classBuckets[cl].push(student);
+    });
+
+    // Per-student: compute composite total & per-subject scores
+    const scoreMap = new Map(); // studentId -> { total, subjectScores, average }
+    Object.values(classBuckets).forEach(group => {
+        group.forEach(student => {
+            const subjectScores = {};
+            let runningTotal = 0;
+            let subjectCount = 0;
+            subjectsList.forEach(sub => {
+                if (!student.subjects || !student.subjects[sub]) return;
+                const cat  = Number(student.catMarks  && student.catMarks[sub]  != null ? student.catMarks[sub]  : '');
+                const exam = Number(student.examMarks && student.examMarks[sub] != null ? student.examMarks[sub] : '');
+                const raw  = Number(student.marks     && student.marks[sub]     != null ? student.marks[sub]     : '');
+                let composite;
+                if (!isNaN(cat) && !isNaN(exam)) {
+                    composite = Math.round((cat * catWeight / 100) + (exam * examWeight / 100));
+                } else if (!isNaN(raw)) {
+                    composite = raw;
+                } else {
+                    return; // no score for this subject
+                }
+                subjectScores[sub] = composite;
+                runningTotal += composite;
+                subjectCount++;
+            });
+            const average = subjectCount > 0 ? Math.round((runningTotal / subjectCount) * 10) / 10 : 0;
+            scoreMap.set(String(student.id), { total: runningTotal, subjectScores, average, subjectCount });
+        });
+
+        // Rank within class by total score descending
+        const sorted = [...group].sort((a, b) => {
+            const aTotal = (scoreMap.get(String(a.id)) || {}).total || 0;
+            const bTotal = (scoreMap.get(String(b.id)) || {}).total || 0;
+            return bTotal - aTotal;
+        });
+        sorted.forEach((student, idx) => {
+            const entry = scoreMap.get(String(student.id));
+            if (entry) entry.position = idx + 1;
+        });
+    });
+
+    // ── Archive fee + academic snapshot per student ────────────────────
     let studentCount = 0;
     (db.students || []).forEach(student => {
         const section = getSection(student.section) || defaultSection;
         const expectedFee = section.fee || 0;
         const paidAmount = student.paidAmount || 0;
+        const academicSnap = scoreMap.get(String(student.id)) || { total: 0, average: 0, subjectScores: {}, subjectCount: 0 };
 
-        // Archive snapshot
+        // Fee archive
         if (!student.termHistory) student.termHistory = [];
         student.termHistory.push({
             termName: termName.trim(),
@@ -169,6 +224,20 @@ router.post('/fee-ledger/start-new-term', requireBursarOrAdmin, (req, res) => {
             paidAmount,
             balance: Math.max(0, expectedFee - paidAmount),
             paymentHistory: [...(student.paymentHistory || [])],
+            archivedAt: new Date().toISOString()
+        });
+
+        // Academic archive
+        if (!student.academicHistory) student.academicHistory = [];
+        student.academicHistory.push({
+            termName: termName.trim(),
+            classLevel: student.classLevel || '',
+            totalScore: academicSnap.total,
+            average: academicSnap.average,
+            subjectCount: academicSnap.subjectCount,
+            position: academicSnap.position || null,
+            outOf: (classBuckets[student.classLevel || 'Form 1'] || []).length,
+            subjectScores: { ...academicSnap.subjectScores },
             archivedAt: new Date().toISOString()
         });
 

@@ -85,6 +85,31 @@ function sanitiseStudent(s, expectedFee) {
             method: p.method,
             receiptNo: p.receiptNo
         })),
+        termHistory: (s.termHistory || []).map(t => ({
+            termName: t.termName,
+            sectionName: t.sectionName,
+            expectedFee: t.expectedFee,
+            paidAmount: t.paidAmount,
+            balance: t.balance,
+            paymentHistory: (t.paymentHistory || []).map(p => ({
+                date: p.date,
+                amount: p.amount,
+                method: p.method,
+                receiptNo: p.receiptNo
+            })),
+            archivedAt: t.archivedAt
+        })),
+        academicHistory: (s.academicHistory || []).map(a => ({
+            termName: a.termName,
+            classLevel: a.classLevel,
+            totalScore: a.totalScore,
+            average: a.average,
+            subjectCount: a.subjectCount,
+            position: a.position,
+            outOf: a.outOf,
+            subjectScores: a.subjectScores || {},
+            archivedAt: a.archivedAt
+        })),
         marks: s.marks || {},
         catMarks: s.catMarks || {},
         examMarks: s.examMarks || {},

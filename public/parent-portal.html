@@ -337,6 +337,7 @@
         <div class="portal-tab" data-panel="panel-fees">💳 Fees</div>
         <div class="portal-tab" data-panel="panel-attendance">📋 Attendance</div>
         <div class="portal-tab" data-panel="panel-marks">📝 Marks</div>
+        <div class="portal-tab" data-panel="panel-history">📜 History</div>
         <div class="portal-tab" data-panel="panel-notices">📢 Notices</div>
     </nav>
 
@@ -383,6 +384,20 @@
             <div class="info-card">
                 <h2>📝 Subject Marks & Grades</h2>
                 <div id="marks-table-container" style="overflow-x:auto;"></div>
+            </div>
+        </div>
+
+        <!-- History -->
+        <div id="panel-history" class="panel">
+            <div class="info-card">
+                <h2>💳 Past Term Fee Records</h2>
+                <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:16px;">Archived fee summaries from previous terms.</p>
+                <div id="history-fees-container"></div>
+            </div>
+            <div class="info-card">
+                <h2>🎓 Past Term Academic Performance</h2>
+                <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:16px;">Subject scores, average, and class position from previous terms.</p>
+                <div id="history-academic-container"></div>
             </div>
         </div>
 
@@ -517,6 +532,7 @@
             else if (panelId === 'panel-fees') loadFees();
             else if (panelId === 'panel-attendance') loadAttendance();
             else if (panelId === 'panel-marks') loadMarks();
+            else if (panelId === 'panel-history') loadHistory();
             else if (panelId === 'panel-notices') loadNotices();
 
         } catch (e) {
@@ -549,6 +565,7 @@
             if (panelId === 'panel-fees') loadFees();
             if (panelId === 'panel-attendance') loadAttendance();
             if (panelId === 'panel-marks') loadMarks();
+            if (panelId === 'panel-history') loadHistory();
             if (panelId === 'panel-notices') loadNotices();
         });
     });
@@ -758,6 +775,78 @@
         if (score >= 50) return { letter: 'C', cls: 'badge-blue' };
         if (score >= 40) return { letter: 'D', cls: 'badge-warning' };
         return { letter: 'F', cls: 'badge-danger' };
+    }
+
+    // ── History ──
+    function loadHistory() {
+        const s = portalStudent;
+        const termHistory     = [...(s.termHistory     || [])].reverse(); // most recent first
+        const academicHistory = [...(s.academicHistory || [])].reverse();
+
+        // ── Fee history ──
+        const feesEl = document.getElementById('history-fees-container');
+        if (!termHistory.length) {
+            feesEl.innerHTML = '<p style="color:var(--text-secondary);">No past term fee records yet. Records appear here after each term is closed.</p>';
+        } else {
+            feesEl.innerHTML = termHistory.map(t => {
+                const paid    = Number(t.paidAmount  || 0);
+                const total   = Number(t.expectedFee || 0);
+                const bal     = Number(t.balance     || 0);
+                const cleared = bal <= 0;
+                const pymtRows = (t.paymentHistory || []).map(p => `
+                    <tr>
+                        <td>${new Date(p.date).toLocaleDateString()}</td>
+                        <td><strong>MK ${Number(p.amount).toLocaleString()}</strong></td>
+                        <td>${p.method || 'Cash'}</td>
+                        <td><span class="badge badge-blue">${p.receiptNo || '—'}</span></td>
+                    </tr>`).join('');
+                return `
+                <details style="margin-bottom:14px; border:1px solid var(--border-color); border-radius:8px; padding:12px;">
+                    <summary style="cursor:pointer; font-weight:600; font-size:1rem; list-style:none; display:flex; justify-content:space-between; align-items:center;">
+                        <span>${t.termName}${t.sectionName ? ' · ' + t.sectionName : ''}</span>
+                        <span class="badge ${cleared ? 'badge-success' : 'badge-danger'}" style="font-size:0.8rem;">
+                            ${cleared ? 'CLEARED' : 'MK ' + bal.toLocaleString() + ' OWING'}
+                        </span>
+                    </summary>
+                    <div style="margin-top:12px;">
+                        <div class="summary-grid" style="margin-bottom:12px;">
+                            <div class="summary-card"><div class="value">MK ${total.toLocaleString()}</div><div class="label">Total Fees</div></div>
+                            <div class="summary-card"><div class="value" style="color:var(--accent-success)">MK ${paid.toLocaleString()}</div><div class="label">Amount Paid</div></div>
+                            <div class="summary-card"><div class="value" style="color:${cleared ? 'var(--accent-success)' : 'var(--accent-danger)'}">MK ${bal.toLocaleString()}</div><div class="label">Balance</div></div>
+                        </div>
+                        ${pymtRows ? `<table class="portal-table"><thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Receipt</th></tr></thead><tbody>${pymtRows}</tbody></table>` : '<p style="color:var(--text-secondary); font-size:0.85rem;">No individual payments recorded.</p>'}
+                    </div>
+                </details>`;
+            }).join('');
+        }
+
+        // ── Academic history ──
+        const acEl = document.getElementById('history-academic-container');
+        if (!academicHistory.length) {
+            acEl.innerHTML = '<p style="color:var(--text-secondary);">No past academic records yet. Records appear here after each term is closed.</p>';
+        } else {
+            acEl.innerHTML = academicHistory.map(a => {
+                const subjects = Object.entries(a.subjectScores || {});
+                const subjRows = subjects.map(([sub, score]) => `
+                    <tr><td>${sub}</td><td><strong>${score}</strong></td></tr>`).join('');
+                const posText = a.position ? `${a.position} / ${a.outOf}` : '—';
+                return `
+                <details style="margin-bottom:14px; border:1px solid var(--border-color); border-radius:8px; padding:12px;">
+                    <summary style="cursor:pointer; font-weight:600; font-size:1rem; list-style:none; display:flex; justify-content:space-between; align-items:center;">
+                        <span>${a.termName}${a.classLevel ? ' · ' + a.classLevel : ''}</span>
+                        <span style="font-size:0.85rem; color:var(--text-secondary);">Avg: ${a.average}% &nbsp;|&nbsp; Pos: ${posText}</span>
+                    </summary>
+                    <div style="margin-top:12px;">
+                        <div class="summary-grid" style="margin-bottom:12px;">
+                            <div class="summary-card"><div class="value">${a.totalScore}</div><div class="label">Total Score</div></div>
+                            <div class="summary-card"><div class="value">${a.average}%</div><div class="label">Average</div></div>
+                            <div class="summary-card"><div class="value">${posText}</div><div class="label">Position in Class</div></div>
+                        </div>
+                        ${subjRows ? `<table class="portal-table"><thead><tr><th>Subject</th><th>Score</th></tr></thead><tbody>${subjRows}</tbody></table>` : '<p style="color:var(--text-secondary); font-size:0.85rem;">No subject scores recorded.</p>'}
+                    </div>
+                </details>`;
+            }).join('');
+        }
     }
 
     // ── Notices ──
