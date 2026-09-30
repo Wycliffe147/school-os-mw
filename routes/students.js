@@ -228,6 +228,16 @@ router.post('/fee-ledger/start-new-term', requireBursarOrAdmin, (req, res) => {
         });
 
         // Academic archive
+        let passedSubjectsCount = 0;
+        let englishPassed = false;
+        Object.entries(academicSnap.subjectScores || {}).forEach(([sub, score]) => {
+            if (Number(score) >= 40) {
+                passedSubjectsCount++;
+                if (sub === 'ENG' || sub === 'English') englishPassed = true;
+            }
+        });
+        const hasPassed = englishPassed && passedSubjectsCount >= 6;
+
         if (!student.academicHistory) student.academicHistory = [];
         student.academicHistory.push({
             termName: termName.trim(),
@@ -237,6 +247,7 @@ router.post('/fee-ledger/start-new-term', requireBursarOrAdmin, (req, res) => {
             subjectCount: academicSnap.subjectCount,
             position: academicSnap.position || null,
             outOf: (classBuckets[student.classLevel || 'Form 1'] || []).length,
+            passed: hasPassed,
             subjectScores: { ...academicSnap.subjectScores },
             archivedAt: new Date().toISOString()
         });

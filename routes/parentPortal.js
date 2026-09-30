@@ -113,6 +113,7 @@ function sanitiseStudent(s, expectedFee) {
             subjectCount: a.subjectCount,
             position: a.position,
             outOf: a.outOf,
+            passed: a.passed !== undefined ? a.passed : (a.average >= 50),
             subjectScores: a.subjectScores || {},
             archivedAt: a.archivedAt
         })),
