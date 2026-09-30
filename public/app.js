@@ -2404,6 +2404,7 @@ async function renderPayrollTab() {
                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
                     <button class="btn primary-btn btn-gen-payslip" style="padding:3px 8px; font-size:0.78rem;" data-id="${s.id}" data-name="${s.name}">🧾 Payslip</button>
                     <button class="btn outline-btn btn-record-leave" style="padding:3px 8px; font-size:0.78rem;" data-id="${s.id}" data-name="${s.name}">🌴 Leave</button>
+                    <button class="btn outline-btn btn-staff-history" style="padding:3px 8px; font-size:0.78rem;" data-id="${s.id}">📜 History</button>
                 </div>
             </td>`;
 
@@ -2429,7 +2430,7 @@ async function renderPayrollTab() {
             if (res.ok) {
                 const data = await res.json();
                 const p = data.payslip;
-                alert(`🧾 PAYSLIP — ${sname} — ${p.month} ${p.year}\n\nBasic Salary:   MK ${p.basicSalary.toLocaleString()}\nAllowances:     MK ${p.totalAllowances.toLocaleString()}\nGross Pay:      MK ${p.grossPay.toLocaleString()}\n────────────────────\nPAYE Tax:       MK ${p.paye.toLocaleString()}\nPension (MIPF): MK ${p.pension.toLocaleString()}\n────────────────────\nNET PAY:        MK ${p.netPay.toLocaleString()}\n\nSlip ID: ${p.slipId}`);
+                openPrintablePayslipModal(s, p);
             }
         });
 
@@ -2458,9 +2459,149 @@ async function renderPayrollTab() {
             }
         });
 
+        tr.querySelector('.btn-staff-history').addEventListener('click', () => {
+            openStaffHistoryModal(s);
+        });
+
         tbody.appendChild(tr);
     });
 }
+
+// Staff HR History Modal Logic
+function openStaffHistoryModal(staff) {
+    document.getElementById('staff-history-title').innerText = `📜 HR History: ${staff.name}`;
+    document.getElementById('staff-history-subtitle').innerText = `${formatRole(staff.role)} · ${staff.employmentType || 'Full-Time'} · ${staff.leaveBalance !== undefined ? staff.leaveBalance : 14} Day(s) Remaining Leave`;
+
+    // Render Payslips
+    const payslipsList = document.getElementById('staff-payslips-list');
+    payslipsList.innerHTML = '';
+    const payslips = staff.paymentHistory || [];
+
+    if (payslips.length > 0) {
+        payslips.slice().reverse().forEach(p => {
+            const div = document.createElement('div');
+            div.style.cssText = 'padding: 10px 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); display: flex; justify-content: space-between; align-items: center; gap: 10px;';
+            const totalDeductions = Number(p.paye || 0) + Number(p.pension || 0);
+            div.innerHTML = `
+                <div>
+                    <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">
+                        ${p.month} ${p.year} <span style="font-size: 0.78rem; font-weight: normal; color: var(--text-secondary);">(${p.slipId})</span>
+                    </div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">
+                        Gross: MK ${Number(p.grossPay || 0).toLocaleString()} · Tax/Deductions: MK ${totalDeductions.toLocaleString()} · <strong style="color: var(--accent-success);">Net: MK ${Number(p.netPay || 0).toLocaleString()}</strong>
+                    </div>
+                </div>
+                <button class="btn primary-btn btn-print-this-payslip" style="padding: 4px 10px; font-size: 0.78rem; background: #0284c7;">🖨️ View / Print</button>
+            `;
+            div.querySelector('.btn-print-this-payslip').addEventListener('click', () => {
+                openPrintablePayslipModal(staff, p);
+            });
+            payslipsList.appendChild(div);
+        });
+    } else {
+        payslipsList.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.88rem; padding: 10px 0;">No monthly payslips issued yet for this staff member.</p>';
+    }
+
+    // Render Leave Logs
+    const leaveList = document.getElementById('staff-leave-list');
+    leaveList.innerHTML = '';
+    const leaves = staff.leaveHistory || [];
+
+    if (leaves.length > 0) {
+        leaves.slice().reverse().forEach(l => {
+            const div = document.createElement('div');
+            div.style.cssText = 'padding: 10px 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); font-size: 0.85rem;';
+            const typeColor = l.type === 'Sick' ? 'var(--accent-danger)' : (l.type === 'Compassionate' ? '#f59e0b' : 'var(--accent-blue)');
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span class="badge" style="background: ${typeColor}; color: white; font-size: 0.75rem;">${l.type || 'Annual Leave'} (${l.days} day${l.days > 1 ? 's' : ''})</span>
+                    <span style="color: var(--text-secondary); font-size: 0.78rem;">${new Date(l.startDate).toLocaleDateString()} to ${new Date(l.endDate).toLocaleDateString()}</span>
+                </div>
+                ${l.reason ? `<div style="color: var(--text-primary); margin-top: 4px;">Reason: ${l.reason}</div>` : ''}
+                <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px;">Recorded by: ${l.recordedBy || 'Admin'}</div>
+            `;
+            leaveList.appendChild(div);
+        });
+    } else {
+        leaveList.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.88rem; padding: 10px 0;">No leave logs recorded.</p>';
+    }
+
+    document.getElementById('staff-history-modal').style.display = 'flex';
+}
+
+function openPrintablePayslipModal(staff, payslip) {
+    const schoolNameEl = document.getElementById('sidebar-school-name');
+    const schoolName = (schoolNameEl && schoolNameEl.innerText) ? schoolNameEl.innerText : 'EXCEL ACADEMY';
+    
+    document.getElementById('payslip-school-name').innerText = schoolName.toUpperCase();
+    document.getElementById('ps-staff-name').innerText = staff.name;
+    document.getElementById('ps-staff-role').innerText = formatRole(staff.role);
+    document.getElementById('ps-staff-id').innerText = staff.nationalId || staff.username || 'N/A';
+
+    document.getElementById('ps-period').innerText = `${payslip.month} ${payslip.year}`;
+    document.getElementById('ps-slip-id').innerText = payslip.slipId;
+    document.getElementById('ps-date').innerText = payslip.generatedAt ? new Date(payslip.generatedAt).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB');
+
+    const basic = Number(payslip.basicSalary || 0);
+    const allow = payslip.allowances || {};
+    const housing = Number(allow.housing || 0);
+    const transport = Number(allow.transport || 0);
+    const health = Number(allow.health || 0);
+    const gross = Number(payslip.grossPay || (basic + housing + transport + health));
+    const paye = Number(payslip.paye || 0);
+    const pension = Number(payslip.pension || 0);
+    const totalDeductions = paye + pension;
+    const net = Number(payslip.netPay || (gross - totalDeductions));
+
+    document.getElementById('ps-basic').innerText = `MK ${basic.toLocaleString()}`;
+    document.getElementById('ps-allow-housing').innerText = `MK ${housing.toLocaleString()}`;
+    document.getElementById('ps-allow-transport').innerText = `MK ${transport.toLocaleString()}`;
+    document.getElementById('ps-allow-health').innerText = `MK ${health.toLocaleString()}`;
+    document.getElementById('ps-gross').innerText = `MK ${gross.toLocaleString()}`;
+
+    document.getElementById('ps-paye').innerText = `MK ${paye.toLocaleString()}`;
+    document.getElementById('ps-pension').innerText = `MK ${pension.toLocaleString()}`;
+    document.getElementById('ps-total-deductions').innerText = `MK ${totalDeductions.toLocaleString()}`;
+    document.getElementById('ps-net').innerText = `MK ${net.toLocaleString()}`;
+    document.getElementById('ps-generated-by').innerText = payslip.generatedBy || 'Admin';
+
+    document.getElementById('printable-payslip-modal').style.display = 'flex';
+}
+
+document.getElementById('staff-history-close-x')?.addEventListener('click', () => {
+    document.getElementById('staff-history-modal').style.display = 'none';
+});
+document.getElementById('staff-history-close-btn')?.addEventListener('click', () => {
+    document.getElementById('staff-history-modal').style.display = 'none';
+});
+document.getElementById('btn-close-payslip-modal')?.addEventListener('click', () => {
+    document.getElementById('printable-payslip-modal').style.display = 'none';
+});
+
+document.getElementById('btn-print-payslip-action')?.addEventListener('click', () => {
+    const content = document.getElementById('printable-payslip-area').innerHTML;
+    const printWindow = window.open('', '', 'width=700,height=800');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Staff Payslip</title>
+            <style>
+                body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 25px; color: #1e293b; }
+                @media print { body { padding: 0; } }
+            </style>
+        </head>
+        <body>
+            <div style="max-width: 580px; margin: 0 auto; border: 1px solid #cbd5e1; padding: 25px; border-radius: 8px;">
+                ${content}
+            </div>
+            <script>
+                window.onload = function() { window.print(); window.close(); }
+            </script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+});
 
 // ── 📱 PHASE 3.1 — Mobile Money Verification UI ──────────────────────
 async function renderMobileMoneyTab() {

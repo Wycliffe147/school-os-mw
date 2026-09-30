@@ -1173,6 +1173,127 @@
         </div>
     </div>
 
+    <!-- Staff History Modal (Payslips & Leave Logs) -->
+    <div id="staff-history-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; justify-content:center; align-items:center;">
+        <div class="card" style="width:680px; max-width:95vw; max-height:90vh; display:flex; flex-direction:column; padding:25px; position:relative; border-top: 5px solid var(--accent-blue);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
+                <div>
+                    <h3 id="staff-history-title" style="margin:0;">📜 Staff HR History</h3>
+                    <p id="staff-history-subtitle" class="subtitle" style="margin:4px 0 0 0;">Payslip records and leave log.</p>
+                </div>
+                <button type="button" id="staff-history-close-x" style="background:none; border:none; color:var(--text-secondary); font-size:1.4rem; cursor:pointer; padding:0 5px;">&times;</button>
+            </div>
+
+            <div style="overflow-y:auto; flex:1; padding-right:5px;">
+                <!-- Payslips Section -->
+                <h4 style="margin:10px 0 10px 0; color:var(--accent-blue); font-size:1rem; border-bottom:1px solid var(--border-color); padding-bottom:6px;">🧾 Monthly Payslips Issued</h4>
+                <div id="staff-payslips-list" style="margin-bottom:20px;">
+                    <!-- Dynamically populated -->
+                </div>
+
+                <!-- Leave History Section -->
+                <h4 style="margin:15px 0 10px 0; color:#f59e0b; font-size:1rem; border-bottom:1px solid var(--border-color); padding-bottom:6px;">🌴 Leave History Logs</h4>
+                <div id="staff-leave-list">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <div style="margin-top:15px; text-align:right;">
+                <button type="button" id="staff-history-close-btn" class="btn outline-btn" style="padding:6px 16px;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Printable Payslip Modal -->
+    <div id="printable-payslip-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:11000; justify-content:center; align-items:center;">
+        <div class="card" style="width:580px; max-width:95vw; max-height:92vh; background: white; color: #1e293b; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); overflow-y: auto;">
+            <div id="printable-payslip-area" style="font-family: var(--font-stack); color: #1e293b; line-height: 1.5;">
+                <div style="text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 15px;">
+                    <h2 id="payslip-school-name" style="color: #0f172a; margin: 0; font-size: 1.4rem;">EXCEL ACADEMY</h2>
+                    <p id="payslip-school-motto" style="color: #64748b; font-size: 0.8rem; margin: 2px 0 0 0; font-style: italic;"></p>
+                    <p style="font-weight: 800; color: #0284c7; margin-top: 8px; font-size: 1rem; text-transform: uppercase; letter-spacing: 1.5px;">Official Staff Payslip</p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 12px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div>
+                        <div><strong>Staff Member:</strong> <span id="ps-staff-name">John Doe</span></div>
+                        <div><strong>Role:</strong> <span id="ps-staff-role">Teacher</span></div>
+                        <div><strong>National ID / Ref:</strong> <span id="ps-staff-id">N/A</span></div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div><strong>Pay Period:</strong> <span id="ps-period" style="color: #0284c7; font-weight: bold;">September 2026</span></div>
+                        <div><strong>Slip ID:</strong> <span id="ps-slip-id">SLIP-000000</span></div>
+                        <div><strong>Issued Date:</strong> <span id="ps-date">2026-09-30</span></div>
+                    </div>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.88rem;">
+                    <thead>
+                        <tr style="background: #0f172a; color: white;">
+                            <th style="padding: 8px; text-align: left;">Earnings</th>
+                            <th style="padding: 8px; text-align: right;">Amount (MK)</th>
+                            <th style="padding: 8px; text-align: left; border-left: 1px solid #334155;">Deductions</th>
+                            <th style="padding: 8px; text-align: right;">Amount (MK)</th>
+                        </tr>
+                    </thead>
+                    <tbody style="border-bottom: 1px solid #cbd5e1;">
+                        <tr>
+                            <td style="padding: 6px 8px;">Basic Salary</td>
+                            <td style="padding: 6px 8px; text-align: right;" id="ps-basic">MK 0</td>
+                            <td style="padding: 6px 8px; border-left: 1px solid #e2e8f0;">PAYE Tax (MRA)</td>
+                            <td style="padding: 6px 8px; text-align: right; color: #dc2626;" id="ps-paye">MK 0</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 8px;">Housing Allowance</td>
+                            <td style="padding: 6px 8px; text-align: right;" id="ps-allow-housing">MK 0</td>
+                            <td style="padding: 6px 8px; border-left: 1px solid #e2e8f0;">MIPF Pension (5%)</td>
+                            <td style="padding: 6px 8px; text-align: right; color: #dc2626;" id="ps-pension">MK 0</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 8px;">Transport Allowance</td>
+                            <td style="padding: 6px 8px; text-align: right;" id="ps-allow-transport">MK 0</td>
+                            <td style="padding: 6px 8px; border-left: 1px solid #e2e8f0;"></td>
+                            <td style="padding: 6px 8px; text-align: right;"></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 8px;">Health Allowance</td>
+                            <td style="padding: 6px 8px; text-align: right;" id="ps-allow-health">MK 0</td>
+                            <td style="padding: 6px 8px; border-left: 1px solid #e2e8f0;"></td>
+                            <td style="padding: 6px 8px; text-align: right;"></td>
+                        </tr>
+                        <tr style="background: #f1f5f9; font-weight: bold; border-top: 1px solid #cbd5e1;">
+                            <td style="padding: 8px;">Gross Earnings</td>
+                            <td style="padding: 8px; text-align: right; color: #0284c7;" id="ps-gross">MK 0</td>
+                            <td style="padding: 8px; border-left: 1px solid #cbd5e1;">Total Deductions</td>
+                            <td style="padding: 8px; text-align: right; color: #dc2626;" id="ps-total-deductions">MK 0</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="border: 2px solid #059669; border-radius: 8px; padding: 12px; text-align: center; background: #ecfdf5; margin-bottom: 20px;">
+                    <div style="font-size: 0.8rem; color: #065f46; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">NET PAYABLE TO STAFF</div>
+                    <div id="ps-net" style="font-size: 1.8rem; font-weight: 800; color: #059669;">MK 0</div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.78rem; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
+                    <div>
+                        <p style="margin:0 0 25px 0;">Employer Signature / Stamp:</p>
+                        <p style="margin:0; font-weight:bold; color:#334155;">_______________________</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin:0;">Generated by: <span id="ps-generated-by">Admin</span></p>
+                        <p style="margin:4px 0 0 0; font-style:italic;">Malawi School OS · Payroll System</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" id="btn-print-payslip-action" class="btn primary-btn" style="flex: 1; background: #0284c7;">🖨️ Print Payslip</button>
+                <button type="button" id="btn-close-payslip-modal" class="btn outline-btn" style="flex: 1; border-color: #cbd5e1; color: #475569;">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
