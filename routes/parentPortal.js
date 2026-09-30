@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 
 const { readDb, writeDb } = require('../db');
 const { JWT_SECRET } = require('../middleware/auth');
+const { generatePDF } = require('../services/pdfService');
 
 // Normalise phone: strip non-digits, return last 9 digits for suffix matching
 function normPhone(p) {
@@ -59,8 +60,13 @@ router.post('/parent-portal/login', (req, res) => {
 // ── Middleware: verify parent JWT ──────────────────────────────────────
 function authenticateParent(req, res, next) {
     const auth = req.headers.authorization;
-    if (!auth || !auth.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorised' });
-    const token = auth.slice(7);
+    let token = null;
+    if (auth && auth.startsWith('Bearer ')) {
+        token = auth.slice(7);
+    } else if (req.query.token) {
+        token = req.query.token;
+    }
+    if (!token) return res.status(401).json({ error: 'Unauthorised' });
     try {
         req.parentUser = jwt.verify(token, JWT_SECRET);
         next();
@@ -238,6 +244,78 @@ router.delete('/parent-portal/notices/:id', authenticateToken, requireAdmin, (re
     db.notices = db.notices.filter(n => n.id !== req.params.id);
     writeDb();
     res.json({ success: true });
+});
+
+// ── GET /api/parent-portal/pdf ──────────────────────────────────────────
+// Query: studentId, termIndex (optional), download (optional 'true')
+router.get('/parent-portal/pdf', authenticateParent, async (req, res) => {
+    const { studentIds, studentId: singleId, schoolId } = req.parentUser;
+    const ids = (studentIds || (singleId ? [singleId] : [])).map(String);
+    const targetId = String(req.query.studentId || ids[0] || '');
+    const hasTermIndex = req.query.termIndex !== undefined && req.query.termIndex !== null && req.query.termIndex !== '';
+    const termIndex = hasTermIndex ? parseInt(req.query.termIndex, 10) : null;
+    const download = req.query.download === 'true';
+
+    if (!ids.includes(targetId)) return res.status(403).json({ error: 'Forbidden' });
+
+    const db = readDb(schoolId);
+    const student = (db.students || []).find(s => String(s.id) === targetId);
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+
+    let pdfStudent = student;
+    let pdfDb = JSON.parse(JSON.stringify(db));
+
+    if (hasTermIndex && !isNaN(termIndex) && student.academicHistory && student.academicHistory[termIndex]) {
+        const arc = student.academicHistory[termIndex];
+        if (arc.termName) pdfDb.settings.currentTerm = arc.termName;
+
+        const subjectsObj = {};
+        Object.keys(arc.subjectScores || {}).forEach(sub => {
+            subjectsObj[sub] = true;
+        });
+
+        pdfStudent = {
+            id: student.id,
+            name: student.name,
+            gender: student.gender,
+            classLevel: arc.classLevel || student.classLevel,
+            rank: arc.position || 1,
+            juniorTotalScore: arc.totalScore || 0,
+            mscePoints: arc.totalScore || 0,
+            subjects: subjectsObj,
+            marks: arc.subjectScores || {},
+            catMarks: {},
+            examMarks: {}
+        };
+    } else {
+        // Current term check: fee lock gate
+        const sections = db.settings.sections || [];
+        const defaultSection = sections.find(s => s.isDefault) || sections[0] || { fee: 0 };
+        const studentSection = sections.find(s => s.id === student.section) || defaultSection;
+        const expectedFee = Number(studentSection.fee) || 0;
+        const paidAmount = Number(student.paidAmount) || 0;
+        const feeBalance = expectedFee - paidAmount;
+
+        if (feeBalance > 0 && !student.feeLockOverride) {
+            return res.status(403).send("Report card locked due to outstanding fee balance.");
+        }
+    }
+
+    try {
+        const pdfBytes = await generatePDF(pdfStudent, pdfDb);
+        const fileName = `${pdfStudent.name.replace(/\s+/g, '_')}_Report.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        if (download) {
+            res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        } else {
+            res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+        }
+        res.send(Buffer.from(pdfBytes));
+    } catch (e) {
+        console.error("Parent portal PDF error:", e);
+        res.status(500).send("Error generating PDF report: " + e.message);
+    }
 });
 
 module.exports = router;

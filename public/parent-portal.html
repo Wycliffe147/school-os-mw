@@ -418,6 +418,23 @@
     </div>
 </div>
 
+<!-- PDF Preview Modal -->
+<div id="portal-pdf-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:var(--bg-card); width:92%; max-width:920px; height:85vh; border-radius:12px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.6); border: 1px solid var(--border-color);">
+        <div style="padding:14px 20px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:var(--bg-primary);">
+            <h3 id="portal-pdf-title" style="margin:0; font-size:1.1rem; color:var(--text-primary); font-weight:600;">📄 Report Card Preview</h3>
+            <button id="portal-pdf-close-x" onclick="closePortalPdfModal()" style="background:transparent; border:none; color:var(--text-secondary); font-size:1.6rem; cursor:pointer; line-height:1;">&times;</button>
+        </div>
+        <div style="flex:1; background:#525659; position:relative;">
+            <iframe id="portal-pdf-iframe" style="width:100%; height:100%; border:none;" src="about:blank"></iframe>
+        </div>
+        <div style="padding:12px 20px; border-top:1px solid var(--border-color); display:flex; justify-content:flex-end; gap:12px; background:var(--bg-primary);">
+            <a id="portal-pdf-download-btn" href="#" download class="btn primary-btn" style="text-decoration:none; padding:8px 18px; font-size:0.9rem;">📥 Download PDF</a>
+            <button onclick="closePortalPdfModal()" class="btn outline-btn" style="padding:8px 18px; font-size:0.9rem;">Close</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // ── State ──
     let portalToken = null;
@@ -744,13 +761,27 @@
         const marks = s.marks || {};
         const subjects = Object.keys(marks);
 
-        const container = document.getElementById('marks-table-container');
-        if (!subjects.length) {
-            container.innerHTML = '<p style="color:var(--text-secondary); padding:10px 0;">No marks recorded yet.</p>';
-            return;
-        }
+        const total = Number(s.expectedFee || 0);
+        const paid  = Number(s.paidAmount || 0);
+        const bal   = total - paid;
+        const canViewPdf = bal <= 0 || s.feeLockOverride;
 
-        container.innerHTML = `
+        const pdfActions = canViewPdf ? `
+            <div style="margin-bottom:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <button onclick="openPortalPdfModal(null, 'Current Term')" class="btn outline-btn" style="padding:8px 16px; font-size:0.88rem; cursor:pointer;">
+                    👁️ Preview Report Card PDF
+                </button>
+                <a href="/api/parent-portal/pdf?token=${encodeURIComponent(portalToken)}&studentId=${encodeURIComponent(s.id)}&download=true" download class="btn primary-btn" style="padding:8px 16px; font-size:0.88rem; text-decoration:none;">
+                    📥 Download Report Card PDF
+                </a>
+            </div>
+        ` : `
+            <div style="margin-bottom:16px; padding:10px 14px; background:rgba(239,68,68,0.1); border:1px solid var(--accent-danger); border-radius:6px; color:var(--accent-danger); font-size:0.85rem;">
+                🔒 Full Report Card PDF download is locked due to an outstanding fee balance of MK ${bal.toLocaleString()}.
+            </div>
+        `;
+
+        container.innerHTML = pdfActions + `
             <table class="portal-table">
                 <thead><tr>
                     <th>Subject</th>
@@ -828,36 +859,76 @@
         }
     }
 
+    function openPortalPdfModal(termIndex, termTitle) {
+        const modal = document.getElementById('portal-pdf-modal');
+        const iframe = document.getElementById('portal-pdf-iframe');
+        const titleEl = document.getElementById('portal-pdf-title');
+        const downloadBtn = document.getElementById('portal-pdf-download-btn');
+        if (!modal || !iframe || !portalStudent) return;
+
+        const termParam = (termIndex !== null && termIndex !== undefined && termIndex !== '') ? `&termIndex=${termIndex}` : '';
+        const previewUrl = `/api/parent-portal/pdf?token=${encodeURIComponent(portalToken)}&studentId=${encodeURIComponent(portalStudent.id)}${termParam}`;
+        const downloadUrl = `/api/parent-portal/pdf?token=${encodeURIComponent(portalToken)}&studentId=${encodeURIComponent(portalStudent.id)}${termParam}&download=true`;
+
+        titleEl.textContent = `📄 Report Card Preview — ${termTitle || 'Report Card'}`;
+        iframe.src = previewUrl;
+        downloadBtn.href = downloadUrl;
+        modal.style.display = 'flex';
+    }
+
+    function closePortalPdfModal() {
+        const modal = document.getElementById('portal-pdf-modal');
+        const iframe = document.getElementById('portal-pdf-iframe');
+        if (modal) modal.style.display = 'none';
+        if (iframe) iframe.src = 'about:blank';
+    }
+
     // ── Academic History ──
     function loadAcademicHistory() {
         const s = portalStudent;
-        const academicHistory = [...(s.academicHistory || [])].reverse();
+        const historyList = (s.academicHistory || []).map((a, idx) => ({ ...a, originalIndex: idx })).reverse();
 
         const acEl = document.getElementById('history-academic-container');
         if (!acEl) return;
-        if (!academicHistory.length) {
+        if (!historyList.length) {
             acEl.innerHTML = '<p style="color:var(--text-secondary);">No past academic records yet. Records appear here after each term is closed.</p>';
         } else {
-            acEl.innerHTML = academicHistory.map(a => {
-                const subjects = Object.entries(a.subjectScores || {});
-                const subjRows = subjects.map(([sub, score]) => `
-                    <tr><td>${sub}</td><td><strong>${score}</strong></td></tr>`).join('');
-                const posText = a.position ? `${a.position} / ${a.outOf}` : '—';
+            acEl.innerHTML = historyList.map(a => {
+                const posText = a.position ? `${a.position} of ${a.outOf}` : '—';
+                const previewUrl = `/api/parent-portal/pdf?token=${encodeURIComponent(portalToken)}&studentId=${encodeURIComponent(portalStudent.id)}&termIndex=${a.originalIndex}`;
+                const downloadUrl = `${previewUrl}&download=true`;
+
                 return `
-                <details style="margin-bottom:14px; border:1px solid var(--border-color); border-radius:8px; padding:12px;">
-                    <summary style="cursor:pointer; font-weight:600; font-size:1rem; list-style:none; display:flex; justify-content:space-between; align-items:center;">
-                        <span>${a.termName}${a.classLevel ? ' · ' + a.classLevel : ''}</span>
-                        <span style="font-size:0.85rem; color:var(--text-secondary);">Avg: ${a.average}% &nbsp;|&nbsp; Pos: ${posText}</span>
-                    </summary>
-                    <div style="margin-top:12px;">
-                        <div class="summary-grid" style="margin-bottom:12px;">
-                            <div class="summary-card"><div class="value">${a.totalScore}</div><div class="label">Total Score</div></div>
-                            <div class="summary-card"><div class="value">${a.average}%</div><div class="label">Average</div></div>
-                            <div class="summary-card"><div class="value">${posText}</div><div class="label">Position in Class</div></div>
+                <div style="margin-bottom:14px; border:1px solid var(--border-color); border-radius:10px; padding:16px; background:var(--bg-primary);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                        <div>
+                            <h3 style="margin:0 0 4px 0; font-size:1.1rem; color:var(--text-primary);">${a.termName}</h3>
+                            <span style="color:var(--text-secondary); font-size:0.88rem;">${a.classLevel || 'Form 1'}</span>
                         </div>
-                        ${subjRows ? `<table class="portal-table"><thead><tr><th>Subject</th><th>Score</th></tr></thead><tbody>${subjRows}</tbody></table>` : '<p style="color:var(--text-secondary); font-size:0.85rem;">No subject scores recorded.</p>'}
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button onclick="openPortalPdfModal(${a.originalIndex}, '${a.termName.replace(/'/g, "\\'")}')" class="btn outline-btn" style="padding:7px 14px; font-size:0.85rem; cursor:pointer;">
+                                👁️ Preview Report Card
+                            </button>
+                            <a href="${downloadUrl}" download class="btn primary-btn" style="padding:7px 14px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                                📥 Download
+                            </a>
+                        </div>
                     </div>
-                </details>`;
+                    <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px;">
+                        <div class="summary-card" style="padding:10px;">
+                            <div class="value" style="font-size:1.2rem;">${a.totalScore}</div>
+                            <div class="label">Total Score</div>
+                        </div>
+                        <div class="summary-card" style="padding:10px;">
+                            <div class="value" style="font-size:1.2rem;">${a.average}%</div>
+                            <div class="label">Average</div>
+                        </div>
+                        <div class="summary-card" style="padding:10px;">
+                            <div class="value" style="font-size:1.2rem;">${posText}</div>
+                            <div class="label">Position in Class</div>
+                        </div>
+                    </div>
+                </div>`;
             }).join('');
         }
     }
