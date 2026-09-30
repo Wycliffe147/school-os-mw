@@ -99,9 +99,17 @@ async function generatePDF(student, db) {
         color: rgb(theme.r, theme.g, theme.b),
     });
 
-    if (db.settings.logoPath && fs.existsSync(db.settings.logoPath)) {
+    const logoPathRaw = db.settings.logoPath;
+    // Support both legacy absolute paths and new web-URL format (/uploads/filename)
+    const resolvedLogoPath = logoPathRaw
+        ? (logoPathRaw.startsWith('/uploads/')
+            ? path.join(__dirname, '..', logoPathRaw)
+            : logoPathRaw)
+        : null;
+
+    if (resolvedLogoPath && fs.existsSync(resolvedLogoPath)) {
         try {
-            const logoBytes = fs.readFileSync(db.settings.logoPath);
+            const logoBytes = fs.readFileSync(resolvedLogoPath);
             let logoImage;
             
             const isPng = logoBytes[0] === 0x89 && logoBytes[1] === 0x50 && logoBytes[2] === 0x4E && logoBytes[3] === 0x47;

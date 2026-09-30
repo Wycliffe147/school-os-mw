@@ -96,7 +96,14 @@ router.post('/settings', requireAdmin, upload.single('logo'), (req, res) => {
     }
     
     if (req.file) {
-        db.settings.logoPath = req.file.path;
+        // Rename file to include original extension (multer strips it by default)
+        const ext = path.extname(req.file.originalname).toLowerCase() || '.png';
+        const newFilename = req.file.filename + ext;
+        const newPath = path.join(UPLOADS_DIR, newFilename);
+        const fs = require('fs');
+        fs.renameSync(req.file.path, newPath);
+        // Store a web-accessible URL, not the raw filesystem path
+        db.settings.logoPath = `/uploads/${newFilename}`;
     }
     
     writeDb();

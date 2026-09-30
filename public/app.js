@@ -1402,6 +1402,26 @@ async function loadSettings() {
     document.getElementById('school-name').value = settings.schoolName || '';
     document.getElementById('school-subtitle').value = settings.subtitle || '';
     document.getElementById('theme-color').value = settings.themeColor || '#142e5c';
+
+    // Logo preview
+    const logoWrap = document.getElementById('logo-preview-wrap');
+    const logoImg  = document.getElementById('logo-preview-img');
+    if (logoWrap && logoImg) {
+        if (settings.logoPath) {
+            logoImg.src = settings.logoPath + '?t=' + Date.now(); // cache-bust
+            logoWrap.style.display = 'block';
+        } else {
+            logoWrap.style.display = 'none';
+        }
+    }
+    // Reset file input so "Leave blank to keep logo" hint is accurate
+    const logoInput = document.getElementById('school-logo');
+    if (logoInput) {
+        logoInput.value = '';
+        logoInput.addEventListener('change', () => {
+            if (logoWrap) logoWrap.style.display = 'none'; // hide old preview while new one pending
+        }, { once: true });
+    }
     
     // Public Location & Profile
     if (document.getElementById('school-district')) {

@@ -642,6 +642,10 @@
                             <label for="school-logo">School Logo (PNG or JPG)</label>
                             <input type="file" id="school-logo" name="logo" accept="image/png, image/jpeg">
                             <small>Leave blank to keep the current logo.</small>
+                            <div id="logo-preview-wrap" style="display:none; margin-top:8px;">
+                                <span style="font-size:0.8rem; color:#aaa;">Current logo:</span><br>
+                                <img id="logo-preview-img" src="" alt="School Logo" style="max-height:72px; max-width:160px; margin-top:4px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:#fff; padding:4px;">
+                            </div>
                         </div>
                         
                         <div class="input-group" style="display: flex; gap: 15px;">
