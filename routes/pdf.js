@@ -19,9 +19,14 @@ router.post('/generate-pdf/:id', async (req, res) => {
     const student = ranked.find(s => s.id === req.params.id);
     
     if (student) {
-        const totalFees = student.totalFees || 0;
+        // Compute expected fee from the student's section
+        const sections = db.settings.sections || [];
+        const defaultSection = sections.find(s => s.isDefault) || sections[0] || { fee: 0 };
+        const studentSection = sections.find(s => s.id === student.section) || defaultSection;
+        const expectedFee = studentSection.fee || 0;
         const paidAmount = student.paidAmount || 0;
-        const feeBalance = totalFees - paidAmount;
+        const feeBalance = expectedFee - paidAmount;
+
         if (feeBalance > 0 && !student.feeLockOverride) {
             return res.status(403).json({
                 error: `Report card locked for ${student.name} due to outstanding fee balance of MK ${feeBalance.toLocaleString()}. Clear balance or enable admin override.`,

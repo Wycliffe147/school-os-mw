@@ -12,7 +12,12 @@ const upload = multer({ dest: UPLOADS_DIR });
 router.use(authenticateToken);
 
 router.get('/settings', (req, res) => {
-    res.json(readDb(req.user ? req.user.schoolId : 'default').settings);
+    const db = readDb(req.user ? req.user.schoolId : 'default');
+    // Ensure sections always returned; default: one general section
+    if (!db.settings.sections || db.settings.sections.length === 0) {
+        db.settings.sections = [{ id: 'general', name: 'General', fee: 0, isDefault: true }];
+    }
+    res.json(db.settings);
 });
 
 router.post('/settings', requireAdmin, upload.single('logo'), (req, res) => {
@@ -42,6 +47,27 @@ router.post('/settings', requireAdmin, upload.single('logo'), (req, res) => {
     if (req.body.headerContactNumber !== undefined) db.settings.headerContactNumber = req.body.headerContactNumber;
     if (req.body.catWeight !== undefined) db.settings.catWeight = Number(req.body.catWeight);
     if (req.body.examWeight !== undefined) db.settings.examWeight = Number(req.body.examWeight);
+
+    // School Sections (fee structure)
+    if (req.body.sections !== undefined) {
+        try {
+            const parsedSections = JSON.parse(req.body.sections);
+            if (Array.isArray(parsedSections) && parsedSections.length > 0) {
+                db.settings.sections = parsedSections;
+                // Ensure exactly one is default
+                const hasDefault = parsedSections.some(s => s.isDefault);
+                if (!hasDefault) db.settings.sections[0].isDefault = true;
+
+                // Migrate: assign default section to any student who has none
+                const defaultSection = db.settings.sections.find(s => s.isDefault) || db.settings.sections[0];
+                (db.students || []).forEach(student => {
+                    if (!student.section) student.section = defaultSection.id;
+                });
+            }
+        } catch (e) {
+            console.error('Error parsing sections:', e);
+        }
+    }
     
     if (req.body.masterSubjects) {
         try {

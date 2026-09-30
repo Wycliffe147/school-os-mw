@@ -39,7 +39,7 @@ router.post('/students', requireBursarOrAdmin, (req, res) => {
                 if (req.body.updates[id].name !== undefined) student.name = req.body.updates[id].name;
                 if (req.body.updates[id].phone !== undefined) student.phone = req.body.updates[id].phone;
                 if (req.body.updates[id].bursaryName !== undefined) student.bursaryName = req.body.updates[id].bursaryName;
-                if (req.body.updates[id].totalFees !== undefined) student.totalFees = Number(req.body.updates[id].totalFees);
+                if (req.body.updates[id].section !== undefined) student.section = req.body.updates[id].section;
                 if (req.body.updates[id].feeLockOverride !== undefined) student.feeLockOverride = Boolean(req.body.updates[id].feeLockOverride);
                 
                 if (req.body.updates[id].subjects) {
@@ -49,17 +49,24 @@ router.post('/students', requireBursarOrAdmin, (req, res) => {
             }
         });
     } else {
+        // Get default section from settings if not provided
+        const defaultSection = (() => {
+            const sections = db.settings.sections || [];
+            return (sections.find(s => s.isDefault) || sections[0] || { id: 'general' }).id;
+        })();
+
         db.students.push({
             id: Date.now().toString(),
             name: req.body.name,
             phone: req.body.phone,
             bursaryName: req.body.bursaryName,
             classLevel: req.body.classLevel || 'Form 1',
+            section: req.body.section || defaultSection,
             subjects: req.body.subjects || {},
             marks: {},
-            totalFees: req.body.totalFees ? Number(req.body.totalFees) : 0,
             paidAmount: 0,
             paymentHistory: [],
+            termHistory: [],
             feeLockOverride: false
         });
     }
@@ -98,9 +105,7 @@ router.post('/students/:id/payments', requireBursarOrAdmin, (req, res) => {
     res.json({
         success: true,
         receipt: paymentRecord,
-        paidAmount: student.paidAmount,
-        totalFees: student.totalFees || 0,
-        balance: (student.totalFees || 0) - student.paidAmount
+        paidAmount: student.paidAmount
     });
 });
 
@@ -122,11 +127,63 @@ router.delete('/students/:id/payments/:receiptNo', requireBursarOrAdmin, (req, r
     writeDb();
     res.json({
         success: true,
-        paidAmount: student.paidAmount,
-        totalFees: student.totalFees || 0,
-        balance: (student.totalFees || 0) - student.paidAmount
+        paidAmount: student.paidAmount
     });
 });
+
+// Override fee lock for a student
+router.post('/students/:id/fee-lock-override', requireBursarOrAdmin, (req, res) => {
+    const db = readDb(req.user ? req.user.schoolId : 'default');
+    const student = db.students.find(s => s.id === req.params.id);
+    if (!student) return res.status(404).json({ error: "Student not found" });
+    student.feeLockOverride = Boolean(req.body.override);
+    writeDb();
+    res.json({ success: true });
+});
+
+// Start New Term — archive current term data, reset payment state for all students
+router.post('/fee-ledger/start-new-term', requireBursarOrAdmin, (req, res) => {
+    const db = readDb(req.user ? req.user.schoolId : 'default');
+    const { termName } = req.body;
+    if (!termName || !termName.trim()) {
+        return res.status(400).json({ error: 'termName is required (e.g. "Term 2 2026")' });
+    }
+
+    const sections = db.settings.sections || [];
+    const getSection = (sectionId) => sections.find(s => s.id === sectionId);
+    const defaultSection = sections.find(s => s.isDefault) || sections[0] || { id: 'general', name: 'General', fee: 0 };
+
+    let studentCount = 0;
+    (db.students || []).forEach(student => {
+        const section = getSection(student.section) || defaultSection;
+        const expectedFee = section.fee || 0;
+        const paidAmount = student.paidAmount || 0;
+
+        // Archive snapshot
+        if (!student.termHistory) student.termHistory = [];
+        student.termHistory.push({
+            termName: termName.trim(),
+            section: section.id,
+            sectionName: section.name,
+            expectedFee,
+            paidAmount,
+            balance: Math.max(0, expectedFee - paidAmount),
+            paymentHistory: [...(student.paymentHistory || [])],
+            archivedAt: new Date().toISOString()
+        });
+
+        // Reset for new term
+        student.paidAmount = 0;
+        student.paymentHistory = [];
+        student.feeLockOverride = false;
+        studentCount++;
+    });
+
+    writeDb();
+    res.json({ success: true, studentCount, termName: termName.trim() });
+});
+
+
 
 // Save Daily Attendance Register
 router.post('/attendance', (req, res) => {
@@ -189,16 +246,6 @@ router.get('/students/:id/attendance-summary', (req, res) => {
     res.json({ present, absent, late, excused, totalDays });
 });
 
-// Toggle Fee Lock Override for a student
-router.post('/students/:id/fee-lock-override', requireBursarOrAdmin, (req, res) => {
-    const db = readDb(req.user ? req.user.schoolId : 'default');
-    const student = db.students.find(s => s.id === req.params.id);
-    if (!student) return res.status(404).json({ error: "Student not found" });
-
-    student.feeLockOverride = Boolean(req.body.override);
-    writeDb();
-    res.json({ success: true, feeLockOverride: student.feeLockOverride });
-});
 
 router.delete('/students/:id', requireAdmin, (req, res) => {
     const db = readDb(req.user ? req.user.schoolId : 'default');

@@ -2,6 +2,7 @@ let students = [];
 let masterSubjects = [];
 let subjectsList = [];
 let subjectsMap = {};
+let schoolSections = []; // School enrollment sections with fees
 
 window.hasUnsavedChanges = false;
 
@@ -21,6 +22,37 @@ async function loadGlobals() {
         subjectsList = masterSubjects.filter(s => s.active).map(s => s.name).sort();
         subjectsMap = {};
         masterSubjects.forEach(s => subjectsMap[s.name] = s.abbr);
+
+        // Load school sections
+        schoolSections = (settings.sections && settings.sections.length > 0)
+            ? settings.sections
+            : [{ id: 'general', name: 'General', fee: 0, isDefault: true }];
+
+        // Populate student section dropdown (only show if >1 section)
+        const sectionGroup = document.getElementById('student-section-group');
+        const sectionSelect = document.getElementById('student-section');
+        if (sectionGroup && sectionSelect) {
+            if (schoolSections.length > 1) {
+                sectionSelect.innerHTML = schoolSections.map(sec =>
+                    `<option value="${sec.id}" ${sec.isDefault ? 'selected' : ''}>${sec.name} (MK ${Number(sec.fee).toLocaleString()})</option>`
+                ).join('');
+                sectionGroup.style.display = '';
+            } else {
+                sectionGroup.style.display = 'none';
+            }
+        }
+
+        // Populate fee ledger section filter (only show if >1 section)
+        const feeSectionFilterContainer = document.getElementById('fee-section-filter-container');
+        const feeSectionFilter = document.getElementById('fee-section-filter');
+        if (feeSectionFilter) {
+            feeSectionFilter.innerHTML = '<option value="ALL">All Sections</option>' +
+                schoolSections.map(sec => `<option value="${sec.id}">${sec.name}</option>`).join('');
+        }
+        if (feeSectionFilterContainer) {
+            feeSectionFilterContainer.style.display = schoolSections.length > 1 ? '' : 'none';
+        }
+
         const sidebarSchoolName = document.getElementById('sidebar-school-name');
         if (sidebarSchoolName && settings.schoolName) {
             sidebarSchoolName.innerText = settings.schoolName;
@@ -820,10 +852,14 @@ document.getElementById('add-student-form').addEventListener('submit', async (e)
     const onBursary = document.getElementById('student-on-bursary').checked;
     const bursaryName = onBursary ? document.getElementById('student-bursary-name').value : '';
     
+    // Get section — if only 1 section, the server will use the default
+    const sectionEl = document.getElementById('student-section');
+    const section = (sectionEl && schoolSections.length > 1) ? sectionEl.value : undefined;
+
     const res = await apiFetch('/api/students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, bursaryName, classLevel: currentClass, subjects: {} })
+        body: JSON.stringify({ name, phone, bursaryName, classLevel: currentClass, section, subjects: {} })
     });
     
     if (res.ok) {
@@ -1413,6 +1449,15 @@ async function loadSettings() {
         mtbody.innerHTML = '';
         (settings.masterSubjects || []).forEach(sub => addMasterSubjectRow(sub));
     }
+
+    const stbody = document.getElementById('sections-tbody');
+    if (stbody) {
+        stbody.innerHTML = '';
+        const sections = (settings.sections && settings.sections.length > 0)
+            ? settings.sections
+            : [{ id: 'general', name: 'General', fee: settings.defaultTermFee || 0, isDefault: true }];
+        sections.forEach(sec => addSectionRow(sec));
+    }
 }
 
 // GPS detection button in Settings
@@ -1438,6 +1483,35 @@ if (btnDetectGps) {
         );
     });
 }
+
+function addSectionRow(section = { id: '', name: '', fee: 0, isDefault: false }) {
+    const tbody = document.getElementById('sections-tbody');
+    if (!tbody) return;
+    const tr = document.createElement('tr');
+    const secId = section.id || ('sec_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
+    tr.setAttribute('data-id', secId);
+    tr.innerHTML = `
+        <td><input type="text" class="sec-name" value="${section.name || ''}" placeholder="e.g. Day School" required style="width: 150px;"></td>
+        <td><input type="number" class="sec-fee" value="${section.fee !== undefined ? section.fee : ''}" placeholder="e.g. 30000" min="0" required style="width: 110px;"></td>
+        <td><input type="radio" name="defaultSectionRadio" class="sec-default" ${section.isDefault ? 'checked' : ''} style="cursor:pointer;"></td>
+        <td><button type="button" class="btn danger-btn remove-section-btn" style="padding:5px;">Remove</button></td>
+    `;
+    tr.querySelector('.remove-section-btn').addEventListener('click', () => {
+        if (tbody.querySelectorAll('tr').length <= 1) {
+            alert('A school must have at least one section.');
+            return;
+        }
+        tr.remove();
+        if (!tbody.querySelector('input.sec-default:checked')) {
+            const firstRadio = tbody.querySelector('input.sec-default');
+            if (firstRadio) firstRadio.checked = true;
+        }
+    });
+    tbody.appendChild(tr);
+}
+
+const addSecBtn = document.getElementById('add-section-btn');
+if (addSecBtn) addSecBtn.addEventListener('click', () => addSectionRow());
 
 function addMasterSubjectRow(sub = {name: '', abbr: '', active: true}) {
     const tbody = document.getElementById('master-subjects-tbody');
@@ -1497,6 +1571,23 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
     if (document.getElementById('fac-sports')?.checked) facilities.push('Sports Ground');
     formData.append('facilities', JSON.stringify(facilities));
 
+    // School Sections
+    const sections = [];
+    document.querySelectorAll('#sections-tbody tr').forEach(tr => {
+        const id = tr.getAttribute('data-id') || ('sec_' + Date.now());
+        const name = tr.querySelector('.sec-name').value.trim();
+        const fee = Number(tr.querySelector('.sec-fee').value || 0);
+        const isDefault = tr.querySelector('.sec-default').checked;
+        if (name) {
+            sections.push({ id, name, fee, isDefault });
+        }
+    });
+    if (sections.length === 0) {
+        sections.push({ id: 'general', name: 'General', fee: 0, isDefault: true });
+    }
+    if (!sections.some(s => s.isDefault)) sections[0].isDefault = true;
+    formData.append('sections', JSON.stringify(sections));
+
     const rules = [];
     document.querySelectorAll('#grading-tbody tr').forEach(tr => {
         rules.push({
@@ -1550,7 +1641,18 @@ document.getElementById('preview-design-btn').addEventListener('click', () => {
 // ── 💰 Fee Ledger UI Implementation ────────────────────────────────
 let feeLedgerSearchTerm = '';
 let feeLedgerClassFilter = 'SELECTED';
+let feeLedgerSectionFilter = 'ALL';
 let feeLedgerStatusFilter = 'ALL';
+
+function getStudentExpectedFee(student) {
+    const sections = schoolSections && schoolSections.length > 0
+        ? schoolSections
+        : [{ id: 'general', name: 'General', fee: 0, isDefault: true }];
+    const found = sections.find(s => s.id === student.section);
+    if (found) return { fee: Number(found.fee || 0), name: found.name, id: found.id };
+    const def = sections.find(s => s.isDefault) || sections[0];
+    return { fee: Number(def.fee || 0), name: def.name, id: def.id };
+}
 
 async function renderFeesTab() {
     try {
@@ -1575,6 +1677,14 @@ async function renderFeesTab() {
         targetStudents = students.filter(s => (s.classLevel || 'Form 1') === feeLedgerClassFilter);
     }
 
+    // Filter by section filter
+    if (feeLedgerSectionFilter !== 'ALL') {
+        targetStudents = targetStudents.filter(s => {
+            const sec = getStudentExpectedFee(s);
+            return sec.id === feeLedgerSectionFilter;
+        });
+    }
+
     // Filter by search term
     if (feeLedgerSearchTerm) {
         const term = feeLedgerSearchTerm.toLowerCase();
@@ -1584,13 +1694,13 @@ async function renderFeesTab() {
     // Filter by payment / lock status
     if (feeLedgerStatusFilter === 'HAS_BALANCE') {
         targetStudents = targetStudents.filter(s => {
-            const tf = Number(s.totalFees || 0);
+            const tf = getStudentExpectedFee(s).fee;
             const pa = Number(s.paidAmount || 0);
             return (tf - pa) > 0;
         });
     } else if (feeLedgerStatusFilter === 'CLEARED') {
         targetStudents = targetStudents.filter(s => {
-            const tf = Number(s.totalFees || 0);
+            const tf = getStudentExpectedFee(s).fee;
             const pa = Number(s.paidAmount || 0);
             return (tf - pa) <= 0;
         });
@@ -1598,7 +1708,7 @@ async function renderFeesTab() {
         targetStudents = targetStudents.filter(s => Boolean(s.bursaryName && s.bursaryName.trim()));
     } else if (feeLedgerStatusFilter === 'LOCKED') {
         targetStudents = targetStudents.filter(s => {
-            const tf = Number(s.totalFees || 0);
+            const tf = getStudentExpectedFee(s).fee;
             const pa = Number(s.paidAmount || 0);
             return (tf - pa) > 0 && !s.feeLockOverride;
         });
@@ -1617,11 +1727,12 @@ async function renderFeesTab() {
     let bursaryCount = 0;
 
     if (targetStudents.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 30px;">No students match the current fee filter criteria.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 30px;">No students match the current fee filter criteria.</td></tr>`;
     }
 
     targetStudents.forEach(student => {
-        const tf = Number(student.totalFees || 0);
+        const secObj = getStudentExpectedFee(student);
+        const tf = secObj.fee;
         const pa = Number(student.paidAmount || 0);
         const bal = tf - pa;
         const isBursary = Boolean(student.bursaryName && student.bursaryName.trim());
@@ -1648,15 +1759,24 @@ async function renderFeesTab() {
         const paymentCount = (student.paymentHistory || []).length;
         const bursaryTag = isBursary ? `<div style="margin-top: 3px;"><span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #c4b5fd; border: 1px solid #8b5cf6; font-size: 0.72rem; padding: 2px 6px;">🎓 ${student.bursaryName}</span></div>` : '';
 
+        let sectionTdHtml = '';
+        if (schoolSections.length > 1) {
+            const opts = schoolSections.map(sec =>
+                `<option value="${sec.id}" ${sec.id === secObj.id ? 'selected' : ''}>${sec.name} (MK ${Number(sec.fee).toLocaleString()})</option>`
+            ).join('');
+            sectionTdHtml = `<select class="student-section-select" data-id="${student.id}" data-current-sec="${secObj.id}" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-primary); color: white; font-size: 0.85rem; cursor: pointer;">${opts}</select>`;
+        } else {
+            sectionTdHtml = `<span style="font-weight: 500; font-size: 0.85rem; color: var(--text-primary);">${secObj.name}</span>`;
+        }
+
         tr.innerHTML = `
             <td>
                 <strong>${student.name}</strong>
                 ${bursaryTag}
             </td>
             <td>${student.classLevel || 'Form 1'}</td>
-            <td>
-                <input type="number" class="fee-input" value="${tf}" min="0" style="width: 110px; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-primary); color: white; font-weight: 600;" data-id="${student.id}">
-            </td>
+            <td>${sectionTdHtml}</td>
+            <td style="font-weight: 600; color: var(--text-primary);">MK ${tf.toLocaleString()}</td>
             <td style="color: var(--text-primary);">MK ${pa.toLocaleString()}</td>
             <td style="color: ${bal > 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}; font-weight: bold;">
                 MK ${bal.toLocaleString()}
@@ -1674,20 +1794,38 @@ async function renderFeesTab() {
             </td>
         `;
 
-        // Update fee amount change handler
-        tr.querySelector('.fee-input').addEventListener('change', async (e) => {
-            const sid = e.target.getAttribute('data-id');
-            const newFee = Math.max(0, Number(e.target.value));
-            e.target.value = newFee;
-            const updates = {};
-            updates[sid] = { totalFees: newFee };
-            await apiFetch('/api/students', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ updates })
+        // Section change listener with warning dialog
+        const secSelect = tr.querySelector('.student-section-select');
+        if (secSelect) {
+            secSelect.addEventListener('change', async (e) => {
+                const sid = e.target.getAttribute('data-id');
+                const oldSecId = e.target.getAttribute('data-current-sec');
+                const newSecId = e.target.value;
+
+                const oldSec = schoolSections.find(s => s.id === oldSecId) || { name: 'Previous Section', fee: 0 };
+                const newSec = schoolSections.find(s => s.id === newSecId) || { name: 'New Section', fee: 0 };
+
+                const confirmMsg = `⚠️ Change section for ${student.name}?\n\n` +
+                    `From: ${oldSec.name} (MK ${Number(oldSec.fee).toLocaleString()})\n` +
+                    `To: ${newSec.name} (MK ${Number(newSec.fee).toLocaleString()})\n\n` +
+                    `Existing payments of MK ${pa.toLocaleString()} will now count toward the new fee balance of MK ${Math.max(0, Number(newSec.fee) - pa).toLocaleString()}.\n\n` +
+                    `Proceed?`;
+
+                if (!confirm(confirmMsg)) {
+                    e.target.value = oldSecId;
+                    return;
+                }
+
+                const updates = {};
+                updates[sid] = { section: newSecId };
+                await apiFetch('/api/students', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ updates })
+                });
+                renderFeesTab();
             });
-            renderFeesTab();
-        });
+        }
 
         // Record payment click handler
         tr.querySelector('.btn-pay').addEventListener('click', () => {
@@ -1747,15 +1885,17 @@ document.getElementById('btn-export-fees')?.addEventListener('click', () => {
     let target = students;
     if (feeLedgerClassFilter === 'SELECTED') target = students.filter(s => (s.classLevel || 'Form 1') === currentClass);
     else if (feeLedgerClassFilter !== 'ALL') target = students.filter(s => (s.classLevel || 'Form 1') === feeLedgerClassFilter);
+    if (feeLedgerSectionFilter !== 'ALL') target = target.filter(s => getStudentExpectedFee(s).id === feeLedgerSectionFilter);
     
-    let csv = 'Student ID,Full Name,Class Level,Bursary,Total Fees (MK),Paid Amount (MK),Balance (MK),Fee Lock Override\n';
+    let csv = 'Student ID,Full Name,Class Level,Section,Bursary,Expected Fee (MK),Paid Amount (MK),Balance (MK),Fee Lock Override\n';
     target.forEach(s => {
-        const tf = Number(s.totalFees || 0);
+        const secObj = getStudentExpectedFee(s);
+        const tf = secObj.fee;
         const pa = Number(s.paidAmount || 0);
         const bal = tf - pa;
         const bursary = (s.bursaryName || '').replace(/,/g, ' ');
         const name = (s.name || '').replace(/,/g, ' ');
-        csv += `"${s.id}","${name}","${s.classLevel || 'Form 1'}","${bursary}",${tf},${pa},${bal},${s.feeLockOverride ? 'YES' : 'NO'}\n`;
+        csv += `"${s.id}","${name}","${s.classLevel || 'Form 1'}","${secObj.name}","${bursary}",${tf},${pa},${bal},${s.feeLockOverride ? 'YES' : 'NO'}\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1781,11 +1921,12 @@ function openPaymentModal(studentId, studentName) {
     document.getElementById('payment-student-id').value = studentId;
     document.getElementById('payment-student-name').innerText = `${studentName} (${s.classLevel || 'Form 1'})`;
     
-    const tf = Number(s.totalFees || 0);
+    const secObj = getStudentExpectedFee(s);
+    const tf = secObj.fee;
     const pa = Number(s.paidAmount || 0);
     const bal = tf - pa;
 
-    document.getElementById('pay-modal-term-fee').innerText = `MK ${tf.toLocaleString()}`;
+    document.getElementById('pay-modal-term-fee').innerText = `MK ${tf.toLocaleString()} (${secObj.name})`;
     document.getElementById('pay-modal-paid').innerText = `MK ${pa.toLocaleString()}`;
     document.getElementById('pay-modal-balance').innerText = `MK ${bal.toLocaleString()}`;
 
@@ -1854,7 +1995,8 @@ function renderPaymentHistoryList(student) {
                         student.paymentHistory = student.paymentHistory.filter(x => x.receiptNo !== p.receiptNo);
                         
                         // Update modal numbers
-                        const newBal = (student.totalFees || 0) - student.paidAmount;
+                        const secObj = getStudentExpectedFee(student);
+                        const newBal = secObj.fee - student.paidAmount;
                         document.getElementById('pay-modal-paid').innerText = `MK ${student.paidAmount.toLocaleString()}`;
                         document.getElementById('pay-modal-balance').innerText = `MK ${newBal.toLocaleString()}`;
                         
@@ -1928,10 +2070,11 @@ function openReceiptModal(student, payment) {
     document.getElementById('receipt-note').innerText = payment.note || 'Term Tuition Fee Payment';
     document.getElementById('receipt-amount').innerText = `MK ${Number(payment.amount).toLocaleString()}`;
     
-    const tf = Number(student.totalFees || 0);
+    const secObj = getStudentExpectedFee(student);
+    const tf = secObj.fee;
     const pa = Number(student.paidAmount || 0);
     const bal = tf - pa;
-    document.getElementById('receipt-total-fee').innerText = `MK ${tf.toLocaleString()}`;
+    document.getElementById('receipt-total-fee').innerText = `MK ${tf.toLocaleString()} (${secObj.name})`;
     document.getElementById('receipt-balance').innerText = `MK ${bal.toLocaleString()}`;
     document.getElementById('receipt-recorded-by').innerText = payment.recordedBy || 'Admin';
 
@@ -1967,57 +2110,27 @@ document.getElementById('btn-print-receipt-action')?.addEventListener('click', (
     printWindow.document.close();
 });
 
-// Batch Set Fee Modal Logic
-document.getElementById('btn-batch-set-fees')?.addEventListener('click', () => {
-    document.getElementById('batch-fee-amount').value = '';
-    const classScopeLabel = document.getElementById('batch-scope-class-name');
-    if (classScopeLabel) classScopeLabel.innerText = currentClass;
-    document.getElementById('batch-fee-modal').style.display = 'flex';
-});
+// Start New Term Action
+document.getElementById('btn-start-new-term')?.addEventListener('click', async () => {
+    const termName = prompt('⚠️ START NEW TERM\n\nThis will archive current payment records to student history and reset balances to MK 0 for all students for the new term.\n\nEnter the name for the new term (e.g. "Term 2 2026"):');
+    if (!termName || !termName.trim()) return;
 
-document.getElementById('batch-fee-cancel-btn')?.addEventListener('click', () => {
-    document.getElementById('batch-fee-modal').style.display = 'none';
-});
-
-document.getElementById('batch-fee-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const defaultFee = Number(document.getElementById('batch-fee-amount').value);
-    if (isNaN(defaultFee) || defaultFee < 0) return alert('Please enter a valid non-negative fee amount.');
-
-    const scopeRadio = document.querySelector('input[name="batchScope"]:checked');
-    const isEntireSchool = scopeRadio && scopeRadio.value === 'all';
-    const excludeBursary = document.getElementById('batch-exclude-bursary')?.checked;
-
-    const updates = {};
-    let affectedCount = 0;
-
-    students.forEach(s => {
-        const matchesScope = isEntireSchool || (s.classLevel || 'Form 1') === currentClass;
-        const isBursary = Boolean(s.bursaryName && s.bursaryName.trim());
-        
-        if (matchesScope) {
-            if (excludeBursary && isBursary) {
-                // Skip students on bursary
-                return;
-            }
-            updates[s.id] = { totalFees: defaultFee };
-            affectedCount++;
+    try {
+        const res = await apiFetch('/api/fee-ledger/start-new-term', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ termName: termName.trim() })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert(`✅ New term "${data.termName}" started! Archived term history for ${data.studentCount} student(s). All balances reset for the new term.`);
+            await renderFeesTab();
+        } else {
+            alert('Error starting new term: ' + (data.error || 'Unknown error'));
         }
-    });
-
-    if (affectedCount === 0) {
-        return alert('No students met the criteria to update.');
+    } catch(e) {
+        alert('Network error starting new term.');
     }
-
-    await apiFetch('/api/students', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ updates })
-    });
-
-    document.getElementById('batch-fee-modal').style.display = 'none';
-    await renderFeesTab();
-    alert(`✅ Default fee of MK ${defaultFee.toLocaleString()} applied to ${affectedCount} student(s).`);
 });
 
 // ── 📅 Daily Attendance UI Implementation ─────────────────────────────

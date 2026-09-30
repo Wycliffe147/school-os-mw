@@ -129,6 +129,12 @@
                                 <label for="student-bursary-name">Bursary Name</label>
                                 <input type="text" id="student-bursary-name" placeholder="e.g. Save the Children">
                             </div>
+                            <div class="input-group" id="student-section-group" style="display: none; margin-top: 10px;">
+                                <label for="student-section">Enrollment Section</label>
+                                <select id="student-section">
+                                    <!-- Populated dynamically from school sections -->
+                                </select>
+                            </div>
                             <button type="submit" class="btn primary-btn" style="margin-top: 15px;">Register Student</button>
                         </form>
                     </div>
@@ -167,7 +173,7 @@
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <button id="btn-export-fees" class="btn outline-btn" style="padding: 8px 14px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">📥 Export CSV</button>
                         <button id="btn-print-fees" class="btn outline-btn" style="padding: 8px 14px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">🖨️ Print Ledger</button>
-                        <button id="btn-batch-set-fees" class="btn primary-btn" style="padding: 8px 14px; font-size: 0.85rem;">⚙️ Batch Set Fees</button>
+                        <button id="btn-start-new-term" class="btn" style="padding: 8px 14px; font-size: 0.85rem; background: #f59e0b; color: white;">🔄 Start New Term</button>
                     </div>
                 </div>
 
@@ -213,6 +219,13 @@
                                     <option value="Form 4">Form 4</option>
                                 </select>
                             </div>
+                            <div style="display: flex; align-items: center; gap: 6px;" id="fee-section-filter-container">
+                                <label for="fee-section-filter" style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; white-space: nowrap;">Section:</label>
+                                <select id="fee-section-filter" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 0.85rem; cursor: pointer;">
+                                    <option value="ALL">All Sections</option>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
                             <div style="display: flex; align-items: center; gap: 6px;">
                                 <label for="fee-status-filter" style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; white-space: nowrap;">Status:</label>
                                 <select id="fee-status-filter" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 0.85rem; cursor: pointer;">
@@ -233,6 +246,7 @@
                                 <tr>
                                     <th>Student Name</th>
                                     <th>Class</th>
+                                    <th>Section</th>
                                     <th>Term Fee (MK)</th>
                                     <th>Paid Amount (MK)</th>
                                     <th>Balance (MK)</th>
@@ -756,7 +770,28 @@
                         </div>
 
                         <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border-color);">
-                        
+
+                        <h3>School Sections &amp; Term Fees</h3>
+                        <p class="subtitle" style="margin-bottom:15px;">Define the enrollment types at your school (e.g. Day School, Full Boarding) and set the term fee for each. Students are assigned to a section on registration.</p>
+                        <div class="table-container" style="margin-bottom: 10px;">
+                            <table id="sections-table" style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr>
+                                        <th>Section Name</th>
+                                        <th>Term Fee (MK)</th>
+                                        <th>Default?</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sections-tbody">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <button type="button" id="add-section-btn" class="btn outline-btn" style="border: 1px solid var(--primary-color); color: var(--primary-color); background: transparent; margin-bottom: 20px;">+ Add Section</button>
+
+                        <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border-color);">
+
                         <h3>Report Card Footer Details</h3>
                         <p class="subtitle" style="margin-bottom:15px;">Information displayed at the bottom of every report card.</p>
                         
