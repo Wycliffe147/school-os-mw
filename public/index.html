@@ -361,6 +361,18 @@
                     <h3 style="margin-bottom: 5px;">Manually Verify a Mobile Money Payment</h3>
                     <p class="subtitle" style="margin-bottom: 20px;">Once you confirm a mobile money reference via SMS or Airtel/TNM app, record it here to automatically update the student's fee ledger.</p>
                     <form id="mobile-money-form">
+                        <div style="display:flex; gap:10px; margin-bottom:12px;">
+                            <div class="input-group" style="flex:1; margin-bottom:0;">
+                                <label>Filter by Class</label>
+                                <select id="mm-class-filter" style="width:100%; padding:10px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-primary); color:white;">
+                                    <option value="ALL">All Students</option>
+                                </select>
+                            </div>
+                            <div class="input-group" style="flex:2; margin-bottom:0;">
+                                <label>Search Student</label>
+                                <input type="text" id="mm-student-search" placeholder="Type name to search…" style="width:100%; padding:10px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-primary); color:white; box-sizing:border-box;">
+                            </div>
+                        </div>
                         <div class="input-group" style="margin-bottom: 12px;">
                             <label>Student</label>
                             <select id="mm-student-id" required style="width:100%; padding:10px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-primary); color:white;">

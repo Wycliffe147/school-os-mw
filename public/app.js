@@ -2604,22 +2604,59 @@ document.getElementById('btn-print-payslip-action')?.addEventListener('click', (
 });
 
 // ── 📱 PHASE 3.1 — Mobile Money Verification UI ──────────────────────
+let mmAllStudents = []; // module-level cache
+
+function filterMmStudents() {
+    const classSel = document.getElementById('mm-class-filter');
+    const searchInput = document.getElementById('mm-student-search');
+    const studentSel = document.getElementById('mm-student-id');
+    if (!classSel || !searchInput || !studentSel) return;
+
+    const classFilter = classSel.value;
+    const query = searchInput.value.trim().toLowerCase();
+
+    const filtered = mmAllStudents.filter(s => {
+        const matchClass = classFilter === 'ALL' || (s.classLevel || '') === classFilter;
+        const matchSearch = !query || (s.name || '').toLowerCase().includes(query);
+        return matchClass && matchSearch;
+    });
+
+    studentSel.innerHTML = '<option value="">— Select Student —</option>';
+    filtered.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.name} (${s.classLevel || 'Form 1'})`;
+        studentSel.appendChild(opt);
+    });
+}
+
 async function renderMobileMoneyTab() {
-    const sel = document.getElementById('mm-student-id');
-    if (sel.options.length <= 1) {
+    // Only fetch once; subsequent tab visits just re-wire listeners
+    if (mmAllStudents.length === 0) {
         try {
             const res = await apiFetch('/api/students');
             if (!res.ok) return;
-            const allStudents = await res.json();
-            sel.innerHTML = '<option value="">— Select Student —</option>';
-            allStudents.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.id;
-                opt.textContent = `${s.name} (${s.classLevel || 'Form 1'})`;
-                sel.appendChild(opt);
-            });
-        } catch(e) {}
+            mmAllStudents = (await res.json()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        } catch(e) { return; }
     }
+
+    // Populate class filter with unique class levels (sorted)
+    const classSel = document.getElementById('mm-class-filter');
+    const classes = [...new Set(mmAllStudents.map(s => s.classLevel || '').filter(Boolean))].sort();
+    classSel.innerHTML = '<option value="ALL">All Students</option>';
+    classes.forEach(cl => {
+        const opt = document.createElement('option');
+        opt.value = cl;
+        opt.textContent = cl;
+        classSel.appendChild(opt);
+    });
+
+    // Wire up filter listeners (safe to re-add since we replace elements each call)
+    classSel.onchange = filterMmStudents;
+    document.getElementById('mm-student-search').oninput = filterMmStudents;
+
+    // Initial population of student dropdown
+    filterMmStudents();
 }
 
 document.getElementById('mobile-money-form').addEventListener('submit', async (e) => {
