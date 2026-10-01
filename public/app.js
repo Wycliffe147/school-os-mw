@@ -164,6 +164,8 @@ async function checkLogin() {
             document.querySelector('[data-tab="staff-tab"]').style.display = 'none';
             document.querySelector('[data-tab="whatsapp-tab"]').style.display = 'none';
             document.querySelector('[data-tab="settings-tab"]').style.display = 'none';
+            document.querySelector('[data-tab="applications-tab"]').style.display = 'none';
+            document.querySelector('[data-tab="attendance-tab"]').style.display = 'none';
 
             document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
             document.querySelector('[data-tab="students-tab"]').classList.add('active');
@@ -201,6 +203,7 @@ async function checkLogin() {
             document.querySelector('[data-tab="whatsapp-tab"]').style.display = 'none';
             document.querySelector('[data-tab="settings-tab"]').style.display = 'none';
             document.querySelector('[data-tab="superadmin-tab"]').style.display = 'none';
+            document.querySelector('[data-tab="attendance-tab"]').style.display = 'none';
             document.getElementById('nav-analytics').style.display = 'none';
 
             document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
@@ -1104,22 +1107,73 @@ document.getElementById('cancel-staff-btn').addEventListener('click', () => {
 });
 
 // 2. Marks Grid Tab
-async function renderMarksTab() {
-    await fetchStudents();
+let marksGridMode = 'quick'; // 'quick' | 'overview' - only used for class_teacher
+
+async function renderMarksTab(skipFetch) {
+    if (!skipFetch) await fetchStudents();
 
     // Subjects a plain "teacher" (or the editable subset for a "class_teacher") may enter marks for
     const editableSubjects = (currentUser.role === 'teacher' || currentUser.role === 'class_teacher') ?
         (currentUser.subjects || []).filter(s => s.startsWith(currentClass + ':')).map(s => s.split(':')[1]) :
         subjectsList;
 
-    // Columns shown: a plain teacher only sees their own subjects; class teachers and admins see all subjects
-    const allowedSubjects = currentUser.role === 'teacher' ? editableSubjects : subjectsList;
-    
+    const isClassTeacher = currentUser.role === 'class_teacher';
+
+    // Determine allowed columns based on mode
+    let allowedSubjects;
+    if (currentUser.role === 'teacher') {
+        allowedSubjects = editableSubjects;
+    } else if (isClassTeacher && marksGridMode === 'quick') {
+        allowedSubjects = editableSubjects.length > 0 ? editableSubjects : subjectsList;
+    } else {
+        allowedSubjects = subjectsList;
+    }
+
+    // --- View Toggle for class_teacher ---
+    const completionBanner = document.getElementById('marks-completion-banner');
+    if (isClassTeacher && editableSubjects.length > 0 && completionBanner) {
+        const toggleHtml = `
+            <div id="marks-grid-toggle" style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; align-items:center;">
+                <span style="font-size:0.82rem; color:var(--text-secondary); font-weight:600;">View:</span>
+                <button id="btn-marks-quick" class="btn ${marksGridMode === 'quick' ? 'primary-btn' : 'outline-btn'}"
+                    style="padding:5px 12px; font-size:0.82rem;">
+                    📝 My Subjects (Quick Entry)
+                </button>
+                <button id="btn-marks-overview" class="btn ${marksGridMode === 'overview' ? 'primary-btn' : 'outline-btn'}"
+                    style="padding:5px 12px; font-size:0.82rem;">
+                    👁 All Subjects (Overview)
+                </button>
+            </div>
+        `;
+        // Inject toggle before the banner content
+        const existingToggle = document.getElementById('marks-grid-toggle');
+        if (!existingToggle) {
+            completionBanner.insertAdjacentHTML('beforebegin', toggleHtml);
+        } else {
+            existingToggle.outerHTML = toggleHtml;
+        }
+
+        document.getElementById('btn-marks-quick').addEventListener('click', () => {
+            if (marksGridMode !== 'quick') { marksGridMode = 'quick'; renderMarksTab(true); }
+        });
+        document.getElementById('btn-marks-overview').addEventListener('click', () => {
+            if (marksGridMode !== 'overview') { marksGridMode = 'overview'; renderMarksTab(true); }
+        });
+    } else {
+        // Remove toggle if present for other roles
+        const existingToggle = document.getElementById('marks-grid-toggle');
+        if (existingToggle) existingToggle.remove();
+    }
+
     // Generate Headers
     const theadTr = document.getElementById('marks-table-header');
     theadTr.innerHTML = '<th>Student Name</th>';
     allowedSubjects.forEach(sub => {
-        theadTr.innerHTML += `<th>${sub}</th>`;
+        const isOwn = isClassTeacher && editableSubjects.includes(sub);
+        const highlight = (isClassTeacher && marksGridMode === 'overview' && isOwn)
+            ? ' style="background:rgba(59,130,246,0.13); border-left:2px solid #3b82f6; border-right:2px solid #3b82f6;"'
+            : '';
+        theadTr.innerHTML += `<th${highlight}>${sub}</th>`;
     });
     theadTr.innerHTML += `<th>Actions</th>`;
 
@@ -1141,7 +1195,6 @@ async function renderMarksTab() {
         });
     });
 
-    const completionBanner = document.getElementById('marks-completion-banner');
     if (completionBanner) {
         if (totalSlots === 0) {
             completionBanner.innerHTML = '';
@@ -1164,9 +1217,13 @@ async function renderMarksTab() {
             const canEdit = currentUser.role === 'class_teacher' ? editableSubjects.includes(sub) : true;
             const mark = isTaking && student.marks && student.marks[sub] !== undefined && student.marks[sub] !== null ? student.marks[sub] : '';
             const isMissing = isTaking && canEdit && (mark === '');
+            const isOwnCol = isClassTeacher && editableSubjects.includes(sub);
+            const colHighlight = (isClassTeacher && marksGridMode === 'overview' && isOwnCol)
+                ? 'background:rgba(59,130,246,0.07); border-left:2px solid #3b82f6; border-right:2px solid #3b82f6;'
+                : '';
             const inputStyle = `width: 60px; ${isMissing ? 'border:1px solid #f59e0b; background:rgba(245,158,11,0.08);' : ''}`;
             cols += `
-                <td>
+                <td style="${colHighlight}">
                     <input type="number" min="0" max="100" 
                            data-student-id="${student.id}" 
                            data-subject="${sub}" 
@@ -1228,6 +1285,7 @@ async function renderMarksTab() {
         });
     });
 }
+
 
 // 3. Render Rankings Tab
 async function renderRankingsTab() {
@@ -2535,12 +2593,18 @@ async function renderTimetableTab() {
     let scheduleData = [];
     let staffList = [];
     try {
-        const [ttRes, stRes] = await Promise.all([
-            apiFetch(`/api/timetable?classLevel=${encodeURIComponent(currentClass)}`),
-            apiFetch('/api/users')
-        ]);
+        const ttRes = await apiFetch(`/api/timetable?classLevel=${encodeURIComponent(currentClass)}`);
         if (ttRes.ok) { const d = await ttRes.json(); scheduleData = d.schedule || []; }
-        if (stRes.ok) staffList = await stRes.json();
+
+        const canSeeStaff = currentUser && (
+            currentUser.role === 'admin' ||
+            currentUser.role === 'superadmin' ||
+            currentUser.role === 'headteacher'
+        );
+        if (canSeeStaff) {
+            const stRes = await apiFetch('/api/users');
+            if (stRes.ok) staffList = await stRes.json();
+        }
     } catch(e) { grid.innerHTML = '<p>Error loading timetable.</p>'; return; }
 
     const scheduleMap = {};
