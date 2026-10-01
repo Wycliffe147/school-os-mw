@@ -16,7 +16,18 @@ router.get('/students', (req, res) => {
         // All students - no filter
     } else if (req.user.role === 'class_teacher') {
         const myClasses = req.user.classes || [];
-        ranked = ranked.filter(s => myClasses.includes(s.classLevel || 'Form 1'));
+        const teacherSubjects = req.user.subjects || [];
+        ranked = ranked.filter(s => {
+            const sClass = s.classLevel || 'Form 1';
+            if (myClasses.includes(sClass)) return true;
+            return teacherSubjects.some(sub => {
+                if (sub.includes(':')) {
+                    const [classLevel, subjectName] = sub.split(':');
+                    return sClass === classLevel && s.subjects && s.subjects[subjectName] === true;
+                }
+                return s.subjects && s.subjects[sub] === true;
+            });
+        });
     } else {
         // teacher - filter by assigned subjects
         const teacherSubjects = req.user.subjects || [];
