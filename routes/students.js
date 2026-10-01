@@ -11,10 +11,14 @@ router.get('/students', (req, res) => {
     const db = readDb(req.user ? req.user.schoolId : 'default');
     rankStudents(db);
     let ranked = db.students;
-    if (req.user.role === 'class_teacher') {
+    const fullAccessRoles = ['admin', 'superadmin', 'headteacher', 'bursar', 'discipline_master'];
+    if (fullAccessRoles.includes(req.user.role)) {
+        // All students - no filter
+    } else if (req.user.role === 'class_teacher') {
         const myClasses = req.user.classes || [];
         ranked = ranked.filter(s => myClasses.includes(s.classLevel || 'Form 1'));
-    } else if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+    } else {
+        // teacher - filter by assigned subjects
         const teacherSubjects = req.user.subjects || [];
         ranked = ranked.filter(s =>
             teacherSubjects.some(sub => {
@@ -369,7 +373,9 @@ router.post('/marks', (req, res) => {
     const db = readDb(req.user ? req.user.schoolId : 'default');
     const { id, marks } = req.body;
     
-    if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+    const fullAccessRoles = ['admin', 'superadmin', 'headteacher', 'bursar', 'discipline_master'];
+    if (!fullAccessRoles.includes(req.user.role)) {
+        // teachers and class_teachers are restricted to their assigned subjects
         const student = db.students.find(s => s.id === id);
         if (!student) {
             return res.status(404).json({ error: "Student not found" });
