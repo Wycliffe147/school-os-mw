@@ -49,6 +49,28 @@ const DISTRICT_COORDS = {
     'Zomba':       { lat: -15.3833, lng: 35.3333 }
 };
 
+function getSchoolSubjects(schoolData) {
+    if (!schoolData) return [];
+    const settings = schoolData.settings || {};
+    if (Array.isArray(schoolData.subjects) && schoolData.subjects.length > 0) {
+        return schoolData.subjects;
+    }
+    if (Array.isArray(settings.masterSubjects) && settings.masterSubjects.length > 0) {
+        const active = settings.masterSubjects
+            .filter(s => s.active !== false)
+            .map(s => (typeof s === 'string' ? s : s.name));
+        if (active.length > 0) return active;
+    }
+    if (Array.isArray(settings.subjects) && settings.subjects.length > 0) {
+        return settings.subjects;
+    }
+    return [
+        'Mathematics', 'English', 'Chichewa', 'Biology', 'Physical Science',
+        'Chemistry', 'Physics', 'Geography', 'History', 'Agriculture',
+        'Computer Studies', 'Social Studies', 'Life Skills', 'Business Studies', 'Bible Knowledge'
+    ];
+}
+
 // ── GET /api/public/explore ─────────────────────────────────────────────
 // Public endpoint for school discovery network
 router.get('/public/explore', (req, res) => {
@@ -112,7 +134,7 @@ router.get('/public/explore', (req, res) => {
                 teacherRatio,
                 approxFees,
                 facilities: settings.facilities || ['Classrooms', 'Sports Ground'],
-                subjects: settings.subjects || ['Mathematics', 'English', 'Biology', 'Physical Science', 'Chichewa', 'Geography', 'History'],
+                subjects: getSchoolSubjects(schoolData),
                 badges,
                 logoBase64: settings.logoBase64 || null,
                 admissionStatus: settings.admissionStatus || 'Open',
@@ -217,7 +239,7 @@ router.get('/public/explore/:schoolId', (req, res) => {
         admissionStatus: settings.admissionStatus || 'Open',
         admissionNotes: settings.admissionNotes || '',
         sections: settings.sections || [],
-        subjects: settings.subjects || ['Mathematics', 'English', 'Biology', 'Physical Science', 'Chichewa', 'Geography', 'History', 'Agriculture']
+        subjects: getSchoolSubjects(schoolData)
     });
 });
 
