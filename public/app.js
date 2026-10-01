@@ -1580,11 +1580,13 @@ if (btnDetectGps) {
                 document.getElementById('school-lat').value = pos.coords.latitude.toFixed(6);
                 document.getElementById('school-lng').value = pos.coords.longitude.toFixed(6);
                 btnDetectGps.innerText = '✅ Location Detected!';
-                setTimeout(() => { btnDetectGps.innerText = '📍 Detect School\'s Current GPS Location'; }, 3000);
+                const mapPinSvg = '<svg viewBox="0 0 32 32" width="14" height="14" style="vertical-align: -2px; display: inline-block;"><path fill="currentColor" d="M16 2C10.477 2 6 6.477 6 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/><ellipse cx="16" cy="30" rx="6" ry="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>';
+                setTimeout(() => { btnDetectGps.innerHTML = `${mapPinSvg} Detect School's Current GPS Location`; }, 3000);
             },
             () => {
                 alert('Could not retrieve GPS coordinates. Check browser permissions.');
-                btnDetectGps.innerText = '📍 Detect School\'s Current GPS Location';
+                const mapPinSvg = '<svg viewBox="0 0 32 32" width="14" height="14" style="vertical-align: -2px; display: inline-block;"><path fill="currentColor" d="M16 2C10.477 2 6 6.477 6 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/><ellipse cx="16" cy="30" rx="6" ry="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>';
+                btnDetectGps.innerHTML = `${mapPinSvg} Detect School's Current GPS Location`;
             }
         );
     });
