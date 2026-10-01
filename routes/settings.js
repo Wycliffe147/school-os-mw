@@ -57,6 +57,8 @@ router.post('/settings', requireAdmin, upload.fields([
     if (req.body.currentTerm !== undefined) db.settings.currentTerm = req.body.currentTerm;
     if (req.body.headerContactLabel !== undefined) db.settings.headerContactLabel = req.body.headerContactLabel;
     if (req.body.headerContactNumber !== undefined) db.settings.headerContactNumber = req.body.headerContactNumber;
+    if (req.body.admissionStatus !== undefined) db.settings.admissionStatus = req.body.admissionStatus;
+    if (req.body.admissionNotes !== undefined) db.settings.admissionNotes = req.body.admissionNotes;
     if (req.body.catWeight !== undefined) db.settings.catWeight = Number(req.body.catWeight);
     if (req.body.examWeight !== undefined) db.settings.examWeight = Number(req.body.examWeight);
 

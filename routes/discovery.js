@@ -114,7 +114,9 @@ router.get('/public/explore', (req, res) => {
                 facilities: settings.facilities || ['Classrooms', 'Sports Ground'],
                 subjects: settings.subjects || ['Mathematics', 'English', 'Biology', 'Physical Science', 'Chichewa', 'Geography', 'History'],
                 badges,
-                logoBase64: settings.logoBase64 || null
+                logoBase64: settings.logoBase64 || null,
+                admissionStatus: settings.admissionStatus || 'Open',
+                admissionNotes: settings.admissionNotes || ''
             };
         });
 
@@ -212,6 +214,10 @@ router.get('/public/explore/:schoolId', (req, res) => {
         logoBase64: settings.logoBase64 || null,
         photos: settings.photos || [],
         manebResults: settings.manebResults || [],
+        admissionStatus: settings.admissionStatus || 'Open',
+        admissionNotes: settings.admissionNotes || '',
+        sections: settings.sections || [],
+        subjects: settings.subjects || ['Mathematics', 'English', 'Biology', 'Physical Science', 'Chichewa', 'Geography', 'History', 'Agriculture']
     });
 });
 

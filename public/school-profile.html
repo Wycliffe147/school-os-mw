@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">School Profile — Discovery Network</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            color-scheme: dark;
+            --bg-primary: #0f1117;
+            --bg-secondary: #1a1d26;
+            --bg-card: #1e2130;
+            --border-color: #2e3250;
+            --text-primary: #e8eaf6;
+            --text-secondary: #94a3b8;
+            --accent-blue: #4f8ef7;
+            --accent-green: #22c55e;
+            --accent-amber: #f59e0b;
+            --accent-purple: #a855f7;
+            --accent-red: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100dvh;
+            line-height: 1.5;
+        }
+
+        /* ── Header ── */
+        .site-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: white;
+            text-decoration: none;
+        }
+
+        .header-links { display: flex; gap: 12px; align-items: center; }
+
+        .btn-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+
+        .btn-link:hover { color: white; border-color: var(--accent-blue); background: rgba(79,142,247,0.1); }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* ── Page Container ── */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 32px 20px 60px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        /* ── Hero Card ── */
+        .hero-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.4);
+        }
+
+        .hero-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .school-logo {
+            width: 88px;
+            height: 88px;
+            object-fit: contain;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .school-info { flex: 1; min-width: 260px; }
+
+        .school-title {
+            font-size: 2.1rem;
+            font-weight: 800;
+            color: white;
+            line-height: 1.2;
+            margin-bottom: 6px;
+        }
+
+        .school-motto {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-bottom: 12px;
+        }
+
+        .location-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            background: rgba(79, 142, 247, 0.12);
+            padding: 6px 14px;
+            border-radius: 99px;
+            border: 1px solid rgba(79, 142, 247, 0.3);
+        }
+
+        /* ── Admission Status Callout ── */
+        .admission-callout {
+            border-radius: 14px;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+            border: 1px solid var(--border-color);
+        }
+
+        .admission-callout.status-open {
+            background: rgba(34, 197, 94, 0.08);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .admission-callout.status-limited {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .admission-callout.status-closed {
+            background: rgba(239, 68, 68, 0.08);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .admission-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            font-weight: 800;
+            padding: 6px 14px;
+            border-radius: 99px;
+        }
+
+        .status-open .admission-status-badge {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--accent-green);
+        }
+
+        .status-limited .admission-status-badge {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-amber);
+        }
+
+        .status-closed .admission-status-badge {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+        }
+
+        /* ── Grid Sections ── */
+        .section-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 14px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+        }
+
+        .stat-card .label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 6px;
+        }
+
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+        }
+
+        /* Photo Gallery Grid */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .gallery-img:hover {
+            transform: scale(1.02);
+            border-color: var(--accent-blue);
+        }
+
+        /* MANEB Cards */
+        .maneb-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .maneb-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .maneb-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .maneb-pass-meter {
+            height: 10px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .maneb-pass-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.6s ease;
+        }
+
+        /* Facilities & Subjects badges */
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tag-badge {
+            background: rgba(79, 142, 247, 0.12);
+            color: var(--accent-blue);
+            border: 1px solid rgba(79, 142, 247, 0.3);
+            padding: 8px 16px;
+            border-radius: 99px;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        /* Application Form */
+        .apply-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .form-group input, .form-group select {
+            padding: 12px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--accent-blue);
+        }
+
+        /* Image Lightbox */
+        .lightbox-overlay {
+            position: fixed;
+            top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            padding: 20px;
+        }
+
+        .lightbox-img {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="site-header">
+        <a href="/explore.html" class="brand">
+            <span>🇲🇼</span> School Discovery Network
+        </a>
+        <div class="header-links">
+            <a href="/explore.html" class="btn-link">← Back to Explore</a>
+            <a href="/parent-portal.html" class="btn-link">🔑 Parent Portal</a>
+            <a href="#apply-section" class="btn-primary">🚀 Apply for Admission</a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container">
+
+        <!-- Hero Header -->
+        <section class="hero-card" id="hero-section">
+            <div class="hero-header">
+                <img id="school-logo-img" src="" alt="School Logo" class="school-logo" style="display:none;">
+                <div class="school-info">
+                    <h1 class="school-title" id="school-name-text">Loading School...</h1>
+                    <div class="school-motto" id="school-motto-text"></div>
+                    <div class="location-badge" id="school-location-badge">📍 Malawi</div>
+                </div>
+            </div>
+
+            <!-- Admission Space Status Callout -->
+            <div class="admission-callout status-open" id="admission-callout-box">
+                <div>
+                    <div class="admission-status-badge" id="admission-status-badge">
+                        <span>🟢</span> <span id="admission-status-label">Open for Admission</span>
+                    </div>
+                    <p style="font-size:0.9rem; color:var(--text-secondary); margin-top:8px;" id="admission-notes-text">
+                        Applications are currently being accepted.
+                    </p>
+                </div>
+                <a href="#apply-section" class="btn-primary" style="padding:12px 24px; font-size:0.95rem;">
+                    Submit Application Online
+                </a>
+            </div>
+        </section>
+
+        <!-- Key Stats Grid -->
+        <section class="stats-grid" id="stats-section">
+            <div class="stat-card">
+                <div class="label">TERMLY FEE</div>
+                <div class="value" style="color:var(--accent-green);" id="stat-fee">MK —</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">TOTAL ENROLLMENT</div>
+                <div class="value" id="stat-students">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">CONTACT NUMBER</div>
+                <div class="value" style="font-size:1.1rem; margin-top:4px;" id="stat-phone">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">LOCATION</div>
+                <div class="value" style="font-size:1.1rem; margin-top:4px;" id="stat-district">—</div>
+            </div>
+        </section>
+
+        <!-- Photo Gallery -->
+        <section class="section-card" id="gallery-section" style="display:none;">
+            <div class="section-title">
+                <span>📸</span> School Photos & Campus Gallery
+            </div>
+            <div class="gallery-grid" id="gallery-grid"></div>
+        </section>
+
+        <!-- MANEB Exam Results -->
+        <section class="section-card" id="maneb-section" style="display:none;">
+            <div class="section-title">
+                <span>🎓</span> MANEB National Examination Performance
+            </div>
+            <p style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:6px;">
+                Verified sittings record for Junior Certificate (JCE) and Malawi School Certificate of Education (MSCE).
+            </p>
+            <div class="maneb-grid" id="maneb-cards-grid"></div>
+        </section>
+
+        <!-- Student Enrollment Breakdown -->
+        <section class="section-card">
+            <div class="section-title">
+                <span>📊</span> Class Enrollment Breakdown
+            </div>
+            <div class="stats-grid" id="enrollment-forms-grid">
+                <div class="stat-card">
+                    <div class="label">FORM 1</div>
+                    <div class="value" id="count-f1">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">FORM 2</div>
+                    <div class="value" id="count-f2">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">FORM 3</div>
+                    <div class="value" id="count-f3">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">FORM 4</div>
+                    <div class="value" id="count-f4">0</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Facilities & Curriculum -->
+        <section class="section-card">
+            <div class="section-title">
+                <span>🏗️</span> Campus Facilities & Curriculum
+            </div>
+            <div>
+                <div style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:10px;">FACILITIES & AMENITIES</div>
+                <div class="tag-list" id="facilities-tags-list"></div>
+            </div>
+            <div style="margin-top:16px;">
+                <div style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:10px;">SUBJECTS OFFERED</div>
+                <div class="tag-list" id="subjects-tags-list"></div>
+            </div>
+        </section>
+
+        <!-- Fee Sections Breakdown (if multiple sections exist) -->
+        <section class="section-card" id="sections-fee-card" style="display:none;">
+            <div class="section-title">
+                <span>💳</span> Termly Fee Structure
+            </div>
+            <div class="stats-grid" id="sections-fee-grid"></div>
+        </section>
+
+        <!-- Online Admission Application Section -->
+        <section class="section-card" id="apply-section" style="border-color:var(--accent-blue);">
+            <div class="section-title" style="color:var(--accent-blue);">
+                <span>🚀</span> Apply for Admission
+            </div>
+            <p style="font-size:0.9rem; color:var(--text-secondary);">
+                Submit an instant application directly to the school administration. You will be contacted via WhatsApp/Phone.
+            </p>
+            <form id="public-apply-form" style="display:flex; flex-direction:column; gap:16px; margin-top:8px;">
+                <div class="apply-form">
+                    <div class="form-group">
+                        <label>Student Full Name *</label>
+                        <input type="text" id="app-student-name" required placeholder="e.g. Chisomo Banda">
+                    </div>
+                    <div class="form-group">
+                        <label>Parent / Guardian Name</label>
+                        <input type="text" id="app-parent-name" placeholder="e.g. Mr. Banda">
+                    </div>
+                    <div class="form-group">
+                        <label>Parent WhatsApp / Phone Number *</label>
+                        <input type="tel" id="app-parent-phone" required placeholder="e.g. 0881234567">
+                    </div>
+                    <div class="form-group">
+                        <label>Class Level Applying For *</label>
+                        <select id="app-class">
+                            <option value="Form 1">Form 1</option>
+                            <option value="Form 2">Form 2</option>
+                            <option value="Form 3">Form 3</option>
+                            <option value="Form 4">Form 4</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" style="padding:14px; font-size:1rem; width:100%;">
+                    Submit Application Now
+                </button>
+            </form>
+        </section>
+
+    </main>
+
+    <!-- Image Lightbox Modal -->
+    <div class="lightbox-overlay" id="lightbox-modal">
+        <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+        <img id="lightbox-img-el" class="lightbox-img" src="" alt="Full view">
+    </div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const schoolId = urlParams.get('id');
+
+    if (!schoolId) {
+        alert('No school specified.');
+        window.location.href = '/explore.html';
+    }
+
+    async function fetchProfile() {
+        try {
+            const res = await fetch(`/api/public/explore/${schoolId}`);
+            if (!res.ok) throw new Error('School not found');
+            const data = await res.json();
+            renderProfile(data);
+        } catch (e) {
+            document.getElementById('school-name-text').textContent = 'Error Loading School Profile';
+            console.error(e);
+        }
+    }
+
+    function renderProfile(s) {
+        document.title = `${s.schoolName} — School Profile & MANEB Performance`;
+        
+        // Header info
+        document.getElementById('school-name-text').textContent = s.schoolName;
+        document.getElementById('school-motto-text').textContent = s.motto ? `"${s.motto}"` : '';
+        document.getElementById('school-location-badge').textContent = `📍 ${s.district}, Malawi`;
+
+        // Logo
+        if (s.logoBase64) {
+            const logoImg = document.getElementById('school-logo-img');
+            logoImg.src = s.logoBase64;
+            logoImg.style.display = 'block';
+        }
+
+        // Admission Status Callout
+        const calloutBox = document.getElementById('admission-callout-box');
+        const statusBadge = document.getElementById('admission-status-badge');
+        const statusLabel = document.getElementById('admission-status-label');
+        const notesText = document.getElementById('admission-notes-text');
+
+        const status = s.admissionStatus || 'Open';
+        calloutBox.className = 'admission-callout ' + (status === 'Closed' ? 'status-closed' : status === 'Limited' ? 'status-limited' : 'status-open');
+
+        if (status === 'Closed') {
+            statusBadge.innerHTML = '<span>🔴</span> <span>Applications Closed</span>';
+            statusLabel.textContent = 'Applications Closed';
+            notesText.textContent = s.admissionNotes || 'Applications are currently closed for this session.';
+        } else if (status === 'Limited') {
+            statusBadge.innerHTML = '<span>🟡</span> <span>Limited Spaces Remaining</span>';
+            statusLabel.textContent = 'Limited Spaces Remaining';
+            notesText.textContent = s.admissionNotes || 'Spaces are limited. Submit your application early.';
+        } else {
+            statusBadge.innerHTML = '<span>🟢</span> <span>Open for Admission</span>';
+            statusLabel.textContent = 'Open for Admission';
+            notesText.textContent = s.admissionNotes || 'Applications are open. All form levels accepting candidates.';
+        }
+
+        // Key Stats
+        document.getElementById('stat-fee').textContent = s.approxFees ? `MK ${Number(s.approxFees).toLocaleString()}` : 'MK —';
+        document.getElementById('stat-students').textContent = s.totalStudents || '0';
+        document.getElementById('stat-phone').textContent = s.headerContactNumber || s.phone || 'N/A';
+        document.getElementById('stat-district').textContent = s.district || 'Malawi';
+
+        // Photos Gallery
+        if (s.photos && s.photos.length > 0) {
+            const galleryGrid = document.getElementById('gallery-grid');
+            galleryGrid.innerHTML = s.photos.map(src => `
+                <img src="${src}" class="gallery-img" onclick="openLightbox('${src}')" alt="Campus Photo">
+            `).join('');
+            document.getElementById('gallery-section').style.display = 'flex';
+        }
+
+        // MANEB Results
+        if (s.manebResults && s.manebResults.length > 0) {
+            const manebGrid = document.getElementById('maneb-cards-grid');
+            manebGrid.innerHTML = s.manebResults.map(r => {
+                const passRate = r.sat > 0 ? Math.round(r.passed / r.sat * 100) : 0;
+                const barColor = passRate >= 70 ? 'var(--accent-green)' : passRate >= 50 ? 'var(--accent-amber)' : 'var(--accent-red)';
+                return `
+                <div class="maneb-card">
+                    <div class="maneb-header">
+                        <span style="font-size:1.1rem; font-weight:800; color:white;">${r.exam} (${r.year})</span>
+                        <span style="font-size:1.3rem; font-weight:800; color:${barColor};">${passRate}% Pass</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--text-secondary);">
+                        <span>Sat: <strong style="color:white;">${r.sat}</strong></span>
+                        <span>Passed: <strong style="color:var(--accent-green);">${r.passed}</strong></span>
+                        <span>Failed: <strong style="color:var(--accent-red);">${r.failed}</strong></span>
+                    </div>
+                    <div class="maneb-pass-meter">
+                        <div class="maneb-pass-fill" style="width:${passRate}%; background:${barColor};"></div>
+                    </div>
+                </div>`;
+            }).join('');
+            document.getElementById('maneb-section').style.display = 'flex';
+        }
+
+        // Enrollment
+        const ef = s.enrollmentByForm || {};
+        document.getElementById('count-f1').textContent = ef['Form 1'] || 0;
+        document.getElementById('count-f2').textContent = ef['Form 2'] || 0;
+        document.getElementById('count-f3').textContent = ef['Form 3'] || 0;
+        document.getElementById('count-f4').textContent = ef['Form 4'] || 0;
+
+        // Facilities
+        const facMap = {
+            'Science Lab': '🔬 Science Lab',
+            'Computer Lab': '💻 Computer Lab',
+            'Boarding': '🏠 Full Boarding',
+            'Library': '📚 Library',
+            'Sports Ground': '⚽ Sports Ground'
+        };
+        const facilitiesList = (s.facilities || []).map(f => `<span class="tag-badge">${facMap[f] || f}</span>`).join('') || '<span style="color:var(--text-secondary);">No facilities listed</span>';
+        document.getElementById('facilities-tags-list').innerHTML = facilitiesList;
+
+        // Subjects
+        const subjectsList = (s.subjects || []).map(sub => `<span class="tag-badge" style="background:rgba(255,255,255,0.06); color:white; border-color:var(--border-color);">${sub}</span>`).join('');
+        document.getElementById('subjects-tags-list').innerHTML = subjectsList;
+
+        // Fee Sections
+        if (s.sections && s.sections.length > 1) {
+            const secGrid = document.getElementById('sections-fee-grid');
+            secGrid.innerHTML = s.sections.map(sec => `
+                <div class="stat-card">
+                    <div class="label">${sec.name} ${sec.isDefault ? '(DEFAULT)' : ''}</div>
+                    <div class="value" style="color:var(--accent-green);">MK ${Number(sec.fee).toLocaleString()}</div>
+                </div>
+            `).join('');
+            document.getElementById('sections-fee-card').style.display = 'flex';
+        }
+    }
+
+    // Lightbox
+    function openLightbox(src) {
+        document.getElementById('lightbox-img-el').src = src;
+        document.getElementById('lightbox-modal').style.display = 'flex';
+    }
+
+    function closeLightbox() {
+        document.getElementById('lightbox-modal').style.display = 'none';
+    }
+
+    // Apply Form Submission
+    document.getElementById('public-apply-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const studentName = document.getElementById('app-student-name').value;
+        const parentName = document.getElementById('app-parent-name').value;
+        const parentPhone = document.getElementById('app-parent-phone').value;
+        const classApplied = document.getElementById('app-class').value;
+
+        try {
+            const res = await fetch('/api/public/apply', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ schoolId, studentName, parentName, parentPhone, classApplied })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                alert(data.message || 'Application submitted successfully!');
+                document.getElementById('public-apply-form').reset();
+            } else {
+                alert('Failed to submit application. Please try again.');
+            }
+        } catch (err) {
+            alert('Error submitting application.');
+        }
+    });
+
+    fetchProfile();
+</script>
+</body>
+</html>

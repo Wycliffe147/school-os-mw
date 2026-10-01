@@ -1498,6 +1498,8 @@ async function loadSettings() {
         document.getElementById('school-district').value = settings.district || 'Blantyre';
         document.getElementById('school-address').value = settings.address || '';
         document.getElementById('school-motto').value = settings.motto || '';
+        if (document.getElementById('admission-status')) document.getElementById('admission-status').value = settings.admissionStatus || 'Open';
+        if (document.getElementById('admission-notes')) document.getElementById('admission-notes').value = settings.admissionNotes || '';
         document.getElementById('school-lat').value = settings.latitude !== undefined && settings.latitude !== null ? settings.latitude : '';
         document.getElementById('school-lng').value = settings.longitude !== undefined && settings.longitude !== null ? settings.longitude : '';
 
@@ -1683,6 +1685,9 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
     if (photosInput && photosInput.files.length > 0) {
         Array.from(photosInput.files).forEach(f => formData.append('photos', f));
     }
+
+    if (document.getElementById('admission-status')) formData.append('admissionStatus', document.getElementById('admission-status').value);
+    if (document.getElementById('admission-notes')) formData.append('admissionNotes', document.getElementById('admission-notes').value);
     
     // Facilities checklist
     const facilities = [];

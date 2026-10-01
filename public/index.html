@@ -664,6 +664,21 @@
                         <h3>📍 Public School Profile & Location</h3>
                         <p class="subtitle" style="margin-bottom:15px;">Information displayed on the public school explorer (<a href="/explore.html" target="_blank" style="color:var(--accent-blue);">Explore Schools</a>).</p>
 
+                        <div class="input-group" style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:15px;">
+                            <div style="flex:1; min-width:200px;">
+                                <label for="admission-status">Admission Space Status</label>
+                                <select id="admission-status" name="admissionStatus" style="width:100%; padding:10px; border-radius:6px; background:var(--bg-primary); color:white; border:1px solid var(--border-color);">
+                                    <option value="Open">🟢 Open for Admission (Spaces Available)</option>
+                                    <option value="Limited">🟡 Limited Spaces Remaining</option>
+                                    <option value="Closed">🔴 Applications Closed</option>
+                                </select>
+                            </div>
+                            <div style="flex:2; min-width:260px;">
+                                <label for="admission-notes">Admission Availability Note (Optional)</label>
+                                <input type="text" id="admission-notes" name="admissionNotes" placeholder="e.g. 15 spaces remaining in Form 1 & Form 3">
+                            </div>
+                        </div>
+
                         <div class="input-group">
                             <label for="school-district">District (Malawi)</label>
                             <select id="school-district" name="district" style="width:100%; padding:10px; border-radius:6px; background:var(--bg-primary); color:white; border:1px solid var(--border-color);">
