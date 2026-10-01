@@ -141,14 +141,21 @@ async function checkLogin() {
         await loadGlobals();
 
         // Restrict the global class picker to a class teacher's own assigned class(es)
+        // AND any other class they have subjects assigned in (e.g. class teacher of Form 1
+        // who also teaches a subject in Form 2 must be able to switch to Form 2)
         const classSelect = document.getElementById('global-class-select');
         if (currentUser.role === 'class_teacher') {
-            const myClasses = (currentUser.classes && currentUser.classes.length) ? currentUser.classes : CLASS_LEVELS;
+            const homeroomClasses = (currentUser.classes && currentUser.classes.length) ? currentUser.classes : [];
+            const subjectClasses = (currentUser.subjects || []).map(s => s.split(':')[0]);
+            const myClasses = [...new Set([...homeroomClasses, ...subjectClasses])]
+                .filter(c => CLASS_LEVELS.includes(c));
+            // Fallback: if nothing is configured, show all
+            const visibleClasses = myClasses.length ? myClasses : CLASS_LEVELS;
             Array.from(classSelect.options).forEach(opt => {
-                opt.style.display = myClasses.includes(opt.value) ? '' : 'none';
+                opt.style.display = visibleClasses.includes(opt.value) ? '' : 'none';
             });
-            if (!myClasses.includes(currentClass)) {
-                currentClass = myClasses[0];
+            if (!visibleClasses.includes(currentClass)) {
+                currentClass = visibleClasses[0];
                 classSelect.value = currentClass;
             }
         } else {
@@ -821,6 +828,13 @@ async function fetchStudents() {
 async function renderStudentsTab() {
     await fetchStudents();
 
+    // readOnly = true when viewing a class they are the homeroom teacher for.
+    // If they are a class_teacher but are viewing another class (where they just teach a subject),
+    // they should see a normal read-only student list without the single-column collapse.
+    const homeroomClasses = (currentUser.role === 'class_teacher')
+        ? (currentUser.classes && currentUser.classes.length ? currentUser.classes : [])
+        : [];
+    const isHomeroomForCurrent = homeroomClasses.includes(currentClass);
     const readOnly = currentUser.role === 'class_teacher';
 
     // Registration form and subject-config save are for admins only
@@ -829,9 +843,10 @@ async function renderStudentsTab() {
     const saveSubjectsBtn = document.getElementById('save-subjects-btn');
     if (saveSubjectsBtn) saveSubjectsBtn.style.display = readOnly ? 'none' : '';
 
-    // When form card is hidden, collapse to single-column so table can use full width
+    // Collapse to single-column only when they are the homeroom teacher for the current class
+    // (form card is hidden). When viewing a class they just teach a subject in, keep two-column.
     const twoCol = document.querySelector('#students-tab .two-column-layout');
-    if (twoCol) twoCol.style.gridTemplateColumns = readOnly ? '1fr' : '';
+    if (twoCol) twoCol.style.gridTemplateColumns = isHomeroomForCurrent ? '1fr' : '';
 
     // Render dynamic table headers
     const thead = document.getElementById('subjects-table-header');
@@ -1111,31 +1126,45 @@ document.getElementById('cancel-staff-btn').addEventListener('click', () => {
 });
 
 // 2. Marks Grid Tab
-let marksGridMode = 'quick'; // 'quick' | 'overview' - only used for class_teacher
+let marksGridMode = 'quick'; // 'quick' | 'overview' - only used when acting as homeroom class_teacher
 
 async function renderMarksTab(skipFetch) {
     if (!skipFetch) await fetchStudents();
 
-    // Subjects a plain "teacher" (or the editable subset for a "class_teacher") may enter marks for
-    const editableSubjects = (currentUser.role === 'teacher' || currentUser.role === 'class_teacher') ?
-        (currentUser.subjects || []).filter(s => s.startsWith(currentClass + ':')).map(s => s.split(':')[1]) :
-        subjectsList;
-
     const isClassTeacher = currentUser.role === 'class_teacher';
 
-    // Determine allowed columns based on mode
+    // Determine if they are the homeroom teacher for the CURRENTLY viewed class.
+    // A class_teacher may be homeroom for Form 1 but also teach a subject in Form 2 —
+    // in that case, when viewing Form 2 they behave like a normal subject teacher.
+    const homeroomClasses = isClassTeacher
+        ? (currentUser.classes && currentUser.classes.length ? currentUser.classes : [])
+        : [];
+    const isHomeroomForCurrent = homeroomClasses.includes(currentClass);
+
+    // Subjects this user can edit marks for in the currently viewed class
+    const editableSubjects = (currentUser.role === 'teacher' || isClassTeacher)
+        ? (currentUser.subjects || []).filter(s => s.startsWith(currentClass + ':')).map(s => s.split(':')[1])
+        : subjectsList;
+
+    // Determine which columns to display:
+    // - Admin/headteacher: all subjects
+    // - Homeroom class_teacher in quick mode: only their subjects (filtered to enrolled students)
+    // - Homeroom class_teacher in overview mode: all subjects
+    // - Non-homeroom class_teacher (subject-only) OR plain teacher: only their subjects
     let allowedSubjects;
-    if (currentUser.role === 'teacher') {
-        allowedSubjects = editableSubjects;
-    } else if (isClassTeacher && marksGridMode === 'quick') {
-        allowedSubjects = editableSubjects.length > 0 ? editableSubjects : subjectsList;
-    } else {
+    if (!isClassTeacher && currentUser.role !== 'teacher') {
+        // admin / headteacher / etc.
         allowedSubjects = subjectsList;
+    } else if (isHomeroomForCurrent && marksGridMode === 'overview') {
+        allowedSubjects = subjectsList;
+    } else {
+        // quick mode (homeroom), or non-homeroom class_teacher, or plain teacher
+        allowedSubjects = editableSubjects.length > 0 ? editableSubjects : subjectsList;
     }
 
-    // --- View Toggle for class_teacher ---
+    // --- View Toggle: only show for homeroom class ---
     const completionBanner = document.getElementById('marks-completion-banner');
-    if (isClassTeacher && editableSubjects.length > 0 && completionBanner) {
+    if (isHomeroomForCurrent && editableSubjects.length > 0 && completionBanner) {
         const toggleHtml = `
             <div id="marks-grid-toggle" style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; align-items:center;">
                 <span style="font-size:0.82rem; color:var(--text-secondary); font-weight:600;">View:</span>
@@ -1182,8 +1211,9 @@ async function renderMarksTab(skipFetch) {
     
     const classStudents = students.filter(s => (s.classLevel || 'Form 1') === currentClass);
 
-    // In quick entry mode, only show students enrolled in at least one of the allowed subjects
-    const displayStudents = (isClassTeacher && marksGridMode === 'quick')
+    // In quick entry mode (homeroom class), only show students enrolled in at least one allowed subject.
+    // For non-homeroom class (subject-only), always show all students (same as plain teacher).
+    const displayStudents = (isHomeroomForCurrent && marksGridMode === 'quick')
         ? classStudents.filter(s => allowedSubjects.some(sub => s.subjects && s.subjects[sub]))
         : classStudents;
     
