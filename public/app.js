@@ -867,13 +867,6 @@ async function fetchStudents() {
 async function renderStudentsTab() {
     await fetchStudents();
 
-    // readOnly = true when viewing a class they are the homeroom teacher for.
-    // If they are a class_teacher but are viewing another class (where they just teach a subject),
-    // they should see a normal read-only student list without the single-column collapse.
-    const homeroomClasses = (currentUser.role === 'class_teacher')
-        ? (currentUser.classes && currentUser.classes.length ? currentUser.classes : [])
-        : [];
-    const isHomeroomForCurrent = homeroomClasses.includes(currentClass);
     const readOnly = currentUser.role === 'class_teacher';
 
     // Registration form and subject-config save are for admins only
@@ -882,10 +875,9 @@ async function renderStudentsTab() {
     const saveSubjectsBtn = document.getElementById('save-subjects-btn');
     if (saveSubjectsBtn) saveSubjectsBtn.style.display = readOnly ? 'none' : '';
 
-    // Collapse to single-column only when they are the homeroom teacher for the current class
-    // (form card is hidden). When viewing a class they just teach a subject in, keep two-column.
+    // Collapse to single-column whenever the form card is hidden (always for class_teacher).
     const twoCol = document.querySelector('#students-tab .two-column-layout');
-    if (twoCol) twoCol.style.gridTemplateColumns = isHomeroomForCurrent ? '1fr' : '';
+    if (twoCol) twoCol.style.gridTemplateColumns = readOnly ? '1fr' : '';
 
     // Render dynamic table headers
     const thead = document.getElementById('subjects-table-header');
