@@ -6,11 +6,11 @@ const path = require('path');
 const { readDb, writeDb } = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
-const LOGO_SIZE_LIMIT = 500 * 1024; // 500 KB
-// memoryStorage — no disk writes; file lives in req.file.buffer only
+const PHOTO_SIZE_LIMIT = 1 * 1024 * 1024; // 1 MB
+// memoryStorage — no disk writes; files live in req.files buffers only
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: LOGO_SIZE_LIMIT },
+    limits: { fileSize: PHOTO_SIZE_LIMIT },
     fileFilter: (req, file, cb) => {
         const allowed = ['image/png', 'image/jpeg', 'image/jpg'];
         if (allowed.includes(file.mimetype)) cb(null, true);
@@ -29,7 +29,10 @@ router.get('/settings', (req, res) => {
     res.json(db.settings);
 });
 
-router.post('/settings', requireAdmin, upload.single('logo'), (req, res) => {
+router.post('/settings', requireAdmin, upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'photos', maxCount: 6 }
+]), (req, res) => {
     const db = readDb(req.user ? req.user.schoolId : 'default');
     if (req.body.schoolName) db.settings.schoolName = req.body.schoolName;
     if (req.body.subtitle) db.settings.subtitle = req.body.subtitle;
@@ -56,6 +59,23 @@ router.post('/settings', requireAdmin, upload.single('logo'), (req, res) => {
     if (req.body.headerContactNumber !== undefined) db.settings.headerContactNumber = req.body.headerContactNumber;
     if (req.body.catWeight !== undefined) db.settings.catWeight = Number(req.body.catWeight);
     if (req.body.examWeight !== undefined) db.settings.examWeight = Number(req.body.examWeight);
+
+    // MANEB results save
+    if (req.body.manebResults !== undefined) {
+        try {
+            db.settings.manebResults = typeof req.body.manebResults === 'string' ? JSON.parse(req.body.manebResults) : req.body.manebResults;
+        } catch (e) {
+            console.error('Error parsing manebResults', e);
+        }
+    }
+
+    // Photo deletion by index
+    if (req.body.deletePhotoIndex !== undefined && req.body.deletePhotoIndex !== '') {
+        const idx = Number(req.body.deletePhotoIndex);
+        if (Array.isArray(db.settings.photos) && !isNaN(idx) && idx >= 0 && idx < db.settings.photos.length) {
+            db.settings.photos.splice(idx, 1);
+        }
+    }
 
     // School Sections (fee structure)
     if (req.body.sections !== undefined) {
@@ -104,12 +124,24 @@ router.post('/settings', requireAdmin, upload.single('logo'), (req, res) => {
         }
     }
     
-    if (req.file) {
+    const logoFile = req.files && req.files.logo && req.files.logo[0];
+    if (logoFile) {
         // Convert buffer to Base64 data-URL — stored in MongoDB, survives server restarts
-        const mime = req.file.mimetype;
-        const b64 = req.file.buffer.toString('base64');
+        const mime = logoFile.mimetype;
+        const b64 = logoFile.buffer.toString('base64');
         db.settings.logoBase64 = `data:${mime};base64,${b64}`;
         db.settings.logoPath = null; // clear any old file-path reference
+    }
+
+    // Append photos (up to 6 photos max)
+    if (req.files && req.files.photos && req.files.photos.length > 0) {
+        if (!Array.isArray(db.settings.photos)) db.settings.photos = [];
+        for (const file of req.files.photos) {
+            if (db.settings.photos.length >= 6) break;
+            const mime = file.mimetype;
+            const b64 = file.buffer.toString('base64');
+            db.settings.photos.push(`data:${mime};base64,${b64}`);
+        }
     }
     
     writeDb();
@@ -119,7 +151,7 @@ router.post('/settings', requireAdmin, upload.single('logo'), (req, res) => {
 // Handle multer errors (file too large, wrong type) cleanly
 router.use((err, req, res, next) => {
     if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ error: 'Logo file is too large. Maximum size is 500 KB.' });
+        return res.status(400).json({ error: 'File is too large. Maximum size is 1 MB.' });
     }
     if (err.message === 'Only PNG and JPG images are allowed.') {
         return res.status(400).json({ error: err.message });

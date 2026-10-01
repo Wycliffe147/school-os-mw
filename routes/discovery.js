@@ -113,7 +113,8 @@ router.get('/public/explore', (req, res) => {
                 approxFees,
                 facilities: settings.facilities || ['Classrooms', 'Sports Ground'],
                 subjects: settings.subjects || ['Mathematics', 'English', 'Biology', 'Physical Science', 'Chichewa', 'Geography', 'History'],
-                badges
+                badges,
+                logoBase64: settings.logoBase64 || null
             };
         });
 
@@ -181,17 +182,36 @@ router.get('/public/explore/:schoolId', (req, res) => {
     const settings = schoolData.settings || {};
     const students = schoolData.students || [];
 
+    let defaultTermFee = settings.defaultTermFee || 0;
+    if (settings.sections && settings.sections.length > 0) {
+        const defSec = settings.sections.find(s => s.isDefault) || settings.sections[0];
+        if (defSec && defSec.fee) defaultTermFee = defSec.fee;
+    }
+
+    const enrollmentByForm = { 'Form 1': 0, 'Form 2': 0, 'Form 3': 0, 'Form 4': 0 };
+    students.forEach(st => {
+        const cl = st.classLevel || 'Form 1';
+        if (enrollmentByForm[cl] !== undefined) {
+            enrollmentByForm[cl]++;
+        } else {
+            enrollmentByForm[cl] = 1;
+        }
+    });
+
     res.json({
         schoolId,
         schoolName: settings.schoolName || 'Malawi Academy',
         motto: settings.motto || 'Excellence in Education',
         district: settings.district || 'Blantyre',
         address: settings.address || 'Malawi',
-        phone: settings.phone || '+265 888 000 000',
-        email: settings.email || `info@${schoolId}.ac.mw`,
-        facilities: settings.facilities || ['Science Lab', 'Computer Lab', 'Library', 'Sports Ground'],
-        subjects: settings.subjects || ['Mathematics', 'English', 'Biology', 'Physical Science', 'Chichewa', 'Geography', 'History', 'Agriculture'],
-        gradingSystem: settings.gradingSystem || 'Senior MSCE (1-9 Points)'
+        headerContactNumber: settings.headerContactNumber || '',
+        facilities: settings.facilities || [],
+        approxFees: defaultTermFee,
+        totalStudents: students.length,
+        enrollmentByForm,
+        logoBase64: settings.logoBase64 || null,
+        photos: settings.photos || [],
+        manebResults: settings.manebResults || [],
     });
 });
 

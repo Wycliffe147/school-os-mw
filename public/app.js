@@ -1395,6 +1395,53 @@ document.getElementById('send-all-btn').addEventListener('click', async () => {
 });
 
 // 5. Settings Tab
+function addManebRow(examType, data = {}) {
+    const tbody = document.getElementById('maneb-tbody');
+    if (!tbody) return;
+    const tr = document.createElement('tr');
+    tr.style.borderTop = '1px solid var(--border-color)';
+    tr.innerHTML = `
+        <td style="padding:6px 8px;">
+            <select class="maneb-exam" style="background:var(--bg-secondary);color:white;border:1px solid var(--border-color);border-radius:4px;padding:4px;">
+                <option value="JCE" ${(data.exam||examType)==='JCE'?'selected':''}>JCE</option>
+                <option value="MSCE" ${(data.exam||examType)==='MSCE'?'selected':''}>MSCE</option>
+            </select>
+        </td>
+        <td style="padding:6px 8px;"><input class="maneb-year" type="number" value="${data.year||new Date().getFullYear()}" min="2000" max="2099" style="width:70px;background:var(--bg-secondary);color:white;border:1px solid var(--border-color);border-radius:4px;padding:4px;"></td>
+        <td style="padding:6px 8px;"><input class="maneb-sat" type="number" value="${data.sat||''}" min="0" placeholder="0" style="width:60px;background:var(--bg-secondary);color:white;border:1px solid var(--border-color);border-radius:4px;padding:4px;" oninput="updatePassRate(this)"></td>
+        <td style="padding:6px 8px;"><input class="maneb-passed" type="number" value="${data.passed||''}" min="0" placeholder="0" style="width:60px;background:var(--bg-secondary);color:white;border:1px solid var(--border-color);border-radius:4px;padding:4px;" oninput="updatePassRate(this)"></td>
+        <td style="padding:6px 8px;"><input class="maneb-failed" type="number" value="${data.failed||''}" min="0" placeholder="0" style="width:60px;background:var(--bg-secondary);color:white;border:1px solid var(--border-color);border-radius:4px;padding:4px;"></td>
+        <td class="maneb-rate" style="padding:6px 8px; font-weight:700; color:var(--accent-green);">—</td>
+        <td style="padding:6px 8px;"><button type="button" onclick="this.closest('tr').remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+    updatePassRate(tr.querySelector('.maneb-sat'));
+    if (data.sat) updatePassRate(tr.querySelector('.maneb-sat'));
+}
+
+function updatePassRate(input) {
+    const tr = input.closest('tr');
+    if (!tr) return;
+    const sat = Number(tr.querySelector('.maneb-sat').value) || 0;
+    const passed = Number(tr.querySelector('.maneb-passed').value) || 0;
+    tr.querySelector('.maneb-rate').textContent = sat > 0 ? `${Math.round(passed/sat*100)}%` : '—';
+}
+
+function loadManebRows(results) {
+    const tbody = document.getElementById('maneb-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    results.forEach(r => addManebRow(r.exam, r));
+}
+
+async function deletePhoto(index) {
+    if (!confirm('Remove this photo?')) return;
+    const fd = new FormData();
+    fd.append('deletePhotoIndex', index);
+    const res = await apiFetch('/api/settings', { method: 'POST', body: fd });
+    if (res.ok) await loadSettings();
+}
+
 async function loadSettings() {
     const res = await apiFetch('/api/settings');
     const settings = await res.json();
@@ -1429,6 +1476,22 @@ async function loadSettings() {
             if (logoWrap) logoWrap.style.display = 'none'; // hide old preview until saved
         }, { once: true });
     }
+
+    const photosInput = document.getElementById('school-photos');
+    if (photosInput) photosInput.value = '';
+
+    const photosGrid = document.getElementById('photos-preview-grid');
+    if (photosGrid) {
+        const photos = settings.photos || [];
+        photosGrid.innerHTML = photos.map((src, i) => `
+            <div style="position:relative; width:100px; height:72px;">
+                <img src="${src}" style="width:100px; height:72px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color);">
+                <button type="button" onclick="deletePhoto(${i})" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.7);border:none;color:white;border-radius:50%;width:18px;height:18px;font-size:0.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+            </div>
+        `).join('');
+    }
+
+    loadManebRows(settings.manebResults || []);
     
     // Public Location & Profile
     if (document.getElementById('school-district')) {
@@ -1602,6 +1665,24 @@ document.getElementById('add-junior-grade-rule-btn').addEventListener('click', (
 document.getElementById('settings-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+
+    const manebRows = [];
+    document.querySelectorAll('#maneb-tbody tr').forEach(tr => {
+        const sat = Number(tr.querySelector('.maneb-sat').value) || 0;
+        const passed = Number(tr.querySelector('.maneb-passed').value) || 0;
+        const failed = Number(tr.querySelector('.maneb-failed').value) || 0;
+        manebRows.push({
+            exam: tr.querySelector('.maneb-exam').value,
+            year: tr.querySelector('.maneb-year').value,
+            sat, passed, failed
+        });
+    });
+    formData.append('manebResults', JSON.stringify(manebRows));
+
+    const photosInput = document.getElementById('school-photos');
+    if (photosInput && photosInput.files.length > 0) {
+        Array.from(photosInput.files).forEach(f => formData.append('photos', f));
+    }
     
     // Facilities checklist
     const facilities = [];
