@@ -120,6 +120,7 @@ function renderActiveTab() {
     if (tabId === 'staff-tab') renderStaffTab();
     if (tabId === 'marks-tab') renderMarksTab();
     if (tabId === 'rankings-tab') renderRankingsTab();
+    if (tabId === 'analytics-tab') renderAnalyticsTab();
 }
 
 document.getElementById('global-class-select').addEventListener('change', (e) => {
@@ -157,6 +158,7 @@ async function checkLogin() {
         if (currentUser.role === 'class_teacher') {
             document.querySelectorAll('.nav-links li').forEach(li => li.style.display = 'block');
             document.getElementById('nav-superadmin').style.display = 'none';
+            document.getElementById('nav-analytics').style.display = 'none';
             document.querySelector('[data-tab="whatsapp-tab"]').style.display = 'none';
             document.querySelector('[data-tab="settings-tab"]').style.display = 'none';
 
@@ -192,6 +194,7 @@ async function checkLogin() {
             document.querySelector('[data-tab="whatsapp-tab"]').style.display = 'none';
             document.querySelector('[data-tab="settings-tab"]').style.display = 'none';
             document.querySelector('[data-tab="superadmin-tab"]').style.display = 'none';
+            document.getElementById('nav-analytics').style.display = 'none';
 
             document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
             document.querySelector('[data-tab="marks-tab"]').classList.add('active');
@@ -199,9 +202,10 @@ async function checkLogin() {
             document.getElementById('marks-tab').classList.add('active');
             renderMarksTab();
         } else if (currentUser.role === 'superadmin') {
-            // Show all tabs including Super Admin
+            // Show all tabs including Super Admin and Analytics
             document.querySelectorAll('.nav-links li').forEach(li => li.style.display = 'block');
             document.getElementById('nav-superadmin').style.display = 'block';
+            document.getElementById('nav-analytics').style.display = 'block';
             // Always land on Students tab
             document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
             document.querySelector('[data-tab="students-tab"]').classList.add('active');
@@ -209,9 +213,10 @@ async function checkLogin() {
             document.getElementById('students-tab').classList.add('active');
             renderStudentsTab();
         } else {
-            // admin: show all except superadmin tab
+            // admin: show all except superadmin tab; show analytics
             document.querySelectorAll('.nav-links li').forEach(li => li.style.display = 'block');
             document.getElementById('nav-superadmin').style.display = 'none';
+            document.getElementById('nav-analytics').style.display = 'block';
             // Always land on Students tab
             document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
             document.querySelector('[data-tab="students-tab"]').classList.add('active');
@@ -373,6 +378,7 @@ document.querySelectorAll('.nav-links li').forEach(item => {
         if (tabId === 'applications-tab') renderApplicationsTab();
         if (tabId === 'settings-tab') loadSettings();
         if (tabId === 'superadmin-tab') loadSuperAdmin();
+        if (tabId === 'analytics-tab') renderAnalyticsTab();
     });
 });
 
@@ -2885,5 +2891,385 @@ async function renderApplicationsTab() {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// ANALYTICS DASHBOARD
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── Colour helpers ─────────────────────────────────────────────────────────
+function anGradeColour(val) {
+    if (val === null || val === undefined) return 'rgba(255,255,255,0.06)';
+    if (val >= 80) return '#10b981'; // green
+    if (val >= 65) return '#3b82f6'; // blue
+    if (val >= 50) return '#f59e0b'; // amber
+    return '#ef4444'; // red
+}
+function anGradeTextColour(val) {
+    if (val === null || val === undefined) return 'var(--text-secondary)';
+    if (val >= 80) return '#fff';
+    if (val >= 65) return '#fff';
+    if (val >= 50) return '#fff';
+    return '#fff';
+}
+
+// ─── Horizontal bar chart (pure CSS/HTML) ───────────────────────────────────
+function anRenderBarChart(containerId, items, { colorFn, maxVal, unit = '' }) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const max = maxVal || Math.max(...items.map(d => d.value || 0), 1);
+    el.innerHTML = items.map(d => {
+        const pct = d.value !== null && d.value !== undefined ? Math.round((d.value / max) * 100) : 0;
+        const color = colorFn ? colorFn(d.value) : '#3b82f6';
+        const display = d.value !== null && d.value !== undefined ? `${d.value}${unit}` : '-';
+        return `
+        <div class="an-bar-track">
+            <span class="an-bar-label" title="${d.label}">${d.label.length > 10 ? d.label.substring(0, 9) + '...' : d.label}</span>
+            <div class="an-bar-bg">
+                <div class="an-bar-fill" style="width:${pct}%; background:${color};">
+                    ${pct > 18 ? display : ''}
+                </div>
+            </div>
+            <span class="an-bar-val" style="color:${color};">${pct <= 18 ? display : ''}</span>
+        </div>`;
+    }).join('');
+}
+
+// ─── Sparkline SVG line chart ────────────────────────────────────────────────
+function anRenderSparkline(containerId, points, { color = '#3b82f6', fillColor, labelKey = 'label', valueKey = 'value', unit = '' } = {}) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (!points.length) {
+        el.innerHTML = '<p style="color:var(--text-secondary); padding-top:60px; text-align:center; font-size:0.85rem;">No data yet</p>';
+        return;
+    }
+    const W = el.offsetWidth || 400;
+    const H = 180;
+    const PAD = { top: 12, right: 10, bottom: 36, left: 44 };
+    const chartW = W - PAD.left - PAD.right;
+    const chartH = H - PAD.top - PAD.bottom;
+    const vals = points.map(p => p[valueKey]);
+    const minV = Math.min(...vals);
+    const maxV = Math.max(...vals);
+    const range = maxV - minV || 1;
+
+    const xScale = i => PAD.left + (i / (points.length - 1 || 1)) * chartW;
+    const yScale = v => PAD.top + chartH - ((v - minV) / range) * chartH;
+
+    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${xScale(i).toFixed(1)},${yScale(p[valueKey]).toFixed(1)}`).join(' ');
+    const areaD = pathD + ` L${xScale(points.length - 1).toFixed(1)},${(PAD.top + chartH).toFixed(1)} L${PAD.left.toFixed(1)},${(PAD.top + chartH).toFixed(1)} Z`;
+
+    // Y-axis ticks
+    const yTicks = [minV, Math.round((minV + maxV) / 2), maxV];
+    const yTicksHtml = yTicks.map(v =>
+        `<text x="${PAD.left - 6}" y="${yScale(v) + 4}" text-anchor="end" font-size="10" fill="var(--text-secondary)">${Math.round(v)}${unit}</text>`
+    ).join('');
+
+    // X-axis labels (show at most 6 evenly spaced)
+    const step = Math.ceil(points.length / 6);
+    const xLabels = points
+        .filter((_, i) => i % step === 0 || i === points.length - 1)
+        .map((p, _, arr) => {
+            const origIdx = points.indexOf(p);
+            const x = xScale(origIdx);
+            const lbl = (p[labelKey] || '').toString().substring(0, 8);
+            return `<text x="${x}" y="${H - 6}" text-anchor="middle" font-size="9" fill="var(--text-secondary)">${lbl}</text>`;
+        }).join('');
+
+    el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="spark-svg">
+        <defs>
+            <linearGradient id="sparkGrad-${containerId}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="${fillColor || color}" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="${fillColor || color}" stop-opacity="0.02"/>
+            </linearGradient>
+        </defs>
+        <!-- Grid lines -->
+        ${yTicks.map(v => `<line x1="${PAD.left}" y1="${yScale(v)}" x2="${PAD.left + chartW}" y2="${yScale(v)}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`).join('')}
+        <!-- Area fill -->
+        <path d="${areaD}" fill="url(#sparkGrad-${containerId})"/>
+        <!-- Line -->
+        <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        <!-- Dots -->
+        ${points.length <= 30 ? points.map((p, i) =>
+            `<circle cx="${xScale(i)}" cy="${yScale(p[valueKey])}" r="3" fill="${color}" stroke="var(--bg-secondary)" stroke-width="1.5"/>`
+        ).join('') : ''}
+        <!-- Y ticks -->
+        ${yTicksHtml}
+        <!-- X labels -->
+        ${xLabels}
+    </svg>`;
+}
+
+// ─── Heatmap table ───────────────────────────────────────────────────────────
+function anRenderHeatmap(containerId, data, classLevels) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    // Collect all subjects
+    const subjectSet = new Set();
+    classLevels.forEach(cls => (data[cls] || []).forEach(s => subjectSet.add(s.subject)));
+    const subjects = [...subjectSet].sort();
+    if (!subjects.length) { el.innerHTML = '<p style="color:var(--text-secondary); padding:20px;">No mark data available.</p>'; return; }
+
+    const thead = `<thead><tr>
+        <th style="position:sticky;left:0;background:#0f172a;z-index:2;min-width:130px;">Subject</th>
+        ${classLevels.map(c => `<th style="text-align:center;">${c}</th>`).join('')}
+    </tr></thead>`;
+
+    const tbody = subjects.map(sub => {
+        const cells = classLevels.map(cls => {
+            const entry = (data[cls] || []).find(s => s.subject === sub);
+            const val = entry ? entry.avg : null;
+            const bg = anGradeColour(val);
+            const txt = val !== null ? `${val}%` : '-';
+            return `<td class="hm-cell" style="background:${bg}; color:${anGradeTextColour(val)};">${txt}</td>`;
+        }).join('');
+        return `<tr><td style="position:sticky;left:0;background:var(--bg-secondary);font-size:0.82rem;white-space:nowrap;">${sub}</td>${cells}</tr>`;
+    }).join('');
+
+    el.innerHTML = `<table style="border-collapse:collapse;width:100%;">${thead}<tbody>${tbody}</tbody></table>`;
+}
+
+// ─── Student rank table ──────────────────────────────────────────────────────
+function anRenderRankTable(containerId, students, rankColor) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (!students.length) { el.innerHTML = '<p style="color:var(--text-secondary); padding:16px;">No data.</p>'; return; }
+    el.innerHTML = `<table style="width:100%;border-collapse:collapse;">
+        <thead><tr>
+            <th style="background:#0f172a;width:30px;">#</th>
+            <th style="background:#0f172a;">Name</th>
+            <th style="background:#0f172a;">Class</th>
+            <th style="background:#0f172a;text-align:center;">Avg %</th>
+        </tr></thead>
+        <tbody>${students.map((s, i) => `<tr>
+            <td style="font-weight:700; color:${rankColor};">${i + 1}</td>
+            <td>${s.name}</td>
+            <td style="color:var(--text-secondary);">${s.classLevel}</td>
+            <td style="text-align:center; font-weight:700; color:${anGradeColour(s.avg)};">${s.avg}%</td>
+        </tr>`).join('')}</tbody>
+    </table>`;
+}
+
+// ─── KPI card ────────────────────────────────────────────────────────────────
+function anKpiCard(icon, label, value, sub, accentColor) {
+    return `<div class="card" style="flex:1; min-width:160px; padding:16px; border-left:4px solid ${accentColor};">
+        <p style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">${icon} ${label}</p>
+        <h2 style="font-size:1.4rem; color:${accentColor}; margin:0 0 2px;">${value}</h2>
+        <span style="font-size:0.75rem; color:var(--text-secondary);">${sub}</span>
+    </div>`;
+}
+
+// ─── Main render function ────────────────────────────────────────────────────
+let analyticsData = null;
+let analyticsClassFilter = 'ALL';
+
+async function renderAnalyticsTab() {
+    const loading = document.getElementById('analytics-loading');
+    const errEl   = document.getElementById('analytics-error');
+    if (loading) loading.style.display = 'block';
+    if (errEl)   errEl.style.display   = 'none';
+
+    try {
+        const res = await apiFetch('/api/analytics/summary');
+        if (!res.ok) throw new Error('Failed');
+        analyticsData = await res.json();
+        renderAnalyticsDashboard(analyticsData);
+    } catch (e) {
+        if (errEl) errEl.style.display = 'block';
+    } finally {
+        if (loading) loading.style.display = 'none';
+    }
+}
+
+function renderAnalyticsDashboard(d) {
+    if (!d) return;
+    const classLevels = ['Form 1', 'Form 2', 'Form 3', 'Form 4'];
+    const filterCls   = analyticsClassFilter;
+
+    // Filter helper - class-specific or school-wide
+    const filteredClassStats = filterCls === 'ALL'
+        ? d.classStats
+        : d.classStats.filter(c => c.class === filterCls);
+
+    // ── KPI Row ───────────────────────────────────────────────────────────────
+    const kpiRow = document.getElementById('analytics-kpi-row');
+    if (kpiRow) {
+        const totalStudents = filterCls === 'ALL'
+            ? d.studentCount
+            : (d.enrolmentByClass[filterCls] || 0);
+        const avgMark = filteredClassStats.length
+            ? (filteredClassStats.reduce((s, c) => s + (c.avg || 0), 0) / filteredClassStats.filter(c => c.avg !== null).length).toFixed(1)
+            : '-';
+        const avgPassRate = filteredClassStats.filter(c => c.passRate !== null).length
+            ? Math.round(filteredClassStats.reduce((s, c) => s + (c.passRate || 0), 0) / filteredClassStats.filter(c => c.passRate !== null).length)
+            : '-';
+        const collRate = d.feeStats.collectionRate;
+        const attRates = filterCls === 'ALL'
+            ? Object.values(d.attendanceByClass).filter(v => v !== null)
+            : [d.attendanceByClass[filterCls]].filter(v => v !== null);
+        const avgAtt = attRates.length ? Math.round(attRates.reduce((a, b) => a + b, 0) / attRates.length) : '-';
+
+        kpiRow.innerHTML =
+            anKpiCard('🎓', 'Total Students', totalStudents, filterCls === 'ALL' ? 'All classes' : filterCls, '#3b82f6') +
+            anKpiCard('📈', 'School Average', avgMark !== '-' ? `${avgMark}%` : '-', 'Overall mark avg', '#8b5cf6') +
+            anKpiCard('✅', 'Pass Rate', avgPassRate !== '-' ? `${avgPassRate}%` : '-', `Pass mark: ${d.passMark}%`, '#10b981') +
+            anKpiCard('💰', 'Fee Collection', `${collRate}%`, `MK ${Number(d.feeStats.totalPaid).toLocaleString()} collected`, '#f59e0b') +
+            anKpiCard('📅', 'Attendance Rate', avgAtt !== '-' ? `${avgAtt}%` : 'No data', 'Last recorded', '#06b6d4');
+    }
+
+    // ── Class avg bar chart ───────────────────────────────────────────────────
+    const classItems = filteredClassStats.map(c => ({ label: c.class, value: c.avg }));
+    anRenderBarChart('chart-class-avg', classItems, {
+        colorFn: anGradeColour,
+        maxVal: 100,
+        unit: '%'
+    });
+
+    // ── Subject pass rate bar chart ───────────────────────────────────────────
+    let subStats = d.subjectStats;
+    if (filterCls !== 'ALL') {
+        const byClass = (d.subjectByClass[filterCls] || []);
+        subStats = byClass.map(s => ({
+            subject: s.subject,
+            avg: s.avg,
+            passRate: s.avg >= d.passMark ? 100 : 0 // fallback if individual pass data unavailable
+        }));
+        // Prefer full passRate from d.subjectStats if available
+        subStats = byClass.map(s => {
+            const full = d.subjectStats.find(ss => ss.subject === s.subject);
+            return { subject: s.subject, passRate: full ? full.passRate : null, avg: s.avg };
+        });
+    }
+    const subjItems = subStats.map(s => ({ label: s.subject, value: s.passRate })).sort((a, b) => (b.value || 0) - (a.value || 0));
+    const subjectContainer = document.getElementById('chart-subject-passrate');
+    if (subjectContainer) {
+        subjectContainer.style.height = `${Math.max(220, subjItems.length * 38)}px`;
+    }
+    anRenderBarChart('chart-subject-passrate', subjItems, {
+        colorFn: v => v >= 75 ? '#10b981' : v >= 50 ? '#3b82f6' : '#ef4444',
+        maxVal: 100,
+        unit: '%'
+    });
+
+    // ── Fee collection panel ──────────────────────────────────────────────────
+    const feeDonut = document.getElementById('chart-fee-donut');
+    if (feeDonut) {
+        const fs = d.feeStats;
+        const pct = fs.collectionRate;
+        const barColor = pct >= 75 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444';
+        feeDonut.innerHTML = `
+        <div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <span style="font-size:0.82rem; color:var(--text-secondary);">Collected</span>
+                <span style="font-weight:700; color:${barColor};">${pct}%</span>
+            </div>
+            <div style="background:rgba(255,255,255,0.06); border-radius:8px; height:16px; overflow:hidden;">
+                <div style="width:${pct}%; height:100%; background:${barColor}; border-radius:8px; transition:width 0.6s;"></div>
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px;">
+            ${[
+                ['Expected', `MK ${Number(fs.totalFees).toLocaleString()}`, '#3b82f6'],
+                ['Collected', `MK ${Number(fs.totalPaid).toLocaleString()}`, '#10b981'],
+                ['Outstanding', `MK ${Number(fs.outstanding).toLocaleString()}`, '#ef4444'],
+                ['Fully Paid', `${fs.fullyPaid} / ${fs.totalStudents}`, '#8b5cf6'],
+                ['On Bursary', fs.bursaryCount, '#f59e0b'],
+                ['', '', '']
+            ].filter(r => r[0]).map(([lbl, val, col]) => `
+                <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:10px;">
+                    <p style="font-size:0.7rem; color:var(--text-secondary); margin-bottom:3px;">${lbl}</p>
+                    <p style="font-size:0.88rem; font-weight:700; color:${col};">${val}</p>
+                </div>`).join('')}
+        </div>
+        ${Object.keys(fs.methodCounts).length ? `
+        <div>
+            <p style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:8px;">Payment Methods</p>
+            ${Object.entries(fs.methodCounts).map(([m, v]) => `
+            <div class="an-bar-track" style="margin-bottom:7px;">
+                <span class="an-bar-label">${m}</span>
+                <div class="an-bar-bg">
+                    <div class="an-bar-fill" style="width:${Math.round((v / fs.totalPaid) * 100)}%; background:#6366f1;"></div>
+                </div>
+                <span class="an-bar-val" style="color:#818cf8;">MK ${Number(v).toLocaleString()}</span>
+            </div>`).join('')}
+        </div>` : ''}`;
+    }
+
+    // ── Monthly fee sparkline ─────────────────────────────────────────────────
+    anRenderSparkline('chart-monthly-fees', d.monthlyFees, {
+        color: '#f59e0b',
+        fillColor: '#f59e0b',
+        labelKey: 'month',
+        valueKey: 'amount',
+        unit: ''
+    });
+
+    // ── Attendance by class bar chart ─────────────────────────────────────────
+    const attItems = (filterCls === 'ALL' ? classLevels : [filterCls]).map(cls => ({
+        label: cls,
+        value: d.attendanceByClass[cls]
+    }));
+    anRenderBarChart('chart-attendance-class', attItems, {
+        colorFn: v => v === null ? 'rgba(255,255,255,0.1)' : v >= 85 ? '#10b981' : v >= 70 ? '#f59e0b' : '#ef4444',
+        maxVal: 100,
+        unit: '%'
+    });
+
+    // ── Daily attendance sparkline ────────────────────────────────────────────
+    anRenderSparkline('chart-daily-att', d.dailyAttTrend, {
+        color: '#06b6d4',
+        fillColor: '#06b6d4',
+        labelKey: 'date',
+        valueKey: 'rate',
+        unit: '%'
+    });
+
+    // ── Subject heatmap ───────────────────────────────────────────────────────
+    const heatmapClasses = filterCls === 'ALL' ? classLevels : [filterCls];
+    anRenderHeatmap('analytics-heatmap', d.subjectByClass, heatmapClasses);
+
+    // ── Top 10 & Bottom 10 ────────────────────────────────────────────────────
+    const top10 = filterCls === 'ALL'
+        ? d.top10
+        : d.top10.filter(s => s.classLevel === filterCls);
+    const bottom10 = filterCls === 'ALL'
+        ? d.bottom10
+        : d.bottom10.filter(s => s.classLevel === filterCls);
+    anRenderRankTable('analytics-top10', top10, '#10b981');
+    anRenderRankTable('analytics-bottom10', bottom10, '#ef4444');
+}
+
+// ── Custom dropdown logic for analytics class filter ─────────────────────────
+(function setupAnalyticsDropdown() {
+    const toggle = document.getElementById('analytics-class-toggle');
+    const menu   = document.getElementById('analytics-class-menu');
+    if (!toggle || !menu) return;
+
+    toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.classList.toggle('open');
+    });
+
+    document.addEventListener('click', () => menu.classList.remove('open'));
+
+    menu.querySelectorAll('.dropdown-option').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menu.querySelectorAll('.dropdown-option').forEach(o => o.classList.remove('active'));
+            opt.classList.add('active');
+            const val = opt.getAttribute('data-val');
+            document.getElementById('analytics-class-val').value = val;
+            document.getElementById('analytics-class-text').textContent = opt.textContent.trim();
+            analyticsClassFilter = val;
+            menu.classList.remove('open');
+            if (analyticsData) renderAnalyticsDashboard(analyticsData);
+        });
+    });
+})();
+
+document.getElementById('btn-refresh-analytics')?.addEventListener('click', () => {
+    analyticsData = null;
+    renderAnalyticsTab();
+});
+
 // Initial load
 checkLogin();
+

@@ -86,6 +86,7 @@
                 <li data-tab="whatsapp-tab">WhatsApp Portal</li>
                 <li data-tab="notices-tab">📢 Notices</li>
                 <li data-tab="applications-tab">📥 Applications</li>
+                <li data-tab="analytics-tab" id="nav-analytics" style="display:none;">📊 Analytics</li>
                 <li data-tab="settings-tab">Settings</li>
                 <li data-tab="superadmin-tab" id="nav-superadmin" style="display:none; color: var(--accent-success); font-weight: bold;">Super Admin</li>
             </ul>
@@ -919,8 +920,102 @@
                 </div>
             </section>
         
+            <!-- Analytics Dashboard Tab -->
+            <section id="analytics-tab" class="tab-panel">
+                <div class="panel-header">
+                    <div>
+                        <h1>📊 School Analytics Dashboard</h1>
+                        <p class="subtitle" style="margin: 4px 0 0 0;">Data-driven insights into student performance, attendance, and fee collection.</p>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <!-- Term filter dropdown -->
+                        <div class="custom-dropdown" id="analytics-class-dropdown" style="min-width:140px;">
+                            <div class="custom-dropdown-toggle" id="analytics-class-toggle" style="padding:8px 12px; font-size:0.85rem;">
+                                <span id="analytics-class-text">All Classes</span>
+                                <span style="font-size:0.7rem; color:var(--text-secondary);">&#x25BC;</span>
+                            </div>
+                            <div class="custom-dropdown-menu" id="analytics-class-menu">
+                                <div class="dropdown-option active" data-val="ALL">All Classes</div>
+                                <div class="dropdown-option" data-val="Form 1">Form 1</div>
+                                <div class="dropdown-option" data-val="Form 2">Form 2</div>
+                                <div class="dropdown-option" data-val="Form 3">Form 3</div>
+                                <div class="dropdown-option" data-val="Form 4">Form 4</div>
+                            </div>
+                            <input type="hidden" id="analytics-class-val" value="ALL">
+                        </div>
+                        <button id="btn-refresh-analytics" class="btn outline-btn" style="padding:8px 14px; font-size:0.85rem;">&#x21BA; Refresh</button>
+                    </div>
+                </div>
+
+                <!-- KPI Summary Cards -->
+                <div id="analytics-kpi-row" style="display:flex; gap:14px; margin-bottom:22px; flex-wrap:wrap;"></div>
+
+                <!-- Row 1: Class performance bar chart + Subject pass rates -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px;">
+                    <div class="card" style="padding:20px;">
+                        <h3 style="margin-bottom:16px; font-size:1rem;">Average Mark by Class</h3>
+                        <div id="chart-class-avg" style="position:relative; height:220px;"></div>
+                    </div>
+                    <div class="card" style="padding:20px;">
+                        <h3 style="margin-bottom:16px; font-size:1rem;">Subject Pass Rates (%)</h3>
+                        <div id="chart-subject-passrate" style="position:relative; height:220px; overflow-y:auto;"></div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Fee collection donut-style + Monthly fee trend -->
+                <div style="display:grid; grid-template-columns:300px 1fr; gap:18px; margin-bottom:18px;">
+                    <div class="card" style="padding:20px;">
+                        <h3 style="margin-bottom:16px; font-size:1rem;">Fee Collection</h3>
+                        <div id="chart-fee-donut" style="display:flex; flex-direction:column; gap:12px;"></div>
+                    </div>
+                    <div class="card" style="padding:20px;">
+                        <h3 style="margin-bottom:16px; font-size:1rem;">Monthly Fee Collection (MK)</h3>
+                        <div id="chart-monthly-fees" style="position:relative; height:220px;"></div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Attendance by class + Daily attendance trend -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px;">
+                    <div class="card" style="padding:20px;">
+                        <h3 style="margin-bottom:16px; font-size:1rem;">Attendance Rate by Class (%)</h3>
+                        <div id="chart-attendance-class" style="position:relative; height:220px;"></div>
+                    </div>
+                    <div class="card" style="padding:20px;">
+                        <h3 style="margin-bottom:16px; font-size:1rem;">Daily Attendance Trend (last 30 days)</h3>
+                        <div id="chart-daily-att" style="position:relative; height:220px;"></div>
+                    </div>
+                </div>
+
+                <!-- Row 4: Subject performance heatmap table -->
+                <div class="card" style="padding:20px; margin-bottom:18px;">
+                    <h3 style="margin-bottom:16px; font-size:1rem;">Subject Performance by Class (Avg %)</h3>
+                    <div id="analytics-heatmap" class="table-container" style="overflow-x:auto;"></div>
+                </div>
+
+                <!-- Row 5: Top 10 + At-risk students -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px;">
+                    <div class="card" style="padding:20px;">
+                        <h3 style="margin-bottom:12px; font-size:1rem; color:var(--accent-success);">🏆 Top 10 Students</h3>
+                        <div id="analytics-top10" class="table-container"></div>
+                    </div>
+                    <div class="card" style="padding:20px;">
+                        <h3 style="margin-bottom:12px; font-size:1rem; color:var(--accent-danger);">⚠️ At-Risk Students (lowest avg)</h3>
+                        <div id="analytics-bottom10" class="table-container"></div>
+                    </div>
+                </div>
+
+                <!-- Loading / Error state -->
+                <div id="analytics-loading" style="text-align:center; padding:60px; display:none;">
+                    <p style="color:var(--text-secondary); font-size:1.1rem;">Loading analytics...</p>
+                </div>
+                <div id="analytics-error" style="text-align:center; padding:40px; display:none;">
+                    <p style="color:var(--accent-danger);">Failed to load analytics. Please refresh.</p>
+                </div>
+            </section>
+
             <!-- 7. Super Admin Tab -->
             <section id="superadmin-tab" class="tab-panel">
+
                 <div class="panel-header" style="background-color: var(--accent-success);">
                     <h1>Super Admin Dashboard</h1>
                 </div>

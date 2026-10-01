@@ -38,6 +38,7 @@ app.use('/api', require('./routes/whatsapp'));
 app.use('/api', require('./routes/payments'));
 app.use('/api', require('./routes/timetable'));
 app.use('/api', require('./routes/payroll'));
+app.use('/api', require('./routes/analytics'));
 
 initDB().then(() => {
     app.listen(PORT, '0.0.0.0', () => {
