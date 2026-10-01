@@ -30,44 +30,53 @@ function rankStudents(db) {
     
     forms.forEach(form => {
         const classStudents = db.students.filter(s => (s.classLevel || 'Form 1') === form);
+        const isJunior = form === 'Form 1' || form === 'Form 2';
         
         classStudents.forEach(student => {
-            student.mscePoints = 0;
             student.subjectsCount = 0;
+            let markSum = 0;
+            let markCount = 0;
             let pointsList = [];
+            let englishPoint = 9;
             
             db.subjects.forEach(sub => {
                 if (student.subjects && student.subjects[sub]) {
                     student.subjectsCount++;
                     const score = student.marks && student.marks[sub];
                     if (score !== null && score !== undefined && score !== '') {
-                        const gradeInfo = getGrade(score, db, student.classLevel || 'Form 1');
-                        if (!['Form 1', 'Form 2'].includes(student.classLevel || 'Form 1')) {
-                            if (gradeInfo.points !== '-') {
-                                pointsList.push(Number(gradeInfo.points));
+                        const scoreNum = Number(score);
+                        markSum += scoreNum;
+                        markCount++;
+                        const gradeInfo = getGrade(score, db, form);
+                        if (!isJunior) {
+                            const p = gradeInfo.points !== '-' ? Number(gradeInfo.points) : 9;
+                            if (sub === 'ENG' || sub === 'English') {
+                                englishPoint = p;
+                            } else {
+                                pointsList.push(p);
                             }
-                        } else {
-                            pointsList.push(100 - Number(score));
                         }
                     }
                 }
             });
+
+            student.average = markCount > 0 ? Math.round((markSum / markCount) * 10) / 10 : 0;
+            student.juniorTotalScore = markSum;
             
-            pointsList.sort((a, b) => a - b);
-            const best6 = pointsList.slice(0, 6);
-            student.mscePoints = best6.reduce((acc, val) => acc + val, 0);
-            
-            if (['Form 1', 'Form 2'].includes(student.classLevel || 'Form 1')) {
-                student.juniorTotalScore = pointsList.reduce((acc, val) => acc + (100 - val), 0); 
+            if (!isJunior) {
+                pointsList.sort((a, b) => a - b);
+                const best5Others = pointsList.slice(0, 5);
+                student.mscePoints = [englishPoint, ...best5Others].reduce((acc, val) => acc + val, 0);
+            } else {
+                student.mscePoints = null;
             }
         });
         
         classStudents.sort((a, b) => {
-            const isJunior = ['Form 1', 'Form 2'].includes(a.classLevel || 'Form 1');
             if (isJunior) {
                 return (b.juniorTotalScore || 0) - (a.juniorTotalScore || 0);
             } else {
-                return a.mscePoints - b.mscePoints;
+                return (a.mscePoints || 99) - (b.mscePoints || 99);
             }
         });
         

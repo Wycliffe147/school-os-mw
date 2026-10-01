@@ -159,6 +159,9 @@ async function checkLogin() {
             document.querySelectorAll('.nav-links li').forEach(li => li.style.display = 'block');
             document.getElementById('nav-superadmin').style.display = 'none';
             document.getElementById('nav-analytics').style.display = 'none';
+            document.querySelector('[data-tab="fees-tab"]').style.display = 'none';
+            document.querySelector('[data-tab="payroll-tab"]').style.display = 'none';
+            document.querySelector('[data-tab="staff-tab"]').style.display = 'none';
             document.querySelector('[data-tab="whatsapp-tab"]').style.display = 'none';
             document.querySelector('[data-tab="settings-tab"]').style.display = 'none';
 
@@ -188,8 +191,12 @@ async function checkLogin() {
             document.getElementById('attendance-tab').classList.add('active');
             renderAttendanceTab();
         } else if (currentUser.role === 'teacher') {
+            document.querySelectorAll('.nav-links li').forEach(li => li.style.display = 'block');
             document.querySelector('[data-tab="students-tab"]').style.display = 'none';
+            document.querySelector('[data-tab="fees-tab"]').style.display = 'none';
+            document.querySelector('[data-tab="payroll-tab"]').style.display = 'none';
             document.querySelector('[data-tab="staff-tab"]').style.display = 'none';
+            document.querySelector('[data-tab="applications-tab"]').style.display = 'none';
             document.querySelector('[data-tab="rankings-tab"]').style.display = 'none';
             document.querySelector('[data-tab="whatsapp-tab"]').style.display = 'none';
             document.querySelector('[data-tab="settings-tab"]').style.display = 'none';
@@ -1232,16 +1239,26 @@ async function renderRankingsTab() {
     const sendSelectedBtn = document.getElementById('btn-send-selected');
     if (sendSelectedBtn) sendSelectedBtn.style.display = canSend ? '' : 'none';
 
+    const isJunior = currentClass === 'Form 1' || currentClass === 'Form 2';
+    const scoreHeader = document.getElementById('rankings-score-header');
+    if (scoreHeader) {
+        scoreHeader.innerText = isJunior ? 'Overall Average (%)' : 'Best 6 MSCE Points';
+    }
+
     const classStudents = students.filter(s => (s.classLevel || 'Form 1') === currentClass);
 
     classStudents.forEach(student => {
+        const scoreDisplay = isJunior
+            ? (student.average !== undefined && student.average !== null ? `${student.average}%` : '-')
+            : (student.mscePoints !== undefined && student.mscePoints !== null ? `${student.mscePoints} pts` : '-');
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><input type="checkbox" class="report-cb" value="${student.id}"></td>
-            <td><strong>${student.rank}</strong></td>
-            <td>${student.name}</td>
-            <td>${student.subjectsCount} Subjects</td>
-            <td>${student.mscePoints}</td>
+            <td><strong>${student.rank || '-'}</strong></td>
+            <td><strong>${student.name}</strong></td>
+            <td>${student.subjectsCount || 0} Subjects</td>
+            <td><span style="font-weight:700; color:${isJunior ? 'var(--accent-blue)' : '#8b5cf6'};">${scoreDisplay}</span></td>
             <td>
                 <button class="btn primary-btn download-pdf-btn" data-student-id="${student.id}">Save PDF</button>
                 <button class="btn outline-btn preview-pdf-btn" data-student-id="${student.id}" style="border: 1px solid var(--primary-color); color: var(--primary-color); background: transparent;">Preview</button>
@@ -2538,6 +2555,8 @@ async function renderTimetableTab() {
         </tr></thead>
         <tbody>`;
 
+    const canEditTimetable = currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin');
+
     TIMETABLE_PERIODS.forEach(p => {
         html += `<tr>`;
         html += `<td style="padding:10px; font-size:0.8rem; color:var(--text-secondary); border:1px solid var(--border-color); white-space:nowrap;"><strong>P${p.period}</strong><br>${p.name}</td>`;
@@ -2550,10 +2569,11 @@ async function renderTimetableTab() {
                     ${slot ? slot.subject : '<em style="opacity:0.4">Free</em>'}
                 </div>
                 ${teacher ? `<div style="font-size:0.75rem; color:var(--text-secondary); margin-top:3px;">${teacher.name}</div>` : ''}
+                ${canEditTimetable ? `
                 <div style="display:flex; gap:4px; margin-top:5px; flex-wrap:wrap;">
                     <button class="btn outline-btn btn-tt-edit" style="padding:2px 6px; font-size:0.72rem;" data-day="${day}" data-period="${p.period}" data-slot='${JSON.stringify(slot || {})}'>✏️</button>
                     ${slot ? `<button class="btn outline-btn btn-tt-clear" style="padding:2px 6px; font-size:0.72rem; color:var(--accent-danger);" data-day="${day}" data-period="${p.period}">✕</button>` : ''}
-                </div>
+                </div>` : ''}
             </td>`;
         });
         html += `</tr>`;
@@ -2852,6 +2872,10 @@ async function renderNoticesTab() {
     const countEl = document.getElementById('notices-count');
     listEl.innerHTML = '<p style="color:var(--text-secondary);">Loading...</p>';
 
+    const canPostNotices = currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin' || currentUser.role === 'headteacher' || currentUser.role === 'class_teacher');
+    const formCard = document.getElementById('notices-form')?.closest('.card');
+    if (formCard) formCard.style.display = canPostNotices ? 'block' : 'none';
+
     try {
         const res = await apiFetch('/api/parent-portal/notices');
         if (!res.ok) return;
@@ -2869,7 +2893,7 @@ async function renderNoticesTab() {
                         <div style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:6px;">${new Date(n.postedAt).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})} · by ${n.postedBy || 'Admin'}</div>
                         <div style="font-size:0.88rem; color:var(--text-secondary);">${n.body}</div>
                     </div>
-                    <button class="btn outline-btn btn-del-notice" data-id="${n.id}" style="padding:3px 8px; font-size:0.75rem; color:var(--accent-danger); border-color:var(--accent-danger); flex-shrink:0;">✕</button>
+                    ${canPostNotices ? `<button class="btn outline-btn btn-del-notice" data-id="${n.id}" style="padding:3px 8px; font-size:0.75rem; color:var(--accent-danger); border-color:var(--accent-danger); flex-shrink:0;">✕</button>` : ''}
                 </div>
             </div>`).join('');
 

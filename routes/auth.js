@@ -9,7 +9,7 @@ const { JWT_SECRET, authenticateToken } = require('../middleware/auth');
 // In-memory Rate Limiter for Login
 const loginAttempts = new Map();
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_MAX = 100;
 
 function loginRateLimiter(req, res, next) {
     const ip = req.ip || req.connection.remoteAddress || 'unknown';
