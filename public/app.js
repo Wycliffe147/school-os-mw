@@ -123,10 +123,58 @@ function renderActiveTab() {
     if (tabId === 'analytics-tab') renderAnalyticsTab();
 }
 
-document.getElementById('global-class-select').addEventListener('change', (e) => {
-    currentClass = e.target.value;
-    renderActiveTab();
-});
+function setGlobalClass(val) {
+    currentClass = val;
+    const textEl = document.getElementById('global-class-text');
+    if (textEl) textEl.textContent = val;
+    const menu = document.getElementById('global-class-menu');
+    if (menu) {
+        menu.querySelectorAll('.dropdown-option').forEach(opt => {
+            if (opt.getAttribute('data-val') === val) {
+                opt.classList.add('active');
+            } else {
+                opt.classList.remove('active');
+            }
+        });
+    }
+}
+
+function updateGlobalClassSelector(visibleClasses) {
+    const menu = document.getElementById('global-class-menu');
+    if (!menu) return;
+    menu.querySelectorAll('.dropdown-option').forEach(opt => {
+        const val = opt.getAttribute('data-val');
+        opt.style.display = visibleClasses.includes(val) ? 'flex' : 'none';
+    });
+    if (!visibleClasses.includes(currentClass)) {
+        setGlobalClass(visibleClasses[0]);
+    } else {
+        setGlobalClass(currentClass);
+    }
+}
+
+(function setupGlobalClassDropdown() {
+    const toggle = document.getElementById('global-class-toggle');
+    const menu = document.getElementById('global-class-menu');
+    if (!toggle || !menu) return;
+
+    toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.classList.toggle('open');
+    });
+
+    document.addEventListener('click', () => menu.classList.remove('open'));
+
+    menu.querySelectorAll('.dropdown-option').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const val = opt.getAttribute('data-val');
+            setGlobalClass(val);
+            menu.classList.remove('open');
+            renderActiveTab();
+        });
+    });
+})();
 
 async function checkLogin() {
     if (authToken && currentUser) {
@@ -141,25 +189,16 @@ async function checkLogin() {
         await loadGlobals();
 
         // Restrict the global class picker to a class teacher's own assigned class(es)
-        // AND any other class they have subjects assigned in (e.g. class teacher of Form 1
-        // who also teaches a subject in Form 2 must be able to switch to Form 2)
-        const classSelect = document.getElementById('global-class-select');
+        // AND any other class they have subjects assigned in
         if (currentUser.role === 'class_teacher') {
             const homeroomClasses = (currentUser.classes && currentUser.classes.length) ? currentUser.classes : [];
             const subjectClasses = (currentUser.subjects || []).map(s => s.split(':')[0]);
             const myClasses = [...new Set([...homeroomClasses, ...subjectClasses])]
                 .filter(c => CLASS_LEVELS.includes(c));
-            // Fallback: if nothing is configured, show all
             const visibleClasses = myClasses.length ? myClasses : CLASS_LEVELS;
-            Array.from(classSelect.options).forEach(opt => {
-                opt.style.display = visibleClasses.includes(opt.value) ? '' : 'none';
-            });
-            if (!visibleClasses.includes(currentClass)) {
-                currentClass = visibleClasses[0];
-                classSelect.value = currentClass;
-            }
+            updateGlobalClassSelector(visibleClasses);
         } else {
-            Array.from(classSelect.options).forEach(opt => opt.style.display = '');
+            updateGlobalClassSelector(CLASS_LEVELS);
         }
 
         if (currentUser.role === 'class_teacher') {

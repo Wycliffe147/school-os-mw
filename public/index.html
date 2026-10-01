@@ -64,14 +64,20 @@
                 <span id="user-greeting">Report Dashboard</span>
                 <br>
                 <button id="logout-btn" class="btn outline-btn" style="margin-top: 10px; font-size: 0.8rem; padding: 5px; margin-bottom: 10px;">Logout</button>
-                <div id="class-selector-container" style="display: none; align-items: center; gap: 10px; margin-top: 10px;">
-                    <label for="global-class-select" style="color: var(--text-primary); font-weight: bold; font-size: 0.9rem;">Class:</label>
-                    <select id="global-class-select" style="padding: 6px; border-radius: 5px; font-weight: bold; background: var(--bg-card); color: white; border: 1px solid var(--border-color); flex: 1; cursor: pointer;">
-                        <option value="Form 1">Form 1</option>
-                        <option value="Form 2">Form 2</option>
-                        <option value="Form 3">Form 3</option>
-                        <option value="Form 4">Form 4</option>
-                    </select>
+                <div id="class-selector-container" style="display: none; align-items: center; gap: 8px; margin-top: 10px;">
+                    <label style="color: var(--text-secondary); font-weight: bold; font-size: 0.85rem;">Class:</label>
+                    <div class="custom-dropdown" id="global-class-dropdown" style="flex: 1;">
+                        <div class="custom-dropdown-toggle" id="global-class-toggle" style="padding: 6px 10px; font-size: 0.85rem; font-weight: 600; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                            <span id="global-class-text">Form 1</span>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">&#x25BC;</span>
+                        </div>
+                        <div class="custom-dropdown-menu" id="global-class-menu" style="width: 100%; z-index: 950;">
+                            <div class="dropdown-option active" data-val="Form 1">Form 1</div>
+                            <div class="dropdown-option" data-val="Form 2">Form 2</div>
+                            <div class="dropdown-option" data-val="Form 3">Form 3</div>
+                            <div class="dropdown-option" data-val="Form 4">Form 4</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <ul class="nav-links">
