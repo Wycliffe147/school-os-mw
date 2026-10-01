@@ -3041,12 +3041,221 @@ function anRenderRankTable(containerId, students, rankColor) {
         </tr></thead>
         <tbody>${students.map((s, i) => `<tr>
             <td style="font-weight:700; color:${rankColor};">${i + 1}</td>
-            <td>${s.name}</td>
+            <td><button type="button" class="btn-student-analytics" data-id="${s.id}" style="background:none;border:none;color:var(--accent-blue);font-weight:600;cursor:pointer;padding:0;text-align:left;font-family:inherit;font-size:0.88rem;text-decoration:underline;">${s.name}</button></td>
             <td style="color:var(--text-secondary);">${s.classLevel}</td>
             <td style="text-align:center; font-weight:700; color:${anGradeColour(s.avg)};">${s.avg}%</td>
         </tr>`).join('')}</tbody>
     </table>`;
+
+    el.querySelectorAll('.btn-student-analytics').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const sid = btn.getAttribute('data-id');
+            openStudentAnalyticsModal(sid);
+        });
+    });
 }
+
+// ─── Individual Student Analytics Modal Logic ─────────────────────────────────
+async function openStudentAnalyticsModal(studentId) {
+    const modal = document.getElementById('modal-student-analytics');
+    const content = document.getElementById('modal-student-analytics-content');
+    if (!modal || !content) return;
+
+    modal.style.display = 'flex';
+    content.innerHTML = '<div style="text-align:center; padding:50px;"><p style="color:var(--text-secondary); font-size:1.1rem;">Loading student analytics...</p></div>';
+
+    try {
+        const res = await apiFetch(`/api/analytics/student/${studentId}`);
+        if (!res.ok) throw new Error('Failed to fetch student analytics');
+        const st = await res.json();
+        renderStudentAnalyticsModalContent(st);
+    } catch (e) {
+        content.innerHTML = '<div style="text-align:center; padding:40px;"><p style="color:var(--accent-danger);">Failed to load student analytics data.</p></div>';
+    }
+}
+
+function renderStudentAnalyticsModalContent(st) {
+    const content = document.getElementById('modal-student-analytics-content');
+    if (!content) return;
+
+    const isForm3Or4 = st.classLevel === 'Form 3' || st.classLevel === 'Form 4';
+
+    function pointBadge(p, label) {
+        if (p === null) return `<span style="color:var(--text-secondary);">-</span>`;
+        let color = '#ef4444';
+        if (p <= 2) color = '#10b981';
+        else if (p <= 6) color = '#3b82f6';
+        else if (p <= 8) color = '#f59e0b';
+
+        return `<span style="background:${color}; color:#fff; font-weight:700; padding:3px 9px; border-radius:4px; font-size:0.78rem; display:inline-block;">Pt ${p} (${label})</span>`;
+    }
+
+    const msceBadge = st.msceQualified
+        ? `<span style="background:#10b981; color:#fff; padding:4px 10px; border-radius:20px; font-size:0.78rem; font-weight:700;">✅ MSCE Qualified</span>`
+        : `<span style="background:#ef4444; color:#fff; padding:4px 10px; border-radius:20px; font-size:0.78rem; font-weight:700;">⚠️ MSCE At-Risk</span>`;
+
+    const html = `
+    <!-- Header -->
+    <div style="border-bottom:1px solid var(--border-color); padding-bottom:16px; margin-bottom:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+            <div>
+                <h2 style="margin:0 0 6px 0; font-size:1.35rem; color:var(--text-primary);">${st.name}</h2>
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; font-size:0.85rem; color:var(--text-secondary);">
+                    <span>🏫 <strong>${st.classLevel}</strong> (${st.sectionName})</span>
+                    <span>👤 ${st.gender}</span>
+                    <span>📞 Parent: ${st.parentName} (${st.parentPhone})</span>
+                    ${st.bursaryName ? `<span style="background:rgba(245,158,11,0.15); color:#f59e0b; padding:2px 8px; border-radius:4px; font-weight:600;">🎁 ${st.bursaryName}</span>` : ''}
+                </div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:1.2rem; font-weight:800; color:var(--accent-blue);">
+                    Position ${st.position || '-'} <span style="font-size:0.85rem; font-weight:400; color:var(--text-secondary);">of ${st.totalClassStudents}</span>
+                </div>
+                ${isForm3Or4 ? `<div style="margin-top:6px;">${msceBadge}</div>` : ''}
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics Grid -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:20px;">
+        <div style="background:rgba(255,255,255,0.03); border-left:4px solid #3b82f6; border-radius:8px; padding:12px;">
+            <p style="font-size:0.72rem; color:var(--text-secondary); margin:0 0 4px; text-transform:uppercase;">Overall Average</p>
+            <h3 style="margin:0; font-size:1.3rem; color:${anGradeColour(st.studentAvg)};">${st.studentAvg !== null ? `${st.studentAvg}%` : '-'}</h3>
+        </div>
+        ${isForm3Or4 ? `
+        <div style="background:rgba(255,255,255,0.03); border-left:4px solid #8b5cf6; border-radius:8px; padding:12px;">
+            <p style="font-size:0.72rem; color:var(--text-secondary); margin:0 0 4px; text-transform:uppercase;">MSCE Best 6 Points</p>
+            <h3 style="margin:0; font-size:1.3rem; color:#8b5cf6;">${st.best6Points !== null ? `${st.best6Points} Points` : '-'}</h3>
+            <span style="font-size:0.7rem; color:var(--text-secondary);">Lower is better (MANEB)</span>
+        </div>` : `
+        <div style="background:rgba(255,255,255,0.03); border-left:4px solid #8b5cf6; border-radius:8px; padding:12px;">
+            <p style="font-size:0.72rem; color:var(--text-secondary); margin:0 0 4px; text-transform:uppercase;">Class Position</p>
+            <h3 style="margin:0; font-size:1.3rem; color:#8b5cf6;">Top ${st.position ? Math.round((st.position / st.totalClassStudents) * 100) : '-'}%</h3>
+            <span style="font-size:0.7rem; color:var(--text-secondary);">Rank ${st.position || '-'} of ${st.totalClassStudents}</span>
+        </div>`}
+        <div style="background:rgba(255,255,255,0.03); border-left:4px solid #10b981; border-radius:8px; padding:12px;">
+            <p style="font-size:0.72rem; color:var(--text-secondary); margin:0 0 4px; text-transform:uppercase;">Attendance Rate</p>
+            <h3 style="margin:0; font-size:1.3rem; color:#10b981;">${st.attendance.rate !== null ? `${st.attendance.rate}%` : 'No data'}</h3>
+            <span style="font-size:0.7rem; color:var(--text-secondary);">${st.attendance.presentDays} present / ${st.attendance.totalDays} days</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.03); border-left:4px solid ${st.fees.balance > 0 ? '#ef4444' : '#10b981'}; border-radius:8px; padding:12px;">
+            <p style="font-size:0.72rem; color:var(--text-secondary); margin:0 0 4px; text-transform:uppercase;">Fee Balance</p>
+            <h3 style="margin:0; font-size:1.3rem; color:${st.fees.balance > 0 ? '#ef4444' : '#10b981'};">MK ${Number(st.fees.balance).toLocaleString()}</h3>
+            <span style="font-size:0.7rem; color:var(--text-secondary);">${st.fees.balance <= 0 ? 'Cleared' : 'Outstanding'}</span>
+        </div>
+    </div>
+
+    <!-- MANEB Subject Matrix -->
+    <div style="margin-bottom:20px;">
+        <h4 style="margin:0 0 10px 0; font-size:0.95rem; display:flex; justify-content:space-between; align-items:center;">
+            <span>🇲🇼 MANEB Subject Performance & Grade Points (1-9 Scale)</span>
+            <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:400;">1=Distinction (80%+) | 9=Fail (<40%)</span>
+        </h4>
+        <div class="table-container" style="max-height:240px; overflow-y:auto;">
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th style="background:#0f172a;">Subject</th>
+                        <th style="background:#0f172a; text-align:center;">CAT (30%)</th>
+                        <th style="background:#0f172a; text-align:center;">Exam (70%)</th>
+                        <th style="background:#0f172a; text-align:center;">Final %</th>
+                        <th style="background:#0f172a; text-align:center;">MANEB Grade Point</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${st.subjectDetails.map(sub => `
+                    <tr>
+                        <td><strong>${sub.subject}</strong></td>
+                        <td style="text-align:center;">${sub.catMark !== null ? sub.catMark : '-'}</td>
+                        <td style="text-align:center;">${sub.examMark !== null ? sub.examMark : '-'}</td>
+                        <td style="text-align:center; font-weight:700; color:${anGradeColour(sub.finalMark)};">${sub.finalMark !== null ? `${sub.finalMark}%` : '-'}</td>
+                        <td style="text-align:center;">${pointBadge(sub.manebPoint, sub.manebLabel)}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Term History & Fee Payments Grid -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:8px; padding:14px;">
+            <h4 style="margin:0 0 10px 0; font-size:0.9rem;">📈 Term-over-Term Progression</h4>
+            ${st.termHistory.length ? `
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                ${st.termHistory.map(t => `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:8px 12px; border-radius:6px;">
+                    <span style="font-size:0.82rem; font-weight:600;">${t.term}</span>
+                    <span style="font-size:0.9rem; font-weight:700; color:${anGradeColour(t.avg)};">${t.avg !== null ? `${t.avg}%` : '-'}</span>
+                </div>`).join('')}
+            </div>` : '<p style="color:var(--text-secondary); font-size:0.8rem; margin:0;">No prior term history recorded.</p>'}
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:8px; padding:14px;">
+            <h4 style="margin:0 0 10px 0; font-size:0.9rem;">💳 Fee Installment Log</h4>
+            ${st.fees.paymentHistory.length ? `
+            <div style="max-height:140px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+                ${st.fees.paymentHistory.map(p => `
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; background:rgba(255,255,255,0.04); padding:6px 10px; border-radius:4px;">
+                    <div>
+                        <span style="font-weight:600; color:var(--text-primary);">MK ${Number(p.amount).toLocaleString()}</span>
+                        <span style="color:var(--text-secondary); font-size:0.75rem;"> (${p.method || 'Cash'})</span>
+                    </div>
+                    <span style="color:var(--text-secondary); font-size:0.72rem;">${new Date(p.date).toLocaleDateString()}</span>
+                </div>`).join('')}
+            </div>` : '<p style="color:var(--text-secondary); font-size:0.8rem; margin:0;">No payments recorded yet.</p>'}
+        </div>
+    </div>`;
+
+    content.innerHTML = html;
+}
+
+(function setupStudentAnalyticsSearch() {
+    const input = document.getElementById('analytics-student-search');
+    const results = document.getElementById('analytics-student-results');
+    if (!input || !results) return;
+
+    input.addEventListener('input', async () => {
+        const query = input.value.trim().toLowerCase();
+        if (!query) {
+            results.style.display = 'none';
+            return;
+        }
+
+        try {
+            if (!students || !students.length) {
+                const res = await apiFetch('/api/students');
+                if (res.ok) students = await res.json();
+            }
+
+            const matches = (students || []).filter(s => s.name.toLowerCase().includes(query)).slice(0, 8);
+            if (!matches.length) {
+                results.innerHTML = '<p style="padding:10px; color:var(--text-secondary); font-size:0.8rem; margin:0;">No matching students</p>';
+            } else {
+                results.innerHTML = matches.map(s => `
+                <div class="dropdown-option" data-id="${s.id}" style="font-size:0.85rem; padding:8px 12px; cursor:pointer;">
+                    <span><strong>${s.name}</strong> (${s.classLevel || 'Form 1'})</span>
+                </div>`).join('');
+
+                results.querySelectorAll('.dropdown-option').forEach(opt => {
+                    opt.addEventListener('click', () => {
+                        const sid = opt.getAttribute('data-id');
+                        input.value = '';
+                        results.style.display = 'none';
+                        openStudentAnalyticsModal(sid);
+                    });
+                });
+            }
+            results.style.display = 'block';
+        } catch(e) {}
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !results.contains(e.target)) {
+            results.style.display = 'none';
+        }
+    });
+})();
+
 
 // ─── KPI card ────────────────────────────────────────────────────────────────
 function anKpiCard(icon, label, value, sub, accentColor) {

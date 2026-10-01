@@ -268,4 +268,173 @@ router.get('/analytics/summary', (req, res) => {
     }
 });
 
+// ─── Helper: Convert percentage mark to MANEB Points (1 to 9) ─────────────────
+function getManebPoint(mark) {
+    if (mark === null || mark === undefined || isNaN(mark)) return { point: null, label: 'No Mark', code: '-' };
+    const m = Number(mark);
+    if (m >= 80) return { point: 1, label: 'Distinction', code: '1' };
+    if (m >= 75) return { point: 2, label: 'Distinction', code: '2' };
+    if (m >= 70) return { point: 3, label: 'Credit', code: '3' };
+    if (m >= 65) return { point: 4, label: 'Credit', code: '4' };
+    if (m >= 60) return { point: 5, label: 'Credit', code: '5' };
+    if (m >= 50) return { point: 6, label: 'Credit', code: '6' };
+    if (m >= 45) return { point: 7, label: 'Pass', code: '7' };
+    if (m >= 40) return { point: 8, label: 'Pass', code: '8' };
+    return { point: 9, label: 'Fail', code: '9' };
+}
+
+// ─── GET /api/analytics/student/:id ──────────────────────────────────────────
+router.get('/analytics/student/:id', (req, res) => {
+    try {
+        const db = readDb(req.user.schoolId);
+        const students = db.students || [];
+        const settings = db.settings || {};
+        const catW = Number(settings.catWeight ?? 30);
+        const examW = Number(settings.examWeight ?? 70);
+
+        const student = students.find(s => s.id === req.params.id);
+        if (!student) return res.status(404).json({ error: 'Student not found' });
+
+        const classLevel = student.classLevel || 'Form 1';
+        const classStudents = students.filter(s => (s.classLevel || 'Form 1') === classLevel);
+
+        // 1. Calculate class rank/position
+        const rankedClass = classStudents.map(s => {
+            const subs = Object.keys(s.subjects || {}).filter(k => s.subjects[k]);
+            const marks = subs.map(sub => computeMark(s, sub, catW, examW)).filter(m => m !== null);
+            const avg = marks.length ? marks.reduce((a, b) => a + b, 0) / marks.length : 0;
+            return { id: s.id, avg };
+        }).sort((a, b) => b.avg - a.avg);
+
+        const rankIndex = rankedClass.findIndex(s => s.id === student.id);
+        const position = rankIndex !== -1 ? rankIndex + 1 : null;
+        const totalClassStudents = classStudents.length;
+
+        // 2. Individual Subject Performance & MANEB Points
+        const activeSubjects = Object.keys(student.subjects || {}).filter(k => student.subjects[k]);
+        let totalMarkSum = 0;
+        let markCount = 0;
+
+        const subjectDetails = activeSubjects.map(sub => {
+            const cat = student.catMarks && student.catMarks[sub] != null ? Number(student.catMarks[sub]) : null;
+            const exam = student.examMarks && student.examMarks[sub] != null ? Number(student.examMarks[sub]) : null;
+            const mark = computeMark(student, sub, catW, examW);
+            const maneb = getManebPoint(mark);
+
+            if (mark !== null) {
+                totalMarkSum += mark;
+                markCount++;
+            }
+
+            return {
+                subject: sub,
+                catMark: cat,
+                examMark: exam,
+                finalMark: mark,
+                manebPoint: maneb.point,
+                manebLabel: maneb.label,
+                manebCode: maneb.code
+            };
+        }).sort((a, b) => (b.finalMark || 0) - (a.finalMark || 0));
+
+        const studentAvg = markCount > 0 ? Math.round((totalMarkSum / markCount) * 10) / 10 : null;
+
+        // 3. Best 6 MSCE Points Calculation (MANEB Rules)
+        const englishEntry = subjectDetails.find(s => s.subject.toLowerCase().includes('english'));
+        const englishPoint = englishEntry && englishEntry.manebPoint !== null ? englishEntry.manebPoint : 9;
+        
+        const otherSubjects = subjectDetails
+            .filter(s => !s.subject.toLowerCase().includes('english') && s.manebPoint !== null)
+            .map(s => s.manebPoint)
+            .sort((a, b) => a - b); // Lowest points first (1 is best)
+
+        const top5Others = otherSubjects.slice(0, 5);
+        let best6Points = null;
+        let msceQualified = false;
+
+        if (subjectDetails.length >= 6) {
+            const totalPointsList = [englishPoint, ...top5Others];
+            best6Points = totalPointsList.reduce((a, b) => a + b, 0);
+            
+            // MANEB MSCE pass criteria: Pass English (Point <= 8) and pass at least 5 other subjects
+            const passedSubjectsCount = subjectDetails.filter(s => s.manebPoint !== null && s.manebPoint <= 8).length;
+            msceQualified = (englishPoint <= 8) && (passedSubjectsCount >= 6);
+        }
+
+        // 4. Attendance Summary
+        const attendance = db.attendance || [];
+        let totalDays = 0;
+        let presentDays = 0;
+        let absentDays = 0;
+        let excusedDays = 0;
+
+        attendance.forEach(day => {
+            if (day.records && day.records[student.id]) {
+                totalDays++;
+                const st = day.records[student.id];
+                if (st === 'present') presentDays++;
+                else if (st === 'absent') absentDays++;
+                else if (st === 'excused') excusedDays++;
+            }
+        });
+
+        const attendanceRate = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : null;
+
+        // 5. Fee Health
+        const sections = settings.sections || [];
+        const secObj = sections.find(s => s.id === student.section) || sections.find(s => s.isDefault) || { fee: 0 };
+        const totalFees = student.totalFees !== undefined ? Number(student.totalFees) : Number(secObj.fee || 0);
+        const paidAmount = Number(student.paidAmount || 0);
+        const balance = totalFees - paidAmount;
+
+        // 6. Term History Trend
+        const termHistory = (student.termHistory || []).map(snap => {
+            const termLabel = snap.term || snap.label || 'Term';
+            const termMarks = Object.values(snap.marks || {}).filter(m => m !== null && !isNaN(Number(m))).map(Number);
+            const tAvg = termMarks.length ? Math.round((termMarks.reduce((a, b) => a + b, 0) / termMarks.length) * 10) / 10 : null;
+            return {
+                term: termLabel,
+                avg: tAvg
+            };
+        });
+
+        res.json({
+            id: student.id,
+            name: student.name,
+            gender: student.gender || 'Not specified',
+            phone: student.phone || '-',
+            parentName: student.parentName || '-',
+            parentPhone: student.parentPhone || '-',
+            classLevel,
+            sectionName: secObj.name || 'General',
+            bursaryName: student.bursaryName || null,
+            position,
+            totalClassStudents,
+            studentAvg,
+            subjectDetails,
+            best6Points,
+            msceQualified,
+            attendance: {
+                totalDays,
+                presentDays,
+                absentDays,
+                excusedDays,
+                rate: attendanceRate
+            },
+            fees: {
+                totalFees,
+                paidAmount,
+                balance,
+                lockOverride: Boolean(student.feeLockOverride),
+                paymentHistory: student.paymentHistory || []
+            },
+            termHistory
+        });
+    } catch (err) {
+        console.error('Student Analytics error:', err);
+        res.status(500).json({ error: 'Failed to compute student analytics' });
+    }
+});
+
 module.exports = router;
+
