@@ -23,7 +23,7 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 
 // Register API Routes
 app.use('/api', require('./routes/auth'));
-// Public routes — registered FIRST so they are not blocked by protected routers below
+// Public routes - registered FIRST so they are not blocked by protected routers below
 app.use('/api', require('./routes/parentPortal'));
 app.use('/api', require('./routes/discovery'));
 

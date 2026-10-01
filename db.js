@@ -64,7 +64,7 @@ function fixUsers() {
     });
     const broken = allUsers.filter(u => !u.passwordHash);
     if (broken.length) {
-        console.warn(`[fixUsers] ${broken.length} user(s) have no passwordHash and no plaintext password — they cannot log in:`, broken.map(u => u.username));
+        console.warn(`[fixUsers] ${broken.length} user(s) have no passwordHash and no plaintext password - they cannot log in:`, broken.map(u => u.username));
     }
 }
 

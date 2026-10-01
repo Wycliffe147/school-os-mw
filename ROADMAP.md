@@ -1,7 +1,7 @@
-# 🎓 Project Roadmap — School Management System & Educational Marketplace
+# 🎓 Project Roadmap - School Management System & Educational Marketplace
 
 > **Project:** `report-generator-web`
-> **Current State:** Phase 1 (Live) — Multi-Tenant Student Report Card Generator & WhatsApp Delivery Engine
+> **Current State:** Phase 1 (Live) - Multi-Tenant Student Report Card Generator & WhatsApp Delivery Engine
 > **Ultimate Vision:** A nationwide two-sided educational platform connecting schools (B2B) and parents (B2C) across Malawi and Sub-Saharan Africa.
 
 ---
@@ -11,13 +11,13 @@
 This project will evolve in two parallel directions:
 
 - **B2B (School Operations):** A full School Management System (SMS) that schools subscribe to for managing students, marks, fees, attendance, and parent communication.
-- **B2C (Parent Discovery):** A public-facing school finder and comparison network where parents can locate schools near them by GPS, compare MSCE performance, view verified fee structures, and apply for admissions — far beyond what Google Maps can offer.
+- **B2C (Parent Discovery):** A public-facing school finder and comparison network where parents can locate schools near them by GPS, compare MSCE performance, view verified fee structures, and apply for admissions - far beyond what Google Maps can offer.
 
 The more schools use the B2B system, the richer and more trusted the public B2C directory becomes. This creates a self-reinforcing growth flywheel.
 
 ---
 
-## 📌 Phase 1 — Current Baseline: Report Card Engine ✅ LIVE
+## 📌 Phase 1 - Current Baseline: Report Card Engine ✅ LIVE
 
 > *Goal: Stable, secure, production-ready multi-tenant report card generation.*
 
@@ -45,7 +45,7 @@ The more schools use the B2B system, the richer and more trusted the public B2C 
 
 ---
 
-## 📌 Phase 2 — Immediate High-Value Operations & WhatsApp Bot (B2B)
+## 📌 Phase 2 - Immediate High-Value Operations & WhatsApp Bot (B2B)
 
 > *Goal: Double system value. Solve fee collection and real-time parent communication.*
 
@@ -56,7 +56,7 @@ The more schools use the B2B system, the richer and more trusted the public B2C 
 - [ ] Automated WhatsApp fee reminder messages to parents
 
 ### 2.2 Daily Attendance Module
-- [x] Teacher attendance register interface (Present, Absent, Late, Excused) — optimized for fast mobile entry
+- [x] Teacher attendance register interface (Present, Absent, Late, Excused) - optimized for fast mobile entry
 - [x] Automated WhatsApp absence alert sent to parent when child is marked absent
 - [x] Attendance statistics (Days Present / Days Total) embedded on the PDF report card
 
@@ -76,7 +76,7 @@ The more schools use the B2B system, the richer and more trusted the public B2C 
 
 ---
 
-## 📌 Phase 3 — Enterprise SMS & Financial Automation (B2B)
+## 📌 Phase 3 - Enterprise SMS & Financial Automation (B2B)
 
 > *Goal: Become an indispensable, full School Management System schools cannot operate without.*
 
@@ -106,9 +106,9 @@ The more schools use the B2B system, the richer and more trusted the public B2C 
 
 ---
 
-## 📌 Phase 4 — The Grand Vision: Public School Discovery & Comparison Network 🌐 (B2C)
+## 📌 Phase 4 - The Grand Vision: Public School Discovery & Comparison Network 🌐 (B2C)
 
-> *Goal: Become the definitive educational network connecting parents and schools across Malawi. Think Google Maps for schools — but with real, verified, live data schools cannot fake.*
+> *Goal: Become the definitive educational network connecting parents and schools across Malawi. Think Google Maps for schools - but with real, verified, live data schools cannot fake.*
 
 ### 4.1 Geolocation & "Schools Near Me" Finder
 - [x] Public-facing discovery portal (`public/explore.html`)
@@ -132,7 +132,7 @@ The more schools use the B2B system, the richer and more trusted the public B2C 
 
 ---
 
-## 📝 Future Backlog — Deferred (Far Future)
+## 📝 Future Backlog - Deferred (Far Future)
 
 > These features are noted for consideration far down the line after the core SMS and public marketplace have solid adoption.
 
@@ -142,7 +142,7 @@ The more schools use the B2B system, the richer and more trusted the public B2C 
 
 ---
 
-## 💰 Commercial Targets (Malawi Kwacha — MWK)
+## 💰 Commercial Targets (Malawi Kwacha - MWK)
 
 | Milestone | Active Schools | Monthly Revenue | Annual Revenue (ARR) |
 | :--- | :--- | :--- | :--- |

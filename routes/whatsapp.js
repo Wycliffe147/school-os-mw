@@ -276,10 +276,10 @@ async function connectToWhatsApp(schoolId = 'default') {
                     let reply = `🤖 *${schoolName} Parent Self-Service Bot*\n\n`;
                     reply += `Hello! Welcome. You are connected for student *${student.name}* (${student.classLevel || 'Form 1'}).\n\n`;
                     reply += `Reply with any keyword below:\n\n`;
-                    reply += `1️⃣ *FEES* — View fee balance & receipt history\n`;
-                    reply += `2️⃣ *REPORT* — Download PDF report card\n`;
-                    reply += `3️⃣ *ATTEND* — View attendance summary\n`;
-                    reply += `4️⃣ *MENU* — Display this menu`;
+                    reply += `1️⃣ *FEES* - View fee balance & receipt history\n`;
+                    reply += `2️⃣ *REPORT* - Download PDF report card\n`;
+                    reply += `3️⃣ *ATTEND* - View attendance summary\n`;
+                    reply += `4️⃣ *MENU* - Display this menu`;
 
                     await sock.sendMessage(remoteJid, { text: reply });
                 }

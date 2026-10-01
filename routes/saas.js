@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const { readDb, writeDb, getDbCache } = require('../db');
 const { authenticateToken, requireSuperAdmin } = require('../middleware/auth');
 
-// Scope auth to /saas/* only — do NOT use global router.use() here,
+// Scope auth to /saas/* only - do NOT use global router.use() here,
 // because this router is mounted on /api and a global use() would block
 // ALL /api/* requests including public routes from other routers.
 router.use('/saas', authenticateToken, requireSuperAdmin);

@@ -7,7 +7,7 @@ const { readDb, writeDb } = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 const PHOTO_SIZE_LIMIT = 1 * 1024 * 1024; // 1 MB
-// memoryStorage — no disk writes; files live in req.files buffers only
+// memoryStorage - no disk writes; files live in req.files buffers only
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: PHOTO_SIZE_LIMIT },
@@ -128,7 +128,7 @@ router.post('/settings', requireAdmin, upload.fields([
     
     const logoFile = req.files && req.files.logo && req.files.logo[0];
     if (logoFile) {
-        // Convert buffer to Base64 data-URL — stored in MongoDB, survives server restarts
+        // Convert buffer to Base64 data-URL - stored in MongoDB, survives server restarts
         const mime = logoFile.mimetype;
         const b64 = logoFile.buffer.toString('base64');
         db.settings.logoBase64 = `data:${mime};base64,${b64}`;

@@ -141,7 +141,7 @@ router.post('/students/:id/fee-lock-override', requireBursarOrAdmin, (req, res) 
     res.json({ success: true });
 });
 
-// Start New Term — archive current term data, reset payment state for all students
+// Start New Term - archive current term data, reset payment state for all students
 router.post('/fee-ledger/start-new-term', requireBursarOrAdmin, (req, res) => {
     const db = readDb(req.user ? req.user.schoolId : 'default');
     const { termName } = req.body;

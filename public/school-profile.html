@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-title">School Profile — Discovery Network</title>
+    <title id="page-title">School Profile - Discovery Network</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -449,19 +449,19 @@
         <section class="stats-grid" id="stats-section">
             <div class="stat-card">
                 <div class="label">TERMLY FEE</div>
-                <div class="value" style="color:var(--accent-green);" id="stat-fee">MK —</div>
+                <div class="value" style="color:var(--accent-green);" id="stat-fee">MK -</div>
             </div>
             <div class="stat-card">
                 <div class="label">TOTAL ENROLLMENT</div>
-                <div class="value" id="stat-students">—</div>
+                <div class="value" id="stat-students">-</div>
             </div>
             <div class="stat-card">
                 <div class="label">CONTACT NUMBER</div>
-                <div class="value" style="font-size:1.1rem; margin-top:4px;" id="stat-phone">—</div>
+                <div class="value" style="font-size:1.1rem; margin-top:4px;" id="stat-phone">-</div>
             </div>
             <div class="stat-card">
                 <div class="label">LOCATION</div>
-                <div class="value" style="font-size:1.1rem; margin-top:4px;" id="stat-district">—</div>
+                <div class="value" style="font-size:1.1rem; margin-top:4px;" id="stat-district">-</div>
             </div>
         </section>
 
@@ -600,7 +600,7 @@
     }
 
     function renderProfile(s) {
-        document.title = `${s.schoolName} — School Profile & MANEB Performance`;
+        document.title = `${s.schoolName} - School Profile & MANEB Performance`;
         
         // Header info
         document.getElementById('school-name-text').textContent = s.schoolName;
@@ -638,7 +638,7 @@
         }
 
         // Key Stats
-        document.getElementById('stat-fee').textContent = s.approxFees ? `MK ${Number(s.approxFees).toLocaleString()}` : 'MK —';
+        document.getElementById('stat-fee').textContent = s.approxFees ? `MK ${Number(s.approxFees).toLocaleString()}` : 'MK -';
         document.getElementById('stat-students').textContent = s.totalStudents || '0';
         document.getElementById('stat-phone').textContent = s.headerContactNumber || s.phone || 'N/A';
         document.getElementById('stat-district').textContent = s.district || 'Malawi';

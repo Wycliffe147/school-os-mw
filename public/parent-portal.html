@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Parent Portal — School Management System</title>
+    <title>Parent Portal - School Management System</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -328,12 +328,12 @@
 <div id="portal-app">
     <header class="portal-header">
         <div>
-            <div class="school-name" id="ph-school-name">—</div>
-            <div class="student-name" id="ph-student-name">—</div>
+            <div class="school-name" id="ph-school-name">-</div>
+            <div class="student-name" id="ph-student-name">-</div>
             <div id="child-switcher-container" style="display:none; margin-top: 6px; position: relative;">
                 <label style="font-size: 0.75rem; color: var(--accent-blue); font-weight:600; margin-right: 6px;">🧒 Switch Child:</label>
                 <button id="child-switcher-btn" onclick="toggleChildSwitcher(event)" style="padding: 4px 10px; border-radius: 6px; background: var(--bg-secondary); color: white; border: 1px solid var(--accent-blue); font-size: 0.85rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
-                    <span id="child-switcher-label">—</span> <span style="font-size:0.7rem; opacity:0.7;">▼</span>
+                    <span id="child-switcher-label">-</span> <span style="font-size:0.7rem; opacity:0.7;">▼</span>
                 </button>
                 <ul id="child-switcher-list" style="display:none; position:absolute; top:calc(100% + 4px); left:0; z-index:999; list-style:none; margin:0; padding:4px 0; background:var(--bg-secondary); border:1px solid var(--accent-blue); border-radius:8px; min-width:180px; box-shadow:0 8px 24px rgba(0,0,0,0.5);"></ul>
             </div>
@@ -562,7 +562,7 @@
                 // Set button label to current child
                 const current = portalSiblings.find(s => s.id === portalStudent.id);
                 if (current) switcherLabel.textContent = `${current.name} (${current.classLevel || 'Form 1'})`;
-                // Build list items — each fires selectStudent on click, no mousedown race
+                // Build list items - each fires selectStudent on click, no mousedown race
                 switcherList.innerHTML = portalSiblings.map(s => `
                     <li>
                         <button onclick="selectStudent('${s.id}')" style="
@@ -673,8 +673,8 @@
                 <tr><td style="color:var(--text-secondary); width:140px;">Full Name</td><td><strong>${s.name}</strong></td></tr>
                 <tr><td style="color:var(--text-secondary);">Class</td><td>${s.classLevel || 'N/A'}</td></tr>
                 <tr><td style="color:var(--text-secondary);">Student ID</td><td>${s.id}</td></tr>
-                <tr><td style="color:var(--text-secondary);">Gender</td><td>${s.gender || '—'}</td></tr>
-                <tr><td style="color:var(--text-secondary);">Parent/Guardian</td><td>${s.parentName || '—'}</td></tr>
+                <tr><td style="color:var(--text-secondary);">Gender</td><td>${s.gender || '-'}</td></tr>
+                <tr><td style="color:var(--text-secondary);">Parent/Guardian</td><td>${s.parentName || '-'}</td></tr>
                 <tr><td style="color:var(--text-secondary);">Fee Status</td><td><span class="badge ${bal <= 0 ? 'badge-success' : 'badge-danger'}">${bal <= 0 ? 'FULLY PAID' : 'BALANCE DUE'}</span></td></tr>
             </table>`;
 
@@ -724,7 +724,7 @@
                             <td>${new Date(p.date).toLocaleDateString()}</td>
                             <td><strong>${Number(p.amount).toLocaleString()}</strong></td>
                             <td>${p.method || 'Cash'}</td>
-                            <td><span class="badge badge-blue">${p.receiptNo || '—'}</span></td>
+                            <td><span class="badge badge-blue">${p.receiptNo || '-'}</span></td>
                         </tr>`).join('')}
                     </tbody>
                 </table>`;
@@ -824,8 +824,8 @@
                 <tbody>
                     ${subjects.map(sub => {
                         const score = Number(marks[sub] || 0);
-                        const cat  = s.catMarks  && s.catMarks[sub]  !== undefined ? s.catMarks[sub]  : '—';
-                        const exam = s.examMarks && s.examMarks[sub] !== undefined ? s.examMarks[sub] : '—';
+                        const cat  = s.catMarks  && s.catMarks[sub]  !== undefined ? s.catMarks[sub]  : '-';
+                        const exam = s.examMarks && s.examMarks[sub] !== undefined ? s.examMarks[sub] : '-';
                         const grade = getSimpleGrade(score);
                         return `<tr>
                             <td><strong>${sub}</strong></td>
@@ -867,7 +867,7 @@
                         <td>${new Date(p.date).toLocaleDateString()}</td>
                         <td><strong>MK ${Number(p.amount).toLocaleString()}</strong></td>
                         <td>${p.method || 'Cash'}</td>
-                        <td><span class="badge badge-blue">${p.receiptNo || '—'}</span></td>
+                        <td><span class="badge badge-blue">${p.receiptNo || '-'}</span></td>
                     </tr>`).join('');
                 return `
                 <details style="margin-bottom:14px; border:1px solid var(--border-color); border-radius:8px; padding:12px;">
@@ -901,7 +901,7 @@
         const previewUrl = `/api/parent-portal/pdf?token=${encodeURIComponent(portalToken)}&studentId=${encodeURIComponent(portalStudent.id)}${termParam}`;
         const downloadUrl = `/api/parent-portal/pdf?token=${encodeURIComponent(portalToken)}&studentId=${encodeURIComponent(portalStudent.id)}${termParam}&download=true`;
 
-        titleEl.textContent = `📄 Report Card Preview — ${termTitle || 'Report Card'}`;
+        titleEl.textContent = `📄 Report Card Preview - ${termTitle || 'Report Card'}`;
         iframe.src = previewUrl;
         downloadBtn.href = downloadUrl;
         modal.style.display = 'flex';
@@ -925,7 +925,7 @@
             acEl.innerHTML = '<p style="color:var(--text-secondary);">No past academic records yet. Records appear here after each term is closed.</p>';
         } else {
             acEl.innerHTML = historyList.map(a => {
-                const posText = a.position ? `Position: ${a.position} of ${a.outOf}` : 'Position: —';
+                const posText = a.position ? `Position: ${a.position} of ${a.outOf}` : 'Position: -';
                 const isPassed = a.passed !== undefined ? a.passed : (a.average >= 50);
                 const badgeCls = isPassed ? 'badge-success' : 'badge-danger';
                 const statusLabel = isPassed ? 'PASSED' : 'FAILED';

@@ -697,7 +697,7 @@ document.getElementById('new-school-form')?.addEventListener('submit', async (e)
     }
 });
 
-// Superadmin — update own credentials
+// Superadmin - update own credentials
 document.getElementById('superadmin-account-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const newUsername = document.getElementById('sa-new-username').value.trim();
@@ -850,7 +850,7 @@ document.getElementById('add-student-form').addEventListener('submit', async (e)
     const onBursary = document.getElementById('student-on-bursary').checked;
     const bursaryName = onBursary ? document.getElementById('student-bursary-name').value : '';
     
-    // Get section — if only 1 section, the server will use the default
+    // Get section - if only 1 section, the server will use the default
     const sectionEl = document.getElementById('student-section');
     const section = (sectionEl && schoolSections.length > 1) ? sectionEl.value : undefined;
 
@@ -893,7 +893,7 @@ async function renderStaffTab() {
 
     const readOnly = currentUser.role === 'class_teacher';
 
-    // Hide the create/edit form entirely for class teachers — view only
+    // Hide the create/edit form entirely for class teachers - view only
     const addStaffCard = document.getElementById('add-staff-form')?.closest('.card');
     if (addStaffCard) addStaffCard.style.display = readOnly ? 'none' : '';
 
@@ -1411,7 +1411,7 @@ function addManebRow(examType, data = {}) {
         <td style="padding:6px 8px;"><input class="maneb-sat" type="number" value="${data.sat||''}" min="0" placeholder="0" style="width:60px;background:var(--bg-secondary);color:white;border:1px solid var(--border-color);border-radius:4px;padding:4px;" oninput="updatePassRate(this)"></td>
         <td style="padding:6px 8px;"><input class="maneb-passed" type="number" value="${data.passed||''}" min="0" placeholder="0" style="width:60px;background:var(--bg-secondary);color:white;border:1px solid var(--border-color);border-radius:4px;padding:4px;" oninput="updatePassRate(this)"></td>
         <td style="padding:6px 8px;"><input class="maneb-failed" type="number" value="${data.failed||''}" min="0" placeholder="0" style="width:60px;background:var(--bg-secondary);color:white;border:1px solid var(--border-color);border-radius:4px;padding:4px;"></td>
-        <td class="maneb-rate" style="padding:6px 8px; font-weight:700; color:var(--accent-green);">—</td>
+        <td class="maneb-rate" style="padding:6px 8px; font-weight:700; color:var(--accent-green);">-</td>
         <td style="padding:6px 8px;"><button type="button" onclick="this.closest('tr').remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;">✕</button></td>
     `;
     tbody.appendChild(tr);
@@ -1424,7 +1424,7 @@ function updatePassRate(input) {
     if (!tr) return;
     const sat = Number(tr.querySelector('.maneb-sat').value) || 0;
     const passed = Number(tr.querySelector('.maneb-passed').value) || 0;
-    tr.querySelector('.maneb-rate').textContent = sat > 0 ? `${Math.round(passed/sat*100)}%` : '—';
+    tr.querySelector('.maneb-rate').textContent = sat > 0 ? `${Math.round(passed/sat*100)}%` : '-';
 }
 
 function loadManebRows(results) {
@@ -1450,7 +1450,7 @@ async function loadSettings() {
     document.getElementById('school-subtitle').value = settings.subtitle || '';
     document.getElementById('theme-color').value = settings.themeColor || '#142e5c';
 
-    // Logo preview — use Base64 (new) or URL (legacy)
+    // Logo preview - use Base64 (new) or URL (legacy)
     const logoWrap = document.getElementById('logo-preview-wrap');
     const logoImg  = document.getElementById('logo-preview-img');
     if (logoWrap && logoImg) {
@@ -2415,16 +2415,16 @@ document.getElementById('btn-send-absent-whatsapp').addEventListener('click', as
     }
 });
 
-// ── 🗓️ PHASE 3.2 — Timetable UI ─────────────────────────────────────
+// ── 🗓️ PHASE 3.2 - Timetable UI ─────────────────────────────────────
 const TIMETABLE_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const TIMETABLE_PERIODS = [
-    { period: 1, name: '07:30–08:15' },
-    { period: 2, name: '08:15–09:00' },
-    { period: 3, name: '09:00–09:45' },
-    { period: 4, name: '10:15–11:00' },
-    { period: 5, name: '11:00–11:45' },
-    { period: 6, name: '12:30–13:15' },
-    { period: 7, name: '13:15–14:00' }
+    { period: 1, name: '07:30-08:15' },
+    { period: 2, name: '08:15-09:00' },
+    { period: 3, name: '09:00-09:45' },
+    { period: 4, name: '10:15-11:00' },
+    { period: 5, name: '11:00-11:45' },
+    { period: 6, name: '12:30-13:15' },
+    { period: 7, name: '13:15-14:00' }
 ];
 
 async function renderTimetableTab() {
@@ -2505,7 +2505,7 @@ function openTimetableSlotModal(day, period, existing, staffList) {
     if (subject === null) return;
 
     const teacherOptions = staffList.map(s => `${s.id}: ${s.name}`).join('\n');
-    const teacherChoice = prompt(`Teacher ID (optional — leave blank for none).\nAvailable:\n${teacherOptions}`, existing.teacherId || '');
+    const teacherChoice = prompt(`Teacher ID (optional - leave blank for none).\nAvailable:\n${teacherOptions}`, existing.teacherId || '');
     const teacherId = teacherChoice && teacherChoice.trim() ? teacherChoice.trim().split(':')[0].trim() : null;
 
     apiFetch('/api/timetable', {
@@ -2527,7 +2527,7 @@ function openTimetableSlotModal(day, period, existing, staffList) {
     });
 }
 
-// ── 💼 PHASE 3.3 — Payroll & HR UI ───────────────────────────────────
+// ── 💼 PHASE 3.3 - Payroll & HR UI ───────────────────────────────────
 async function renderPayrollTab() {
     const tbody = document.getElementById('payroll-table-tbody');
     tbody.innerHTML = '';
@@ -2763,7 +2763,7 @@ document.getElementById('btn-print-payslip-action')?.addEventListener('click', (
 });
 
 
-// ── 📢 PHASE 3.4 — Notices Tab (Admin side) ──────────────────────────
+// ── 📢 PHASE 3.4 - Notices Tab (Admin side) ──────────────────────────
 async function renderNoticesTab() {
     const listEl = document.getElementById('notices-admin-list');
     const countEl = document.getElementById('notices-count');
@@ -2821,7 +2821,7 @@ document.getElementById('notices-form').addEventListener('submit', async (e) => 
     }
 });
 
-// ── 📥 PHASE 4.4 — Applications Tab (Admin side) ──────────────────────
+// ── 📥 PHASE 4.4 - Applications Tab (Admin side) ──────────────────────
 async function renderApplicationsTab() {
     const tbody = document.getElementById('applications-table-tbody');
     tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text-secondary);">Loading applications...</td></tr>';
@@ -2841,7 +2841,7 @@ async function renderApplicationsTab() {
             <tr>
                 <td><strong>${a.studentName}</strong></td>
                 <td>${a.classApplied}</td>
-                <td>${a.parentName || '—'}</td>
+                <td>${a.parentName || '-'}</td>
                 <td>${a.parentPhone}</td>
                 <td>${new Date(a.appliedAt).toLocaleDateString()}</td>
                 <td><span style="color:${statusColor}; font-weight:bold;">${a.status}</span></td>

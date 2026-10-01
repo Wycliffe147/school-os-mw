@@ -213,7 +213,7 @@ router.get('/parent-portal/notices', authenticateParent, (req, res) => {
     res.json(notices);
 });
 
-// ── POST /api/parent-portal/notices (Admin only — separate auth) ───────
+// ── POST /api/parent-portal/notices (Admin only - separate auth) ───────
 // Admin can post notices that all parents of a school can see.
 // Uses regular JWT from admin session.
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
