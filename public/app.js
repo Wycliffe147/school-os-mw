@@ -391,6 +391,40 @@ if (selectAllCheckbox) {
     });
 }
 
+// Helper: Check missing marks for students
+function checkMissingMarks(studentIds) {
+    const results = [];
+    (studentIds || []).forEach(id => {
+        const student = students.find(s => s.id === id);
+        if (!student) return;
+
+        const activeSubjects = Object.keys(student.subjects || {}).filter(sub => student.subjects[sub] === true);
+        const missing = activeSubjects.filter(sub => {
+            const hasCat = student.catMarks && student.catMarks[sub] !== undefined && student.catMarks[sub] !== null && student.catMarks[sub] !== '';
+            const hasExam = student.examMarks && student.examMarks[sub] !== undefined && student.examMarks[sub] !== null && student.examMarks[sub] !== '';
+            const hasFinal = student.marks && student.marks[sub] !== undefined && student.marks[sub] !== null && student.marks[sub] !== '';
+            return !hasCat && !hasExam && !hasFinal;
+        });
+
+        if (missing.length > 0) {
+            results.push({
+                id: student.id,
+                name: student.name,
+                classLevel: student.classLevel || 'Form 1',
+                missingSubjects: missing
+            });
+        }
+    });
+    return results;
+}
+
+function promptMissingMarksWarning(missingList, actionName) {
+    const studentLines = missingList.slice(0, 5).map(s => `• ${s.name} (${s.classLevel}): ${s.missingSubjects.join(', ')}`).join('\n');
+    const extraCount = missingList.length > 5 ? `\n...and ${missingList.length - 5} other student(s)` : '';
+    const confirmMsg = `⚠️ MISSING MARKS WARNING\n\nThe following ${missingList.length} student(s) have registered subjects without recorded marks:\n\n${studentLines}${extraCount}\n\nReport cards for these students will show 'Absent/No Score' for missing subjects.\n\nDo you want to proceed with ${actionName}?`;
+    return confirm(confirmMsg);
+}
+
 // Download Selected
 const btnDownloadSelected = document.getElementById('btn-download-selected');
 if (btnDownloadSelected) {
@@ -398,6 +432,13 @@ if (btnDownloadSelected) {
         const selected = Array.from(document.querySelectorAll('.report-cb:checked')).map(cb => cb.value);
         if (selected.length === 0) {
             return alert("Please select at least one student.");
+        }
+
+        const missingList = checkMissingMarks(selected);
+        if (missingList.length > 0) {
+            if (!promptMissingMarksWarning(missingList, "downloading report cards as ZIP")) {
+                return;
+            }
         }
         
         btnDownloadSelected.innerText = 'Zipping... Please wait';
@@ -441,6 +482,13 @@ if (btnSendSelected) {
         const selected = Array.from(document.querySelectorAll('.report-cb:checked')).map(cb => cb.value);
         if (selected.length === 0) {
             return alert("Please select at least one student.");
+        }
+
+        const missingList = checkMissingMarks(selected);
+        if (missingList.length > 0) {
+            if (!promptMissingMarksWarning(missingList, "sending report cards via WhatsApp")) {
+                return;
+            }
         }
 
         const progressBox = document.getElementById('bulk-send-progress');
@@ -1073,6 +1121,31 @@ async function renderMarksTab() {
     
     const classStudents = students.filter(s => (s.classLevel || 'Form 1') === currentClass);
     
+    let totalSlots = 0;
+    let missingSlots = 0;
+
+    classStudents.forEach(student => {
+        allowedSubjects.forEach(sub => {
+            if (student.subjects && student.subjects[sub]) {
+                totalSlots++;
+                const mark = student.marks && student.marks[sub] !== undefined && student.marks[sub] !== null ? student.marks[sub] : '';
+                if (mark === '') missingSlots++;
+            }
+        });
+    });
+
+    const completionBanner = document.getElementById('marks-completion-banner');
+    if (completionBanner) {
+        if (totalSlots === 0) {
+            completionBanner.innerHTML = '';
+        } else if (missingSlots === 0) {
+            completionBanner.innerHTML = `<div style="background:rgba(16,185,129,0.12); border:1px solid #10b981; color:#10b981; padding:10px 14px; border-radius:8px; font-weight:600; font-size:0.88rem;">✅ Mark Sheet 100% Complete for ${currentClass} (All subject marks entered)</div>`;
+        } else {
+            const pct = Math.round(((totalSlots - missingSlots) / totalSlots) * 100);
+            completionBanner.innerHTML = `<div style="background:rgba(245,158,11,0.12); border:1px solid #f59e0b; color:#f59e0b; padding:10px 14px; border-radius:8px; font-weight:600; font-size:0.88rem;">⚠️ Mark Sheet Pending for ${currentClass}: ${pct}% Complete (${missingSlots} missing subject marks)</div>`;
+        }
+    }
+    
     classStudents.forEach(student => {
         const tr = document.createElement('tr');
         tr.setAttribute('data-id', student.id);
@@ -1080,9 +1153,11 @@ async function renderMarksTab() {
         let cols = `<td><strong>${student.name}</strong></td>`;
         
         allowedSubjects.forEach(sub => {
-            const isTaking = student.subjects[sub];
+            const isTaking = student.subjects && student.subjects[sub];
             const canEdit = currentUser.role === 'class_teacher' ? editableSubjects.includes(sub) : true;
-            const mark = isTaking && student.marks[sub] !== undefined && student.marks[sub] !== null ? student.marks[sub] : '';
+            const mark = isTaking && student.marks && student.marks[sub] !== undefined && student.marks[sub] !== null ? student.marks[sub] : '';
+            const isMissing = isTaking && canEdit && (mark === '');
+            const inputStyle = `width: 60px; ${isMissing ? 'border:1px solid #f59e0b; background:rgba(245,158,11,0.08);' : ''}`;
             cols += `
                 <td>
                     <input type="number" min="0" max="100" 
@@ -1090,7 +1165,7 @@ async function renderMarksTab() {
                            data-subject="${sub}" 
                            value="${mark}" 
                            ${(isTaking && canEdit) ? '' : 'disabled'}
-                           style="width: 60px;">
+                           style="${inputStyle}">
                 </td>
             `;
         });
@@ -3316,10 +3391,15 @@ function renderAnalyticsDashboard(d) {
             : [d.attendanceByClass[filterCls]].filter(v => v !== null);
         const avgAtt = attRates.length ? Math.round(attRates.reduce((a, b) => a + b, 0) / attRates.length) : '-';
 
+        const markComp = d.markCompletionRate !== undefined ? d.markCompletionRate : 100;
+        const missingCnt = d.missingMarksCount !== undefined ? d.missingMarksCount : 0;
+        const compColor = markComp === 100 ? '#10b981' : '#f59e0b';
+
         kpiRow.innerHTML =
             anKpiCard('🎓', 'Total Students', totalStudents, filterCls === 'ALL' ? 'All classes' : filterCls, '#3b82f6') +
             anKpiCard('📈', 'School Average', avgMark !== '-' ? `${avgMark}%` : '-', 'Overall mark avg', '#8b5cf6') +
             anKpiCard('✅', 'Pass Rate', avgPassRate !== '-' ? `${avgPassRate}%` : '-', `Pass mark: ${d.passMark}%`, '#10b981') +
+            anKpiCard('📝', 'Mark Completion', `${markComp}%`, missingCnt > 0 ? `${missingCnt} marks pending` : 'All marks entered', compColor) +
             anKpiCard('💰', 'Fee Collection', `${collRate}%`, `MK ${Number(d.feeStats.totalPaid).toLocaleString()} collected`, '#f59e0b') +
             anKpiCard('📅', 'Attendance Rate', avgAtt !== '-' ? `${avgAtt}%` : 'No data', 'Last recorded', '#06b6d4');
     }

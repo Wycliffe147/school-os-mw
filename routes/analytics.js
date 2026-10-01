@@ -237,6 +237,22 @@ router.get('/analytics/summary', (req, res) => {
             }));
         });
 
+        // ── 10. Mark completion data audit ───────────────────────────────────
+        let totalActiveSubjectSlots = 0;
+        let filledSubjectSlots = 0;
+
+        students.forEach(s => {
+            const subs = Object.keys(s.subjects || {}).filter(k => s.subjects[k]);
+            subs.forEach(sub => {
+                totalActiveSubjectSlots++;
+                const m = computeMark(s, sub, catW, examW);
+                if (m !== null && m !== undefined) filledSubjectSlots++;
+            });
+        });
+
+        const missingMarksCount = totalActiveSubjectSlots - filledSubjectSlots;
+        const markCompletionRate = totalActiveSubjectSlots > 0 ? Math.round((filledSubjectSlots / totalActiveSubjectSlots) * 100) : 100;
+
         res.json({
             enrolmentByClass,
             genderCounts,
@@ -260,7 +276,9 @@ router.get('/analytics/summary', (req, res) => {
             termTrend,
             subjectByClass,
             passMark,
-            studentCount: students.length
+            studentCount: students.length,
+            markCompletionRate,
+            missingMarksCount
         });
     } catch (err) {
         console.error('Analytics error:', err);
