@@ -829,6 +829,10 @@ async function renderStudentsTab() {
     const saveSubjectsBtn = document.getElementById('save-subjects-btn');
     if (saveSubjectsBtn) saveSubjectsBtn.style.display = readOnly ? 'none' : '';
 
+    // When form card is hidden, collapse to single-column so table can use full width
+    const twoCol = document.querySelector('#students-tab .two-column-layout');
+    if (twoCol) twoCol.style.gridTemplateColumns = readOnly ? '1fr' : '';
+
     // Render dynamic table headers
     const thead = document.getElementById('subjects-table-header');
     if (thead) {
@@ -1169,11 +1173,7 @@ async function renderMarksTab(skipFetch) {
     const theadTr = document.getElementById('marks-table-header');
     theadTr.innerHTML = '<th>Student Name</th>';
     allowedSubjects.forEach(sub => {
-        const isOwn = isClassTeacher && editableSubjects.includes(sub);
-        const highlight = (isClassTeacher && marksGridMode === 'overview' && isOwn)
-            ? ' style="background:rgba(59,130,246,0.13); border-left:2px solid #3b82f6; border-right:2px solid #3b82f6;"'
-            : '';
-        theadTr.innerHTML += `<th${highlight}>${sub}</th>`;
+        theadTr.innerHTML += `<th>${sub}</th>`;
     });
     theadTr.innerHTML += `<th>Actions</th>`;
 
@@ -1181,11 +1181,16 @@ async function renderMarksTab(skipFetch) {
     tbody.innerHTML = '';
     
     const classStudents = students.filter(s => (s.classLevel || 'Form 1') === currentClass);
+
+    // In quick entry mode, only show students enrolled in at least one of the allowed subjects
+    const displayStudents = (isClassTeacher && marksGridMode === 'quick')
+        ? classStudents.filter(s => allowedSubjects.some(sub => s.subjects && s.subjects[sub]))
+        : classStudents;
     
     let totalSlots = 0;
     let missingSlots = 0;
 
-    classStudents.forEach(student => {
+    displayStudents.forEach(student => {
         allowedSubjects.forEach(sub => {
             if (student.subjects && student.subjects[sub]) {
                 totalSlots++;
@@ -1206,7 +1211,7 @@ async function renderMarksTab(skipFetch) {
         }
     }
     
-    classStudents.forEach(student => {
+    displayStudents.forEach(student => {
         const tr = document.createElement('tr');
         tr.setAttribute('data-id', student.id);
         
@@ -1217,13 +1222,9 @@ async function renderMarksTab(skipFetch) {
             const canEdit = currentUser.role === 'class_teacher' ? editableSubjects.includes(sub) : true;
             const mark = isTaking && student.marks && student.marks[sub] !== undefined && student.marks[sub] !== null ? student.marks[sub] : '';
             const isMissing = isTaking && canEdit && (mark === '');
-            const isOwnCol = isClassTeacher && editableSubjects.includes(sub);
-            const colHighlight = (isClassTeacher && marksGridMode === 'overview' && isOwnCol)
-                ? 'background:rgba(59,130,246,0.07); border-left:2px solid #3b82f6; border-right:2px solid #3b82f6;'
-                : '';
             const inputStyle = `width: 60px; ${isMissing ? 'border:1px solid #f59e0b; background:rgba(245,158,11,0.08);' : ''}`;
             cols += `
-                <td style="${colHighlight}">
+                <td>
                     <input type="number" min="0" max="100" 
                            data-student-id="${student.id}" 
                            data-subject="${sub}" 
