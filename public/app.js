@@ -124,6 +124,68 @@ function renderActiveTab() {
     if (tabId === 'analytics-tab') renderAnalyticsTab();
 }
 
+// ── Hash-based routing ────────────────────────────────────────────────────────
+// Returns the tab to open on login/refresh: honours the URL hash if valid, else uses the fallback.
+function resolveInitialTab(fallback) {
+    const hash = location.hash.replace('#', '');
+    if (hash) {
+        const navItem = document.querySelector(`.nav-links li[data-tab="${hash}"]`);
+        if (navItem && navItem.style.display !== 'none') return hash;
+    }
+    return fallback;
+}
+
+// Central tab switcher — always call this instead of manually toggling classes.
+// pushHistory=true  → normal nav click (pushes a new history entry)
+// pushHistory=false → back/forward or initial load (replaces current entry)
+function switchTab(tabId, pushHistory = true) {
+    const navItem = document.querySelector(`.nav-links li[data-tab="${tabId}"]`);
+    const panel   = document.getElementById(tabId);
+    if (!navItem || !panel) return;
+
+    document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p  => p.classList.remove('active'));
+
+    navItem.classList.add('active');
+    panel.classList.add('active');
+
+    // Update URL hash without scrolling
+    const hash = '#' + tabId;
+    if (pushHistory) {
+        if (location.hash !== hash) history.pushState(null, '', hash);
+    } else {
+        history.replaceState(null, '', hash);
+    }
+
+    // Render the tab
+    if (tabId === 'students-tab')     renderStudentsTab();
+    if (tabId === 'fees-tab')         renderFeesTab();
+    if (tabId === 'attendance-tab')   renderAttendanceTab();
+    if (tabId === 'timetable-tab')    renderTimetableTab();
+    if (tabId === 'payroll-tab')      renderPayrollTab();
+    if (tabId === 'notices-tab')      renderNoticesTab();
+    if (tabId === 'applications-tab') renderApplicationsTab();
+    if (tabId === 'staff-tab')        renderStaffTab();
+    if (tabId === 'marks-tab')        renderMarksTab();
+    if (tabId === 'rankings-tab')     renderRankingsTab();
+    if (tabId === 'explorer-tab')     renderExplorerTab();
+    if (tabId === 'whatsapp-tab')     setupWhatsAppStatusPolling();
+    if (tabId === 'settings-tab')     loadSettings();
+    if (tabId === 'superadmin-tab')   loadSuperAdmin();
+    if (tabId === 'analytics-tab')    renderAnalyticsTab();
+}
+
+// Handle browser back / forward
+window.addEventListener('hashchange', () => {
+    if (!authToken) return; // not logged in — ignore
+    const tabId = location.hash.replace('#', '') || 'students-tab';
+    const navItem = document.querySelector(`.nav-links li[data-tab="${tabId}"]`);
+    // Only switch if that tab is visible (role may hide it)
+    if (navItem && navItem.style.display !== 'none') {
+        switchTab(tabId, false);
+    }
+});
+
 function setGlobalClass(val) {
     currentClass = val;
     const textEl = document.getElementById('global-class-text');
@@ -213,34 +275,19 @@ async function checkLogin() {
             document.querySelector('[data-tab="settings-tab"]').style.display = 'none';
             document.querySelector('[data-tab="applications-tab"]').style.display = 'none';
             document.querySelector('[data-tab="attendance-tab"]').style.display = 'none';
-
-            document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
-            document.querySelector('[data-tab="students-tab"]').classList.add('active');
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById('students-tab').classList.add('active');
-            renderStudentsTab();
+            switchTab(resolveInitialTab('students-tab'), false);
         } else if (currentUser.role === 'bursar') {
             document.querySelectorAll('.nav-links li').forEach(li => li.style.display = 'none');
             document.querySelector('[data-tab="students-tab"]').style.display = 'block';
             document.querySelector('[data-tab="fees-tab"]').style.display = 'block';
             if (document.querySelector('[data-tab="explorer-tab"]')) document.querySelector('[data-tab="explorer-tab"]').style.display = 'block';
-
-            document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
-            document.querySelector('[data-tab="fees-tab"]').classList.add('active');
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById('fees-tab').classList.add('active');
-            renderFeesTab();
+            switchTab(resolveInitialTab('fees-tab'), false);
         } else if (currentUser.role === 'discipline_master') {
             document.querySelectorAll('.nav-links li').forEach(li => li.style.display = 'none');
             document.querySelector('[data-tab="students-tab"]').style.display = 'block';
             document.querySelector('[data-tab="attendance-tab"]').style.display = 'block';
             if (document.querySelector('[data-tab="explorer-tab"]')) document.querySelector('[data-tab="explorer-tab"]').style.display = 'block';
-
-            document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
-            document.querySelector('[data-tab="attendance-tab"]').classList.add('active');
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById('attendance-tab').classList.add('active');
-            renderAttendanceTab();
+            switchTab(resolveInitialTab('attendance-tab'), false);
         } else if (currentUser.role === 'teacher') {
             document.querySelectorAll('.nav-links li').forEach(li => li.style.display = 'block');
             document.querySelector('[data-tab="students-tab"]').style.display = 'none';
@@ -254,34 +301,19 @@ async function checkLogin() {
             document.querySelector('[data-tab="superadmin-tab"]').style.display = 'none';
             document.querySelector('[data-tab="attendance-tab"]').style.display = 'none';
             document.getElementById('nav-analytics').style.display = 'none';
-
-            document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
-            document.querySelector('[data-tab="marks-tab"]').classList.add('active');
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById('marks-tab').classList.add('active');
-            renderMarksTab();
+            switchTab(resolveInitialTab('marks-tab'), false);
         } else if (currentUser.role === 'superadmin') {
             // Show all tabs including Super Admin and Analytics
             document.querySelectorAll('.nav-links li').forEach(li => li.style.display = 'block');
             document.getElementById('nav-superadmin').style.display = 'block';
             document.getElementById('nav-analytics').style.display = 'block';
-            // Always land on Students tab
-            document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
-            document.querySelector('[data-tab="students-tab"]').classList.add('active');
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById('students-tab').classList.add('active');
-            renderStudentsTab();
+            switchTab(resolveInitialTab('students-tab'), false);
         } else {
             // admin: show all except superadmin tab; show analytics
             document.querySelectorAll('.nav-links li').forEach(li => li.style.display = 'block');
             document.getElementById('nav-superadmin').style.display = 'none';
             document.getElementById('nav-analytics').style.display = 'block';
-            // Always land on Students tab
-            document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
-            document.querySelector('[data-tab="students-tab"]').classList.add('active');
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById('students-tab').classList.add('active');
-            renderStudentsTab();
+            switchTab(resolveInitialTab('students-tab'), false);
         }
     } else {
         handleLogout();
@@ -417,28 +449,8 @@ document.querySelectorAll('.nav-links li').forEach(item => {
             }
             window.hasUnsavedChanges = false;
         }
-
-        document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
-        
-        item.classList.add('active');
         const tabId = item.getAttribute('data-tab');
-        document.getElementById(tabId).classList.add('active');
-        if (tabId === 'students-tab') renderStudentsTab();
-        if (tabId === 'fees-tab') renderFeesTab();
-        if (tabId === 'attendance-tab') renderAttendanceTab();
-        if (tabId === 'timetable-tab') renderTimetableTab();
-        if (tabId === 'payroll-tab') renderPayrollTab();
-        if (tabId === 'staff-tab') renderStaffTab();
-        if (tabId === 'marks-tab') renderMarksTab();
-        if (tabId === 'rankings-tab') renderRankingsTab();
-        if (tabId === 'explorer-tab') renderExplorerTab();
-        if (tabId === 'whatsapp-tab') setupWhatsAppStatusPolling();
-        if (tabId === 'notices-tab') renderNoticesTab();
-        if (tabId === 'applications-tab') renderApplicationsTab();
-        if (tabId === 'settings-tab') loadSettings();
-        if (tabId === 'superadmin-tab') loadSuperAdmin();
-        if (tabId === 'analytics-tab') renderAnalyticsTab();
+        switchTab(tabId);
     });
 });
 
