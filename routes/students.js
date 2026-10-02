@@ -52,6 +52,7 @@ router.post('/students', requireBursarOrAdmin, (req, res) => {
             const student = db.students.find(s => s.id === id);
             if (student) {
                 if (req.body.updates[id].name !== undefined) student.name = req.body.updates[id].name;
+                if (req.body.updates[id].gender !== undefined) student.gender = req.body.updates[id].gender;
                 if (req.body.updates[id].phone !== undefined) student.phone = req.body.updates[id].phone;
                 if (req.body.updates[id].bursaryName !== undefined) student.bursaryName = req.body.updates[id].bursaryName;
                 if (req.body.updates[id].section !== undefined) student.section = req.body.updates[id].section;
@@ -73,6 +74,7 @@ router.post('/students', requireBursarOrAdmin, (req, res) => {
         db.students.push({
             id: Date.now().toString(),
             name: req.body.name,
+            gender: req.body.gender || 'Male',
             phone: req.body.phone,
             bursaryName: req.body.bursaryName,
             classLevel: req.body.classLevel || 'Form 1',

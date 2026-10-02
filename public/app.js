@@ -879,7 +879,7 @@ async function renderStudentsTab() {
     // Render dynamic table headers
     const thead = document.getElementById('subjects-table-header');
     if (thead) {
-        thead.innerHTML = `<th>Student</th><th>Phone</th><th>Bursary</th>` + 
+        thead.innerHTML = `<th>Student</th><th>Gender</th><th>Phone</th><th>Bursary</th>` + 
             subjectsList.map(sub => `<th title="${sub}" style="font-size: 10px; writing-mode: vertical-rl; transform: rotate(180deg);">${getAbbreviation(sub)}</th>`).join('');
     }
 
@@ -893,6 +893,7 @@ async function renderStudentsTab() {
         if (readOnly) {
             tr.innerHTML = `
                 <td>${student.name}</td>
+                <td>${student.gender || 'Male'}</td>
                 <td>${student.phone || ''}</td>
                 <td>${student.bursaryName || ''}</td>
             ` +
@@ -902,6 +903,12 @@ async function renderStudentsTab() {
         } else {
             tr.innerHTML = `
                 <td><input type="text" data-student-id="${student.id}" data-field="name" value="${student.name}" style="width: 120px;"></td>
+                <td>
+                    <select data-student-id="${student.id}" data-field="gender" style="padding: 4px; border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                        <option value="Male" ${(student.gender === 'Male' || !student.gender) ? 'selected' : ''}>Male</option>
+                        <option value="Female" ${student.gender === 'Female' ? 'selected' : ''}>Female</option>
+                    </select>
+                </td>
                 <td><input type="text" data-student-id="${student.id}" data-field="phone" value="${student.phone || ''}" style="width: 100px;"></td>
                 <td><input type="text" data-student-id="${student.id}" data-field="bursaryName" value="${student.bursaryName || ''}" placeholder="None" style="width: 100px;"></td>
             ` + 
@@ -934,6 +941,12 @@ document.getElementById('save-subjects-btn').addEventListener('click', async () 
         updates[studentId][field] = input.value;
     });
 
+    document.querySelectorAll('#subjects-table select[data-field="gender"]').forEach(select => {
+        const studentId = select.getAttribute('data-student-id');
+        if (!updates[studentId]) updates[studentId] = { subjects: {} };
+        updates[studentId].gender = select.value;
+    });
+
     const res = await apiFetch('/api/students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -957,6 +970,7 @@ document.getElementById('student-on-bursary').addEventListener('change', (e) => 
 document.getElementById('add-student-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('student-name').value;
+    const gender = document.getElementById('student-gender')?.value || 'Male';
     const phone = document.getElementById('student-phone').value;
     const onBursary = document.getElementById('student-on-bursary').checked;
     const bursaryName = onBursary ? document.getElementById('student-bursary-name').value : '';
@@ -968,7 +982,7 @@ document.getElementById('add-student-form').addEventListener('submit', async (e)
     const res = await apiFetch('/api/students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, bursaryName, classLevel: currentClass, section, subjects: {} })
+        body: JSON.stringify({ name, gender, phone, bursaryName, classLevel: currentClass, section, subjects: {} })
     });
     
     if (res.ok) {
