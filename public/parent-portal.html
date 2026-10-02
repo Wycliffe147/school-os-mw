@@ -312,8 +312,10 @@
             <input type="tel" id="login-phone" placeholder="e.g. 0881234567" inputmode="tel" autocomplete="tel">
         </div>
         <div class="form-group">
-            <label>School Code <span style="color:var(--text-secondary); font-weight:400;">(from your school's registration slip)</span></label>
-            <input type="text" id="login-school-code" placeholder="e.g. school_1" autocomplete="off">
+            <label>Select Your School</label>
+            <select id="login-school-id">
+                <option value="">— Loading schools… —</option>
+            </select>
         </div>
 
         <button class="btn-login" id="btn-portal-login">🔐 Login to Portal</button>
@@ -463,7 +465,25 @@
     // ── Login ──
     document.getElementById('btn-portal-login').addEventListener('click', handleLogin);
     document.getElementById('login-phone').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
-    document.getElementById('login-school-code').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+    document.getElementById('login-school-id').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+
+    // Populate school dropdown
+    (async function loadSchools() {
+        const sel = document.getElementById('login-school-id');
+        try {
+            const res = await fetch(`${API_BASE}/api/public/schools`);
+            const schools = await res.json();
+            sel.innerHTML = schools.length === 0
+                ? '<option value="">No schools registered yet</option>'
+                : '<option value="">— Select a school —</option>' +
+                  schools.map(s => {
+                      const label = s.district ? `${s.schoolName} (${s.district})` : s.schoolName;
+                      return `<option value="${s.schoolId}">${label}</option>`;
+                  }).join('');
+        } catch(e) {
+            sel.innerHTML = '<option value="">Could not load schools</option>';
+        }
+    })();
     // ── Custom child-switcher dropdown (avoids native-select mousedown race condition) ──
     function toggleChildSwitcher(e) {
         e.stopPropagation();
@@ -477,14 +497,14 @@
 
     async function handleLogin() {
         const phone = document.getElementById('login-phone').value.trim();
-        const schoolCode = document.getElementById('login-school-code').value.trim();
+        const schoolCode = document.getElementById('login-school-id').value.trim();
         const errorEl = document.getElementById('login-error');
         const btn = document.getElementById('btn-portal-login');
 
         errorEl.style.display = 'none';
 
         if (!phone || !schoolCode) {
-            errorEl.textContent = 'Please enter your phone number and school code.';
+            errorEl.textContent = 'Please enter your phone number and select your school.';
             errorEl.style.display = 'block';
             return;
         }
@@ -987,7 +1007,6 @@
 
         portalToken    = savedToken;
         portalSchoolId = savedSchoolId;
-        document.getElementById('login-school-code').value = savedSchoolId;
 
         try {
             await selectStudent(savedStudentId);

@@ -67,7 +67,8 @@ router.get('/public/schools', (req, res) => {
         })
         .map(id => ({
             schoolId: id,
-            schoolName: dbCache.schools[id].settings.schoolName || 'Unnamed School'
+            schoolName: dbCache.schools[id].settings.schoolName || 'Unnamed School',
+            district: dbCache.schools[id].settings.district || ''
         }));
     res.json(list);
 });
