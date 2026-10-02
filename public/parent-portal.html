@@ -34,17 +34,21 @@
             justify-content: center;
             min-height: 100dvh;
             padding: 24px;
-            background: linear-gradient(135deg, #0f1117 0%, #1a1d26 100%);
+            background:
+                linear-gradient(rgba(8,12,24,0.68), rgba(8,12,24,0.72)),
+                url('school-bg.jpg') center/cover no-repeat fixed;
         }
 
         .login-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 40px 36px;
+            background: rgba(22, 26, 42, 0.78);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 44px 40px;
             width: 100%;
             max-width: 420px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04) inset;
         }
 
         .login-card .logo {
@@ -103,20 +107,22 @@
 
         .btn-login {
             width: 100%;
-            padding: 13px;
-            background: var(--accent-blue);
+            padding: 14px;
+            background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
             margin-top: 8px;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, transform 0.12s;
+            letter-spacing: 0.01em;
         }
 
-        .btn-login:hover { opacity: 0.9; }
-        .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-login:hover { opacity: 0.91; transform: translateY(-1px); }
+        .btn-login:active { transform: translateY(0); }
+        .btn-login:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         #login-error {
             color: var(--accent-danger);
@@ -126,7 +132,90 @@
             display: none;
         }
 
-        /* ── Main Portal ── */
+        /* Custom school picker dropdown */
+        .pp-custom-dropdown { position: relative; }
+
+        .pp-dropdown-toggle {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            text-align: left;
+            transition: border-color 0.2s;
+        }
+        .pp-dropdown-toggle:focus { outline: none; border-color: var(--accent-blue); }
+        .pp-dropdown-toggle.open { border-color: var(--accent-blue); border-radius: 8px 8px 0 0; }
+        .pp-dropdown-text { flex: 1; color: var(--text-secondary); }
+        .pp-dropdown-text.chosen { color: var(--text-primary); }
+        .pp-dropdown-arrow { font-size: 0.65rem; opacity: 0.55; flex-shrink: 0; transition: transform 0.2s; }
+        .pp-dropdown-toggle.open .pp-dropdown-arrow { transform: rotate(180deg); }
+
+        .pp-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%; left: 0; right: 0;
+            background: #181c2e;
+            border: 1px solid var(--accent-blue);
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            z-index: 999;
+            box-shadow: 0 16px 36px rgba(0,0,0,0.6);
+            overflow: hidden;
+        }
+        .pp-dropdown-menu.open { display: block; }
+
+        .pp-dropdown-search-wrap {
+            padding: 8px 10px;
+            background: #121524;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .pp-dropdown-search-wrap input {
+            width: 100%;
+            padding: 8px 10px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.88rem;
+            outline: none;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .pp-dropdown-search-wrap input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .pp-dropdown-options-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .pp-dropdown-option {
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            transition: background 0.14s;
+        }
+        .pp-dropdown-option:hover { background: rgba(79,142,247,0.14); }
+        .pp-dropdown-option.selected { color: var(--accent-blue); font-weight: 600; background: rgba(79,142,247,0.08); }
+        .pp-dropdown-option .pp-opt-district { font-size: 0.78rem; color: var(--text-secondary); }
+        .pp-dropdown-option.placeholder { color: var(--text-secondary); text-align: center; padding: 14px; }
         #portal-app { display: none; }
 
         .portal-header {
@@ -303,25 +392,40 @@
 <!-- ════════════════════ LOGIN ════════════════════ -->
 <div id="login-screen">
     <div class="login-card">
-        <div class="logo">🏫</div>
+        <div class="logo">🎓</div>
         <h1>Parent Portal</h1>
-        <p class="subtitle">View your child's academic progress, fees, and school notices.</p>
+        <p class="subtitle">Enter your WhatsApp number to check your child's progress, fees &amp; notices.</p>
 
         <div class="form-group">
-            <label>Your Registered Phone Number</label>
+            <label>Your WhatsApp Number</label>
             <input type="tel" id="login-phone" placeholder="e.g. 0881234567" inputmode="tel" autocomplete="tel">
         </div>
+
         <div class="form-group">
             <label>Select Your School</label>
-            <select id="login-school-id">
-                <option value="">— Loading schools… —</option>
-            </select>
+            <!-- Custom dropdown - avoids native select desktop glitch -->
+            <div class="pp-custom-dropdown" id="pp-school-dropdown">
+                <button type="button" class="pp-dropdown-toggle" id="pp-school-toggle" onclick="togglePPSchoolDropdown(event)">
+                    <span class="pp-dropdown-text" id="pp-school-text">Loading schools...</span>
+                    <span class="pp-dropdown-arrow">&#x25BC;</span>
+                </button>
+                <div class="pp-dropdown-menu" id="pp-school-menu">
+                    <div class="pp-dropdown-search-wrap">
+                        <input type="text" id="pp-school-search" placeholder="Search school name or district..." autocomplete="off" onclick="event.stopPropagation();">
+                    </div>
+                    <div class="pp-dropdown-options-list" id="pp-school-options-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+            <!-- Hidden input carries the selected schoolId value for the login handler -->
+            <input type="hidden" id="login-school-id" value="">
         </div>
 
-        <button class="btn-login" id="btn-portal-login">🔐 Login to Portal</button>
+        <button class="btn-login" id="btn-portal-login">Login to Portal</button>
         <p id="login-error"></p>
-        <p style="text-align:center; color:var(--text-secondary); font-size:0.8rem; margin-top:20px;">
-            Not registered? Contact your school administration.
+        <p style="text-align:center; color:var(--text-secondary); font-size:0.8rem; margin-top:20px; line-height:1.5;">
+            First time? Ask your school to register your WhatsApp number.
         </p>
     </div>
 </div>
@@ -465,23 +569,110 @@
     // ── Login ──
     document.getElementById('btn-portal-login').addEventListener('click', handleLogin);
     document.getElementById('login-phone').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
-    document.getElementById('login-school-id').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
 
-    // Populate school dropdown
+    // ── Custom school picker dropdown with live search ──
+    let ppSchoolsList = [];
+
+    function renderPPSchoolOptions(filter = '') {
+        const listEl = document.getElementById('pp-school-options-list');
+        if (!listEl) return;
+        const q = filter.trim().toLowerCase();
+        const currentId = document.getElementById('login-school-id').value;
+        const matched = ppSchoolsList.filter(s =>
+            !q ||
+            (s.schoolName && s.schoolName.toLowerCase().includes(q)) ||
+            (s.district && s.district.toLowerCase().includes(q))
+        );
+
+        if (matched.length === 0) {
+            listEl.innerHTML = '<div class="pp-dropdown-option placeholder">No schools matching search</div>';
+            return;
+        }
+
+        listEl.innerHTML = matched.map(s => {
+            const label = s.district ? `${s.schoolName} (${s.district})` : s.schoolName;
+            const districtSpan = s.district ? `<span class="pp-opt-district">${s.district}</span>` : '';
+            const isSelected = s.schoolId === currentId;
+            return `<div class="pp-dropdown-option ${isSelected ? 'selected' : ''}" data-val="${s.schoolId}" onclick="selectPPSchool('${s.schoolId}', '${label.replace(/'/g, "\\'")}'); event.stopPropagation();">
+                <span>${s.schoolName}</span>
+                ${districtSpan}
+            </div>`;
+        }).join('');
+    }
+
+    function togglePPSchoolDropdown(e) {
+        e.stopPropagation();
+        const toggle = document.getElementById('pp-school-toggle');
+        const menu   = document.getElementById('pp-school-menu');
+        const searchInput = document.getElementById('pp-school-search');
+        const isOpen = menu.classList.contains('open');
+
+        if (!isOpen) {
+            toggle.classList.add('open');
+            menu.classList.add('open');
+            if (searchInput) {
+                searchInput.value = '';
+                renderPPSchoolOptions('');
+                setTimeout(() => searchInput.focus(), 60);
+            }
+        } else {
+            toggle.classList.remove('open');
+            menu.classList.remove('open');
+        }
+    }
+
+    // Search input typing filter
+    document.getElementById('pp-school-search').addEventListener('input', (e) => {
+        renderPPSchoolOptions(e.target.value);
+    });
+
+    document.getElementById('pp-school-search').addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.getElementById('pp-school-toggle').classList.remove('open');
+            document.getElementById('pp-school-menu').classList.remove('open');
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const firstOpt = document.querySelector('#pp-school-options-list .pp-dropdown-option:not(.placeholder)');
+            if (firstOpt) firstOpt.click();
+        }
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', () => {
+        document.getElementById('pp-school-toggle').classList.remove('open');
+        document.getElementById('pp-school-menu').classList.remove('open');
+        const list = document.getElementById('child-switcher-list');
+        if (list) list.style.display = 'none';
+    });
+
+    function selectPPSchool(schoolId, label) {
+        document.getElementById('login-school-id').value = schoolId;
+        const textEl = document.getElementById('pp-school-text');
+        textEl.textContent = label;
+        textEl.classList.add('chosen');
+        renderPPSchoolOptions('');
+        // Close
+        document.getElementById('pp-school-toggle').classList.remove('open');
+        document.getElementById('pp-school-menu').classList.remove('open');
+    }
+
+    // Populate school custom dropdown
     (async function loadSchools() {
-        const sel = document.getElementById('login-school-id');
+        const textEl = document.getElementById('pp-school-text');
+        const listEl = document.getElementById('pp-school-options-list');
         try {
-            const res = await fetch(`${API_BASE}/api/public/schools`);
-            const schools = await res.json();
-            sel.innerHTML = schools.length === 0
-                ? '<option value="">No schools registered yet</option>'
-                : '<option value="">— Select a school —</option>' +
-                  schools.map(s => {
-                      const label = s.district ? `${s.schoolName} (${s.district})` : s.schoolName;
-                      return `<option value="${s.schoolId}">${label}</option>`;
-                  }).join('');
+            const res     = await fetch(`${API_BASE}/api/public/schools`);
+            ppSchoolsList = await res.json();
+            if (ppSchoolsList.length === 0) {
+                if (listEl) listEl.innerHTML = '<div class="pp-dropdown-option placeholder">No schools registered yet</div>';
+                textEl.textContent = 'No schools available';
+            } else {
+                textEl.textContent = '- Select your school -';
+                renderPPSchoolOptions('');
+            }
         } catch(e) {
-            sel.innerHTML = '<option value="">Could not load schools</option>';
+            if (listEl) listEl.innerHTML = '<div class="pp-dropdown-option placeholder">Could not load schools</div>';
+            textEl.textContent = 'Could not load schools';
         }
     })();
     // ── Custom child-switcher dropdown (avoids native-select mousedown race condition) ──
@@ -490,10 +681,6 @@
         const list = document.getElementById('child-switcher-list');
         list.style.display = list.style.display === 'none' ? 'block' : 'none';
     }
-    document.addEventListener('click', () => {
-        const list = document.getElementById('child-switcher-list');
-        if (list) list.style.display = 'none';
-    });
 
     async function handleLogin() {
         const phone = document.getElementById('login-phone').value.trim();
@@ -547,7 +734,7 @@
             errorEl.style.display = 'block';
         } finally {
             btn.disabled = false;
-            btn.textContent = '🔐 Login to Portal';
+            btn.textContent = 'Login to Portal';
         }
     }
 

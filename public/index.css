@@ -376,64 +376,138 @@ td input[type="number"]:disabled {
     flex-shrink: 0;
 }
 
-/* ── Two-step Login: School picker cards ── */
+/* ── Two-step Login: School picker cards (Minimalist Typography) ── */
 .school-pick-btn {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     width: 100%;
-    padding: 13px 16px;
+    padding: 16px 20px;
     border: 1px solid var(--border-color);
-    border-radius: 10px;
-    background: var(--bg-secondary);
+    border-left: 3px solid transparent;
+    border-radius: 12px;
+    background: rgba(30, 41, 59, 0.65);
+    backdrop-filter: blur(8px);
     cursor: pointer;
-    transition: background 0.18s, border-color 0.18s, transform 0.12s;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     font-family: inherit;
-    font-size: 0.95rem;
     color: var(--text-primary);
     text-align: left;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .school-pick-btn:hover {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-    transform: translateX(3px);
+    background: rgba(59, 130, 246, 0.12);
+    border-color: var(--accent-blue);
+    border-left-color: var(--accent-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
-.school-pick-btn:hover .school-pick-arrow {
-    color: white;
-}
-
-.school-pick-icon {
-    font-size: 1.2rem;
+.school-pick-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(30, 58, 138, 0.35) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #93c5fd;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    overflow: hidden;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.school-pick-avatar.has-image {
+    background: rgba(15, 23, 42, 0.7);
+    padding: 2px;
+}
+
+.school-pick-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.school-pick-btn:hover .school-pick-avatar {
+    border-color: var(--accent-blue);
+    transform: scale(1.05);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
+}
+
+.school-pick-avatar-sa {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(180, 83, 9, 0.35) 100%);
+    border-color: rgba(245, 158, 11, 0.4);
+    color: #fcd34d;
+}
+
+.school-pick-superadmin:hover .school-pick-avatar-sa {
+    border-color: #f59e0b;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+.school-pick-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
 }
 
 .school-pick-name {
-    flex: 1;
     font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.school-pick-sub {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
 }
 
 .school-pick-arrow {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     color: var(--text-secondary);
-    transition: color 0.18s;
+    transition: transform 0.2s, color 0.2s;
+    flex-shrink: 0;
+}
+
+.school-pick-btn:hover .school-pick-arrow {
+    color: var(--accent-blue);
+    transform: translateX(4px);
 }
 
 .school-pick-superadmin {
-    border-color: #f59e0b;
-    margin-top: 4px;
+    grid-column: 1 / -1;
+    border-color: rgba(245, 158, 11, 0.35);
+    border-left-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.05);
 }
 
 .school-pick-superadmin:hover {
-    background: #f59e0b;
+    background: rgba(245, 158, 11, 0.12);
     border-color: #f59e0b;
+    border-left-color: #f59e0b;
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.18);
+}
+
+.school-pick-superadmin:hover .school-pick-arrow {
+    color: #f59e0b;
 }
 
 /* School list scrollbar */
-#school-list::-webkit-scrollbar { width: 5px; }
-#school-list::-webkit-scrollbar-track { background: transparent; }
+#school-list::-webkit-scrollbar { width: 6px; }
+#school-list::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); border-radius: 4px; }
 #school-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
 
 

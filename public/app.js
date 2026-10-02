@@ -349,6 +349,27 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 // ── Two-step Login: School picker ─────────────────────────────────
 let allSchools = []; // cached school list
 
+function getSchoolInitials(name) {
+    if (!name) return 'SC';
+    const words = name.trim().split(/\s+/).filter(w => !['and', '&', 'of', 'the', 'for'].includes(w.toLowerCase()));
+    if (words.length >= 2) {
+        return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+}
+
+function getSchoolAvatarHtml(s) {
+    const initials = getSchoolInitials(s.schoolName);
+    if (s.logo) {
+        return `
+            <div class="school-pick-avatar has-image">
+                <img src="${s.logo}" alt="${s.schoolName}" loading="lazy" onerror="this.parentElement.className='school-pick-avatar'; this.parentElement.textContent='${initials}'">
+            </div>
+        `;
+    }
+    return `<div class="school-pick-avatar">${initials}</div>`;
+}
+
 function renderSchoolList(filter = '') {
     const list = document.getElementById('school-list');
     const q = filter.trim().toLowerCase();
@@ -359,19 +380,23 @@ function renderSchoolList(filter = '') {
     list.innerHTML = '';
 
     if (matched.length === 0 && q) {
-        list.innerHTML = '<p class="subtitle" style="text-align:center;padding:14px;">No schools found.</p>';
+        list.innerHTML = '<p class="subtitle" style="text-align:center;padding:24px;grid-column:1 / -1;">No schools found matching "' + filter + '".</p>';
     }
 
     matched.forEach(s => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'school-pick-btn';
+        const districtHtml = s.district ? `<span class="school-pick-sub">${s.district}</span>` : `<span class="school-pick-sub">School Portal</span>`;
         btn.innerHTML = `
-            <span class="school-pick-icon">🏫</span>
-            <span class="school-pick-name">${s.schoolName}</span>
+            ${getSchoolAvatarHtml(s)}
+            <div class="school-pick-info">
+                <span class="school-pick-name">${s.schoolName}</span>
+                ${districtHtml}
+            </div>
             <span class="school-pick-arrow">›</span>
         `;
-        btn.addEventListener('click', () => selectSchool(s.schoolId, s.schoolName));
+        btn.addEventListener('click', () => selectSchool(s.schoolId, s.schoolName, s));
         list.appendChild(btn);
     });
 
@@ -381,11 +406,14 @@ function renderSchoolList(filter = '') {
         saBtn.type = 'button';
         saBtn.className = 'school-pick-btn school-pick-superadmin';
         saBtn.innerHTML = `
-            <span class="school-pick-icon">🔑</span>
-            <span class="school-pick-name">Super Admin</span>
+            <div class="school-pick-avatar school-pick-avatar-sa">SA</div>
+            <div class="school-pick-info">
+                <span class="school-pick-name">Super Admin</span>
+                <span class="school-pick-sub">System Management &amp; Setup</span>
+            </div>
             <span class="school-pick-arrow">›</span>
         `;
-        saBtn.addEventListener('click', () => selectSchool('superadmin', '🔑 Super Admin'));
+        saBtn.addEventListener('click', () => selectSchool('superadmin', 'Super Admin', null));
         list.appendChild(saBtn);
     }
 }
@@ -396,9 +424,20 @@ function goBackToSchoolList() {
     document.getElementById('school-search').focus();
 }
 
-function selectSchool(schoolId, schoolName) {
+function selectSchool(schoolId, schoolName, schoolObj = null) {
     document.getElementById('login-school').value = schoolId;
     document.getElementById('login-school-label').textContent = schoolName;
+    const badgeAvatar = document.getElementById('login-school-avatar');
+    if (badgeAvatar) {
+        if (schoolId === 'superadmin') {
+            badgeAvatar.innerHTML = `<div class="school-pick-avatar school-pick-avatar-sa" style="width:24px; height:24px; font-size:0.68rem;">SA</div>`;
+        } else if (schoolObj && schoolObj.logo) {
+            badgeAvatar.innerHTML = `<div class="school-pick-avatar has-image" style="width:24px; height:24px; padding:1px;"><img src="${schoolObj.logo}" alt="" style="width:100%;height:100%;object-fit:contain;"></div>`;
+        } else {
+            const initials = getSchoolInitials(schoolName);
+            badgeAvatar.innerHTML = `<div class="school-pick-avatar" style="width:24px; height:24px; font-size:0.68rem;">${initials}</div>`;
+        }
+    }
     document.getElementById('login-step-1').style.display = 'none';
     document.getElementById('login-step-2').style.display = 'block';
     document.getElementById('login-username').value = '';

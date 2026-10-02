@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -65,11 +66,25 @@ router.get('/public/schools', (req, res) => {
             }
             return true;
         })
-        .map(id => ({
-            schoolId: id,
-            schoolName: dbCache.schools[id].settings.schoolName || 'Unnamed School',
-            district: dbCache.schools[id].settings.district || ''
-        }));
+        .map(id => {
+            const settings = dbCache.schools[id].settings || {};
+            let logo = settings.logoBase64 || null;
+            if (!logo && settings.logoPath) {
+                const p = settings.logoPath;
+                if (p.startsWith('http') || p.startsWith('data:')) {
+                    logo = p;
+                } else {
+                    const basename = path.basename(p);
+                    logo = `/uploads/${basename}`;
+                }
+            }
+            return {
+                schoolId: id,
+                schoolName: settings.schoolName || 'Unnamed School',
+                district: settings.district || '',
+                logo: logo
+            };
+        });
     res.json(list);
 });
 

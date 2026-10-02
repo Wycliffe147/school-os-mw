@@ -8,53 +8,224 @@
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <div id="login-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); z-index:9999; display:flex; justify-content:center; align-items:center;">
-        <div class="card form-card" style="width:440px; text-align:center;">
+    <style>
+        /* ── Staff Login Overlay ── */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 9999; display: flex;
+            background: radial-gradient(ellipse at 75% 60%, #1e3a5f 0%, #0f172a 55%, #0a0f1e 100%);
+        }
 
-            <!-- Step 1: School Picker -->
-            <div id="login-step-1">
-                <h2 style="margin-bottom:6px;">Welcome</h2>
-                <p class="subtitle" style="margin-bottom:20px;">Select your school to continue</p>
+        /* Left form panel */
+        .login-form-panel {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 36px;
+            overflow-y: auto;
+        }
 
-                <!-- Search bar -->
-                <div style="position:relative; margin-bottom:16px;">
-                    <input type="text" id="school-search" placeholder="🔍  Search schools..." autocomplete="off"
-                        style="width:100%; padding:12px 16px; border-radius:8px; border:1px solid var(--border-color); font-size:0.95rem; background:var(--bg-secondary); color:var(--text-primary); box-sizing:border-box;">
-                </div>
+        .login-form-inner {
+            width: 100%;
+            max-width: 620px;
+        }
 
-                <!-- School list -->
-                <div id="school-list" style="display:flex; flex-direction:column; gap:8px; max-height:340px; overflow-y:auto; text-align:left;">
-                    <p class="subtitle" style="text-align:center; padding:10px;">Loading schools...</p>
-                </div>
-            </div>
+        #login-step-1 {
+            width: 100%;
+        }
 
-            <!-- Step 2: Credentials (hidden until school selected) -->
-            <div id="login-step-2" style="display:none;">
-                <!-- School name header -->
-                <div style="text-align:center; margin-bottom:22px;">
-                    <p style="font-size:0.78rem; color:var(--text-secondary); margin:0 0 4px;">Logging into</p>
-                    <p id="login-school-label" style="font-weight:700; font-size:1.15rem; margin:0; color:var(--text-primary);"></p>
-                </div>
+        #login-step-2 {
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+        }
 
-                <form id="login-form">
-                    <input type="hidden" id="login-school">
-                    <div class="input-group" style="margin-bottom:14px; text-align:left;">
-                        <label>Username</label>
-                        <input type="text" id="login-username" placeholder="Enter username" required style="width:100%;">
+        /* Right branding panel (50/50 split on desktop) */
+        .login-brand-panel {
+            display: none;
+            width: 50%;
+            flex: 0 0 50%;
+            background: linear-gradient(200deg, #1e40af 0%, #1e3a5f 40%, #0f2044 100%);
+            padding: 56px 48px;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        @media (min-width: 820px) {
+            .login-brand-panel { display: flex; }
+            .login-form-panel { width: 50%; flex: 0 0 50%; }
+        }
+
+        /* Decorative circles on the brand panel */
+        .login-brand-panel::before {
+            content: '';
+            position: absolute;
+            width: 320px; height: 320px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.07);
+            top: -80px; left: -80px;
+        }
+        .login-brand-panel::after {
+            content: '';
+            position: absolute;
+            width: 220px; height: 220px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.05);
+            bottom: 60px; right: -60px;
+        }
+
+        .login-brand-top { position: relative; z-index: 1; }
+        .login-brand-icon {
+            font-size: 2.8rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+        .login-brand-title {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.25;
+            margin-bottom: 12px;
+        }
+        .login-brand-sub {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.6);
+            line-height: 1.6;
+        }
+        .login-brand-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 28px;
+        }
+        .login-brand-pill {
+            font-size: 0.75rem;
+            padding: 5px 12px;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.75);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .login-brand-footer {
+            position: relative; z-index: 1;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.3);
+        }
+
+        /* School list grid container */
+        #school-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 12px;
+            max-height: 56vh;
+            min-height: 180px;
+            overflow-y: auto;
+            padding: 4px 2px 12px;
+        }
+        @media (max-width: 580px) {
+            #school-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* School badge pill on step 2 */
+        .login-school-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 99px;
+            padding: 6px 16px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+    </style>
+
+    <div id="login-overlay">
+
+        <!-- Left: Form Panel -->
+        <div class="login-form-panel">
+            <div class="login-form-inner">
+
+                <!-- Step 1: School Picker -->
+                <div id="login-step-1">
+                    <div style="text-align:left; margin-bottom:22px;">
+                        <div style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25); border-radius:99px; font-size:0.75rem; font-weight:700; color:var(--accent-blue); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">
+                            Staff Portal
+                        </div>
+                        <h2 style="margin-bottom:4px; font-size:1.6rem; font-weight:700; color:var(--text-primary); letter-spacing:-0.01em;">Select Your School</h2>
+                        <p class="subtitle" style="font-size:0.88rem; margin:0; color:var(--text-secondary);">Choose your school to continue to your dashboard</p>
                     </div>
-                    <div class="input-group" style="margin-bottom:16px; text-align:left;">
-                        <label>Password</label>
-                        <input type="password" id="login-password" placeholder="Enter password" required style="width:100%;">
-                    </div>
-                    <button type="submit" class="btn primary-btn" style="width:100%; margin-bottom:10px;">Login</button>
-                    <button type="button" id="login-back-btn" class="btn" style="width:100%; background:transparent; border:1px solid var(--border-color); color:var(--text-secondary); display:flex; align-items:center; justify-content:center; gap:8px;">
-                        <span style="font-size:1.1rem;">←</span> Back to school list
-                    </button>
-                    <p id="login-error" style="color:red; margin-top:10px; display:none;"></p>
-                </form>
-            </div>
 
+                    <!-- Search bar -->
+                    <div style="position:relative; margin-bottom:16px;">
+                        <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:1rem; opacity:0.6; pointer-events:none;">🔍</span>
+                        <input type="text" id="school-search" placeholder="Search schools..." autocomplete="off"
+                            style="width:100%; padding:12px 16px 12px 40px; border-radius:10px; border:1px solid var(--border-color); font-size:0.95rem; background:var(--bg-secondary); color:var(--text-primary); box-sizing:border-box; outline:none; transition:border-color 0.2s;">
+                    </div>
+
+                    <!-- School list -->
+                    <div id="school-list">
+                        <p class="subtitle" style="text-align:center; padding:24px; grid-column:1 / -1;">Loading schools...</p>
+                    </div>
+                </div>
+
+                <!-- Step 2: Credentials -->
+                <div id="login-step-2" style="display:none;">
+                    <div style="text-align:center; margin-bottom:28px;">
+                        <div style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:10px;">Logging into</div>
+                        <div class="login-school-badge">
+                            <div id="login-school-avatar" style="display:flex; align-items:center;"></div>
+                            <span id="login-school-label"></span>
+                        </div>
+                    </div>
+
+                    <form id="login-form">
+                        <input type="hidden" id="login-school">
+                        <div class="input-group" style="margin-bottom:14px; text-align:left;">
+                            <label>Username</label>
+                            <input type="text" id="login-username" placeholder="Enter username" required style="width:100%;">
+                        </div>
+                        <div class="input-group" style="margin-bottom:18px; text-align:left;">
+                            <label>Password</label>
+                            <input type="password" id="login-password" placeholder="Enter password" required style="width:100%;">
+                        </div>
+                        <button type="submit" class="btn primary-btn" style="width:100%; margin-bottom:10px; padding:12px;">Login</button>
+                        <button type="button" id="login-back-btn" class="btn" style="width:100%; background:transparent; border:1px solid var(--border-color); color:var(--text-secondary); display:flex; align-items:center; justify-content:center; gap:8px;">
+                            <span style="font-size:1.1rem;">←</span> Back to school list
+                        </button>
+                        <p id="login-error" style="color:#ef4444; margin-top:12px; display:none; font-size:0.88rem; text-align:center;"></p>
+                    </form>
+                </div>
+
+            </div>
         </div>
+
+        <!-- Right: Branding Panel -->
+        <div class="login-brand-panel">
+            <div class="login-brand-top">
+                <span class="login-brand-icon">🎓</span>
+                <div class="login-brand-title">Malawi School OS</div>
+                <div class="login-brand-sub">
+                    A complete school management platform - students, marks, fees, attendance, payroll and more.
+                </div>
+                <div class="login-brand-pills">
+                    <span class="login-brand-pill">Report Cards</span>
+                    <span class="login-brand-pill">Fee Ledger</span>
+                    <span class="login-brand-pill">Attendance</span>
+                    <span class="login-brand-pill">WhatsApp Alerts</span>
+                    <span class="login-brand-pill">Payroll</span>
+                </div>
+            </div>
+            <div class="login-brand-footer">Staff portal - authorised access only</div>
+        </div>
+
     </div>
     <div class="app-container" id="main-app" style="display:none;">
         <!-- Sidebar Navigation -->
