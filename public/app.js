@@ -3965,9 +3965,156 @@ document.getElementById('btn-export-explorer-csv')?.addEventListener('click', ()
 });
 
 // PDF & Print View for Explorer Tab
-document.getElementById('btn-export-explorer-pdf')?.addEventListener('click', () => window.print());
-document.getElementById('btn-print-explorer')?.addEventListener('click', () => window.print());
+function openExplorerPrintWindow() {
+    const schoolName = (schoolSettings && schoolSettings.schoolName)
+        ? schoolSettings.schoolName
+        : (document.getElementById('sidebar-school-name')?.innerText || 'EXCEL ACADEMY');
+
+    const classFilter = document.getElementById('exp-class-filter')?.value || 'CURRENT';
+    const classLabel = classFilter === 'CURRENT' ? `Current Class (${currentClass})` : (classFilter === 'ALL' ? 'All Classes' : classFilter);
+    const targetSubject = document.getElementById('exp-subject-select')?.value || 'Mathematics';
+    
+    const scoreSelect = document.getElementById('exp-score-cutoff');
+    const scoreCutoffText = scoreSelect ? scoreSelect.options[scoreSelect.selectedIndex].text : 'Any Mark';
+    
+    const genderSelect = document.getElementById('exp-gender-filter');
+    const genderText = genderSelect ? genderSelect.options[genderSelect.selectedIndex].text : 'All Genders';
+    
+    const feeSelect = document.getElementById('exp-fee-filter');
+    const feeText = feeSelect ? feeSelect.options[feeSelect.selectedIndex].text : 'All Financial Statuses';
+    
+    const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const staffName = currentUser ? (currentUser.name || currentUser.username) : 'Staff';
+
+    // Collect rendered table rows
+    const tableRows = [];
+    document.querySelectorAll('#explorer-table tbody tr').forEach(tr => {
+        const tds = tr.querySelectorAll('td');
+        if (tds.length >= 8) {
+            tableRows.push({
+                rank: tds[0].textContent.trim(),
+                name: tds[1].textContent.trim(),
+                gender: tds[2].textContent.trim(),
+                classLevel: tds[3].textContent.trim(),
+                subjects: tds[4].textContent.trim(),
+                score: tds[5].textContent.trim(),
+                overall: tds[6].textContent.trim(),
+                feeStatus: tds[7].textContent.trim()
+            });
+        }
+    });
+
+    const printWin = window.open('', '_blank', 'width=1000,height=750');
+    if (!printWin) {
+        alert('Please allow popups in your browser to generate the PDF / Print view.');
+        return;
+    }
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Student Directory - ${schoolName}</title>
+    <style>
+        @page { size: A4 portrait; margin: 12mm; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; margin: 0; padding: 20px; background: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .school-header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 12px; }
+        .school-header h1 { margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 0.5px; color: #0f172a; }
+        .school-header p { margin: 3px 0 0 0; font-size: 13px; font-weight: 600; color: #2563eb; letter-spacing: 1px; }
+        .meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; margin-bottom: 14px; font-size: 11px; }
+        .meta-item label { color: #64748b; font-size: 10px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px; }
+        .meta-item span { font-weight: 600; color: #0f172a; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
+        th { background: #0f172a; color: #ffffff; padding: 7px 8px; text-align: left; font-weight: 600; text-transform: uppercase; font-size: 10px; border: 1px solid #0f172a; }
+        td { padding: 6px 8px; border: 1px solid #cbd5e1; vertical-align: middle; }
+        tr:nth-child(even) { background: #f8fafc; }
+        .footer { margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 11px; color: #475569; page-break-inside: avoid; }
+        .sig-box { width: 200px; text-align: center; border-top: 1px solid #0f172a; padding-top: 4px; margin-top: 35px; font-weight: 600; }
+        @media print {
+            body { padding: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="school-header">
+        <h1>${schoolName}</h1>
+        <p>STUDENT DIRECTORY & PERFORMANCE LIST</p>
+    </div>
+
+    <div class="meta-grid">
+        <div class="meta-item"><label>Class Scope</label><span>${classLabel}</span></div>
+        <div class="meta-item"><label>Target Subject</label><span>${targetSubject}</span></div>
+        <div class="meta-item"><label>Mark Cutoff</label><span>${scoreCutoffText}</span></div>
+        <div class="meta-item"><label>Total Listed</label><span>${tableRows.length} Students</span></div>
+        <div class="meta-item"><label>Gender Scope</label><span>${genderText}</span></div>
+        <div class="meta-item"><label>Fee Filter</label><span>${feeText}</span></div>
+        <div class="meta-item"><label>Date Generated</label><span>${dateStr}</span></div>
+        <div class="meta-item"><label>Generated By</label><span>${staffName}</span></div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 45px;">Rank</th>
+                <th>Student Name</th>
+                <th style="width: 65px;">Gender</th>
+                <th style="width: 65px;">Class</th>
+                <th>Enrolled Subjects</th>
+                <th style="width: 90px;">${targetSubject}</th>
+                <th style="width: 80px;">Overall Avg</th>
+                <th style="width: 110px;">Fee Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${tableRows.length === 0 
+                ? `<tr><td colspan="8" style="text-align:center; padding:15px;">No students match the active filter criteria.</td></tr>`
+                : tableRows.map(r => `
+                    <tr>
+                        <td><strong>${r.rank}</strong></td>
+                        <td><strong>${r.name}</strong></td>
+                        <td>${r.gender}</td>
+                        <td>${r.classLevel}</td>
+                        <td>${r.subjects}</td>
+                        <td>${r.score}</td>
+                        <td><strong>${r.overall}</strong></td>
+                        <td>${r.feeStatus}</td>
+                    </tr>
+                `).join('')
+            }
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <div>
+            <p style="margin: 0;">Official Report generated by School OS MW System.</p>
+            <p style="margin: 2px 0 0 0; font-size: 10px; color: #94a3b8;">Printed on ${dateStr}</p>
+        </div>
+        <div class="sig-box">
+            Authorized Stamp / Signature
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+            }, 300);
+        };
+    </script>
+</body>
+</html>
+    `;
+
+    printWin.document.open();
+    printWin.document.write(htmlContent);
+    printWin.document.close();
+}
+
+document.getElementById('btn-export-explorer-pdf')?.addEventListener('click', openExplorerPrintWindow);
+document.getElementById('btn-print-explorer')?.addEventListener('click', openExplorerPrintWindow);
 
 // Initial load
 checkLogin();
+
 
