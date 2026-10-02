@@ -89,6 +89,7 @@
                 <li data-tab="staff-tab">Staff</li>
                 <li data-tab="marks-tab">Marks Grid</li>
                 <li data-tab="rankings-tab">Ranks & PDFs</li>
+                <li data-tab="explorer-tab" id="nav-explorer">🔎 Custom Lists & Reports</li>
                 <li data-tab="whatsapp-tab">WhatsApp Portal</li>
                 <li data-tab="notices-tab">📢 Notices</li>
                 <li data-tab="applications-tab">📥 Applications</li>
@@ -551,6 +552,142 @@
                                     <th>Subjects Taken</th>
                                     <th id="rankings-score-header">Score</th>
                                     <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Rendered dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            <!-- 3.5. Custom Lists & Reports Tab -->
+            <section id="explorer-tab" class="tab-panel">
+                <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
+                    <div>
+                        <h2 style="color: white; margin: 0;">🔎 Custom Student Lists & Export Suite</h2>
+                        <p class="subtitle" style="margin: 4px 0 0 0; color: rgba(255,255,255,0.7);">Filter, sort, query, and print tailored student lists across all forms</p>
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button id="btn-export-explorer-pdf" class="btn primary-btn" style="display:flex; align-items:center; gap:6px;">
+                            📄 Export PDF List
+                        </button>
+                        <button id="btn-export-explorer-csv" class="btn success-btn" style="display:flex; align-items:center; gap:6px;">
+                            📊 Export CSV
+                        </button>
+                        <button id="btn-print-explorer" class="btn outline-btn" style="display:flex; align-items:center; gap:6px;">
+                            🖨️ Print View
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filters Control Panel Card -->
+                <div class="card" style="margin-bottom: 20px; padding: 20px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+
+                        <!-- Class Scope Filter -->
+                        <div class="input-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
+                            <label style="font-weight:600; font-size:0.85rem;">Class Level</label>
+                            <select id="exp-class-filter" style="height: 38px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0 10px; width: 100%;">
+                                <option value="CURRENT">Current Class (Selected)</option>
+                                <option value="ALL">All Classes</option>
+                                <option value="Form 1">Form 1</option>
+                                <option value="Form 2">Form 2</option>
+                                <option value="Form 3">Form 3</option>
+                                <option value="Form 4">Form 4</option>
+                            </select>
+                        </div>
+
+                        <!-- Sort Field -->
+                        <div class="input-group" style="flex: 1; min-width: 170px; margin-bottom: 0;">
+                            <label style="font-weight:600; font-size:0.85rem;">Sort By</label>
+                            <select id="exp-sort-field" style="height: 38px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0 10px; width: 100%;">
+                                <option value="name_asc">Name (A → Z)</option>
+                                <option value="name_desc">Name (Z → A)</option>
+                                <option value="rank_asc">Rank / Average (High → Low)</option>
+                                <option value="rank_desc">Rank / Average (Low → High)</option>
+                                <option value="subject_high">Subject Score (High → Low)</option>
+                                <option value="subject_low">Subject Score (Low → High)</option>
+                            </select>
+                        </div>
+
+                        <!-- Subject Selector (For Subject Sort / Condition) -->
+                        <div class="input-group" id="exp-subject-select-wrap" style="flex: 1; min-width: 160px; margin-bottom: 0;">
+                            <label style="font-weight:600; font-size:0.85rem;">Target Subject</label>
+                            <select id="exp-subject-select" style="height: 38px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0 10px; width: 100%;">
+                                <!-- Dynamic subjects -->
+                            </select>
+                        </div>
+
+                        <!-- Score Condition Filter (e.g. Remedial < 40 / Distinction >= 80) -->
+                        <div class="input-group" style="flex: 1; min-width: 160px; margin-bottom: 0;">
+                            <label style="font-weight:600; font-size:0.85rem;">Subject Mark Cutoff</label>
+                            <select id="exp-score-cutoff" style="height: 38px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0 10px; width: 100%;">
+                                <option value="ALL">Any Mark</option>
+                                <option value="FAIL">Below 40 (Fail / Remedial)</option>
+                                <option value="PASS">40 - 79 (Pass)</option>
+                                <option value="DISTINCTION">80 - 100 (Distinction)</option>
+                            </select>
+                        </div>
+
+                        <!-- Gender Filter -->
+                        <div class="input-group" style="flex: 0 0 130px; margin-bottom: 0;">
+                            <label style="font-weight:600; font-size:0.85rem;">Gender</label>
+                            <select id="exp-gender-filter" style="height: 38px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0 10px; width: 100%;">
+                                <option value="ALL">All Genders</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+
+                        <!-- Fee / Bursary Status Filter -->
+                        <div class="input-group" style="flex: 1; min-width: 150px; margin-bottom: 0;">
+                            <label style="font-weight:600; font-size:0.85rem;">Fee / Bursary Status</label>
+                            <select id="exp-fee-filter" style="height: 38px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0 10px; width: 100%;">
+                                <option value="ALL">All Financial Statuses</option>
+                                <option value="PAID">Fully Paid</option>
+                                <option value="OWING">Has Arrears / Owing</option>
+                                <option value="BURSARY">On Bursary</option>
+                            </select>
+                        </div>
+
+                        <!-- Subject Enrollment Filter -->
+                        <div class="input-group" style="flex: 1; min-width: 170px; margin-bottom: 0;">
+                            <label style="font-weight:600; font-size:0.85rem;">Subject Enrollment</label>
+                            <select id="exp-subject-enrolled" style="height: 38px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0 10px; width: 100%;">
+                                <option value="ALL">All Students</option>
+                                <option value="TAKING">Must be taking Target Subject</option>
+                                <option value="NOT_TAKING">Must NOT be taking Target Subject</option>
+                            </select>
+                        </div>
+
+                        <!-- Instant Search Input -->
+                        <div class="input-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                            <label style="font-weight:600; font-size:0.85rem;">Search Name / Phone</label>
+                            <input type="text" id="exp-search-input" placeholder="Search..." style="height: 38px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0 10px; width: 100%;">
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Filtered Results Table Card -->
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap:wrap; gap:10px;">
+                        <h3 style="margin:0;" id="explorer-results-title">Filtered Student Directory</h3>
+                        <span id="explorer-counter-badge" style="background: var(--accent-blue); color: white; padding: 4px 12px; border-radius: 20px; font-weight: 600; font-size: 0.85rem;">0 Students</span>
+                    </div>
+
+                    <div class="table-container">
+                        <table id="explorer-table" style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="cursor:pointer;" data-sort="rank">Rank ↕</th>
+                                    <th style="cursor:pointer;" data-sort="name">Student Name ↕</th>
+                                    <th style="cursor:pointer;" data-sort="gender">Gender ↕</th>
+                                    <th style="cursor:pointer;" data-sort="class">Class ↕</th>
+                                    <th>Enrolled Subjects</th>
+                                    <th style="cursor:pointer;" data-sort="subject_score" id="explorer-th-score">Target Subject Score ↕</th>
+                                    <th style="cursor:pointer;" data-sort="average">Overall Avg / Pts ↕</th>
+                                    <th>Fee Status</th>
                                 </tr>
                             </thead>
                             <tbody>

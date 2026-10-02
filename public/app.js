@@ -120,6 +120,7 @@ function renderActiveTab() {
     if (tabId === 'staff-tab') renderStaffTab();
     if (tabId === 'marks-tab') renderMarksTab();
     if (tabId === 'rankings-tab') renderRankingsTab();
+    if (tabId === 'explorer-tab') renderExplorerTab();
     if (tabId === 'analytics-tab') renderAnalyticsTab();
 }
 
@@ -429,6 +430,7 @@ document.querySelectorAll('.nav-links li').forEach(item => {
         if (tabId === 'staff-tab') renderStaffTab();
         if (tabId === 'marks-tab') renderMarksTab();
         if (tabId === 'rankings-tab') renderRankingsTab();
+        if (tabId === 'explorer-tab') renderExplorerTab();
         if (tabId === 'whatsapp-tab') setupWhatsAppStatusPolling();
         if (tabId === 'notices-tab') renderNoticesTab();
         if (tabId === 'applications-tab') renderApplicationsTab();
@@ -3719,6 +3721,225 @@ document.getElementById('btn-refresh-analytics')?.addEventListener('click', () =
     analyticsData = null;
     renderAnalyticsTab();
 });
+
+// ── 3.5. Custom Lists & Reports (Explorer Tab) ──────────────────────────────────
+async function renderExplorerTab() {
+    await fetchStudents();
+
+    // Populate target subject select dropdown if empty
+    const subjSelect = document.getElementById('exp-subject-select');
+    if (subjSelect && subjSelect.options.length === 0) {
+        subjSelect.innerHTML = subjectsList.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    applyAndRenderExplorer();
+}
+
+function applyAndRenderExplorer() {
+    if (!students || !students.length) return;
+
+    const classFilter = document.getElementById('exp-class-filter')?.value || 'CURRENT';
+    const sortField = document.getElementById('exp-sort-field')?.value || 'name_asc';
+    const targetSubject = document.getElementById('exp-subject-select')?.value || (subjectsList[0] || 'Mathematics');
+    const scoreCutoff = document.getElementById('exp-score-cutoff')?.value || 'ALL';
+    const genderFilter = document.getElementById('exp-gender-filter')?.value || 'ALL';
+    const feeFilter = document.getElementById('exp-fee-filter')?.value || 'ALL';
+    const subjectEnrolled = document.getElementById('exp-subject-enrolled')?.value || 'ALL';
+    const searchTerm = (document.getElementById('exp-search-input')?.value || '').toLowerCase().trim();
+
+    // 1. Filter students
+    let filtered = students.filter(s => {
+        // Class Level filter
+        if (classFilter === 'CURRENT') {
+            if ((s.classLevel || 'Form 1') !== currentClass) return false;
+        } else if (classFilter !== 'ALL') {
+            if (s.classLevel !== classFilter) return false;
+        }
+
+        // Gender filter
+        if (genderFilter !== 'ALL') {
+            const g = (s.gender || 'Male').toLowerCase();
+            if (g !== genderFilter.toLowerCase()) return false;
+        }
+
+        // Fee / Bursary status filter
+        if (feeFilter === 'PAID') {
+            if (s.bursaryName || (s.paidAmount || 0) < (s.totalFees || 0)) return false;
+        } else if (feeFilter === 'OWING') {
+            if (s.bursaryName || (s.paidAmount || 0) >= (s.totalFees || 0)) return false;
+        } else if (feeFilter === 'BURSARY') {
+            if (!s.bursaryName) return false;
+        }
+
+        // Subject Enrollment filter
+        const isTaking = s.subjects && s.subjects[targetSubject] === true;
+        if (subjectEnrolled === 'TAKING' && !isTaking) return false;
+        if (subjectEnrolled === 'NOT_TAKING' && isTaking) return false;
+
+        // Subject Mark Cutoff filter
+        const mark = (s.marks && s.marks[targetSubject] !== undefined && s.marks[targetSubject] !== null && s.marks[targetSubject] !== '')
+            ? Number(s.marks[targetSubject])
+            : null;
+        if (scoreCutoff === 'FAIL') {
+            if (mark === null || mark >= 40) return false;
+        } else if (scoreCutoff === 'PASS') {
+            if (mark === null || mark < 40 || mark >= 80) return false;
+        } else if (scoreCutoff === 'DISTINCTION') {
+            if (mark === null || mark < 80) return false;
+        }
+
+        // Instant text search
+        if (searchTerm) {
+            const nameMatch = (s.name || '').toLowerCase().includes(searchTerm);
+            const phoneMatch = (s.phone || '').toLowerCase().includes(searchTerm);
+            const parentMatch = (s.parentPhone || '').toLowerCase().includes(searchTerm);
+            if (!nameMatch && !phoneMatch && !parentMatch) return false;
+        }
+
+        return true;
+    });
+
+    // 2. Sort students
+    filtered.sort((a, b) => {
+        if (sortField === 'name_asc') {
+            return (a.name || '').localeCompare(b.name || '');
+        } else if (sortField === 'name_desc') {
+            return (b.name || '').localeCompare(a.name || '');
+        } else if (sortField === 'rank_asc') {
+            return (a.rank || 999) - (b.rank || 999);
+        } else if (sortField === 'rank_desc') {
+            return (b.rank || 999) - (a.rank || 999);
+        } else if (sortField === 'subject_high') {
+            const mA = (a.marks && a.marks[targetSubject] !== undefined && a.marks[targetSubject] !== null) ? Number(a.marks[targetSubject]) : -1;
+            const mB = (b.marks && b.marks[targetSubject] !== undefined && b.marks[targetSubject] !== null) ? Number(b.marks[targetSubject]) : -1;
+            return mB - mA;
+        } else if (sortField === 'subject_low') {
+            const mA = (a.marks && a.marks[targetSubject] !== undefined && a.marks[targetSubject] !== null) ? Number(a.marks[targetSubject]) : 999;
+            const mB = (b.marks && b.marks[targetSubject] !== undefined && b.marks[targetSubject] !== null) ? Number(b.marks[targetSubject]) : 999;
+            return mA - mB;
+        }
+        return 0;
+    });
+
+    // 3. Render table & badge
+    const badge = document.getElementById('explorer-counter-badge');
+    if (badge) badge.textContent = `${filtered.length} Student${filtered.length === 1 ? '' : 's'}`;
+
+    const thScore = document.getElementById('explorer-th-score');
+    if (thScore) thScore.textContent = `${targetSubject} Score ↕`;
+
+    const tbody = document.querySelector('#explorer-table tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-secondary);">No students match the active filter criteria.</td></tr>`;
+        return;
+    }
+
+    filtered.forEach(student => {
+        const isJunior = (student.classLevel === 'Form 1' || student.classLevel === 'Form 2');
+        const scoreDisplay = isJunior
+            ? (student.average !== undefined && student.average !== null ? `${student.average}%` : '-')
+            : (student.mscePoints !== undefined && student.mscePoints !== null ? `${student.mscePoints} pts` : '-');
+
+        const mark = (student.marks && student.marks[targetSubject] !== undefined && student.marks[targetSubject] !== null && student.marks[targetSubject] !== '')
+            ? Number(student.marks[targetSubject])
+            : null;
+        
+        let markBadge = '-';
+        if (mark !== null) {
+            const color = mark >= 80 ? '#10b981' : mark >= 40 ? '#3b82f6' : '#ef4444';
+            markBadge = `<span style="font-weight:600; color:${color};">${mark}%</span>`;
+        }
+
+        const subjectsCount = student.subjects ? Object.keys(student.subjects).filter(k => student.subjects[k]).length : 0;
+        const isTargetEnrolled = student.subjects && student.subjects[targetSubject] === true;
+
+        let feeBadge = '';
+        if (student.bursaryName) {
+            feeBadge = `<span style="background:rgba(139,92,246,0.15); border:1px solid #8b5cf6; color:#8b5cf6; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:600;">Bursary (${student.bursaryName})</span>`;
+        } else if ((student.paidAmount || 0) >= (student.totalFees || 0)) {
+            feeBadge = `<span style="background:rgba(16,185,129,0.15); border:1px solid #10b981; color:#10b981; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:600;">Fully Paid</span>`;
+        } else {
+            const balance = (student.totalFees || 0) - (student.paidAmount || 0);
+            feeBadge = `<span style="background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ef4444; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:600;">Owes MWK ${balance.toLocaleString()}</span>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>#${student.rank || '-'}</strong></td>
+            <td><strong>${student.name}</strong></td>
+            <td>${student.gender || 'Male'}</td>
+            <td>${student.classLevel || 'Form 1'}</td>
+            <td>${subjectsCount} Subjects ${isTargetEnrolled ? `(<span style="color:#10b981;">✓ Enrolled</span>)` : ''}</td>
+            <td>${markBadge}</td>
+            <td><strong>${scoreDisplay}</strong></td>
+            <td>${feeBadge}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Bind Explorer Control Listeners
+['exp-class-filter', 'exp-sort-field', 'exp-subject-select', 'exp-score-cutoff', 'exp-gender-filter', 'exp-fee-filter', 'exp-subject-enrolled'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', applyAndRenderExplorer);
+});
+document.getElementById('exp-search-input')?.addEventListener('input', applyAndRenderExplorer);
+
+// Clickable Table Headers Sort
+document.querySelectorAll('#explorer-table th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+        const sortType = th.getAttribute('data-sort');
+        const sortSelect = document.getElementById('exp-sort-field');
+        if (!sortSelect) return;
+        if (sortType === 'name') {
+            sortSelect.value = sortSelect.value === 'name_asc' ? 'name_desc' : 'name_asc';
+        } else if (sortType === 'rank') {
+            sortSelect.value = sortSelect.value === 'rank_asc' ? 'rank_desc' : 'rank_asc';
+        } else if (sortType === 'subject_score') {
+            sortSelect.value = sortSelect.value === 'subject_high' ? 'subject_low' : 'subject_high';
+        }
+        applyAndRenderExplorer();
+    });
+});
+
+// CSV Export for Explorer Tab
+document.getElementById('btn-export-explorer-csv')?.addEventListener('click', () => {
+    const targetSubject = document.getElementById('exp-subject-select')?.value || 'Mathematics';
+    const rows = [
+        ['Rank', 'Student Name', 'Gender', 'Class Level', 'Target Subject', 'Subject Mark (%)', 'Overall Average/Points', 'Fee Status', 'Phone']
+    ];
+
+    document.querySelectorAll('#explorer-table tbody tr').forEach(tr => {
+        const tds = tr.querySelectorAll('td');
+        if (tds.length >= 8) {
+            const rank = tds[0].textContent.replace('#', '').trim();
+            const name = tds[1].textContent.trim();
+            const gender = tds[2].textContent.trim();
+            const cls = tds[3].textContent.trim();
+            const mark = tds[5].textContent.trim();
+            const overall = tds[6].textContent.trim();
+            const feeStatus = tds[7].textContent.trim();
+            const studentObj = students.find(s => s.name === name);
+            const phone = studentObj ? (studentObj.phone || '') : '';
+            rows.push([rank, name, gender, cls, targetSubject, mark, overall, feeStatus, phone]);
+        }
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.map(val => `"${val}"`).join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Custom_Student_List_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+});
+
+// PDF & Print View for Explorer Tab
+document.getElementById('btn-export-explorer-pdf')?.addEventListener('click', () => window.print());
+document.getElementById('btn-print-explorer')?.addEventListener('click', () => window.print());
 
 // Initial load
 checkLogin();
