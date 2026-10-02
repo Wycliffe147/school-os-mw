@@ -3847,15 +3847,63 @@ function applyAndRenderExplorer() {
     const badge = document.getElementById('explorer-counter-badge');
     if (badge) badge.textContent = `${filtered.length} Student${filtered.length === 1 ? '' : 's'}`;
 
-    const thScore = document.getElementById('explorer-th-score');
-    if (thScore) thScore.textContent = `${targetSubject} Score ↕`;
+    const viewMode = document.getElementById('exp-view-mode')?.value || 'SINGLE';
+    const subjWrap = document.getElementById('exp-subject-select-wrap');
+    if (subjWrap) subjWrap.style.opacity = viewMode === 'BROADSHEET' ? '0.5' : '1';
+
+    const currentSubjects = subjectsList && subjectsList.length ? subjectsList : ['Mathematics', 'English'];
+
+    // Update Header
+    const theadTr = document.querySelector('#explorer-table thead tr');
+    if (theadTr) {
+        if (viewMode === 'BROADSHEET') {
+            theadTr.innerHTML = `
+                <th style="cursor:pointer;" data-sort="rank">Rank ↕</th>
+                <th style="cursor:pointer;" data-sort="name">Student Name ↕</th>
+                <th style="cursor:pointer;" data-sort="gender">Gender ↕</th>
+                <th style="cursor:pointer;" data-sort="class">Class ↕</th>
+                ${currentSubjects.map(sub => `<th title="${sub}" style="font-size: 10px; writing-mode: vertical-rl; transform: rotate(180deg); text-align:center;">${getAbbreviation(sub)}</th>`).join('')}
+                <th style="cursor:pointer;" data-sort="average">Overall Avg / Pts ↕</th>
+                <th>Fee Status</th>
+            `;
+        } else {
+            theadTr.innerHTML = `
+                <th style="cursor:pointer;" data-sort="rank">Rank ↕</th>
+                <th style="cursor:pointer;" data-sort="name">Student Name ↕</th>
+                <th style="cursor:pointer;" data-sort="gender">Gender ↕</th>
+                <th style="cursor:pointer;" data-sort="class">Class ↕</th>
+                <th>Enrolled Subjects</th>
+                <th style="cursor:pointer;" data-sort="subject_score" id="explorer-th-score">${targetSubject} Score ↕</th>
+                <th style="cursor:pointer;" data-sort="average">Overall Avg / Pts ↕</th>
+                <th>Fee Status</th>
+            `;
+        }
+
+        // Rebind sort listeners on dynamic headers
+        theadTr.querySelectorAll('th[data-sort]').forEach(th => {
+            th.addEventListener('click', () => {
+                const sortType = th.getAttribute('data-sort');
+                const sortSelect = document.getElementById('exp-sort-field');
+                if (!sortSelect) return;
+                if (sortType === 'name') {
+                    sortSelect.value = sortSelect.value === 'name_asc' ? 'name_desc' : 'name_asc';
+                } else if (sortType === 'rank') {
+                    sortSelect.value = sortSelect.value === 'rank_asc' ? 'rank_desc' : 'rank_asc';
+                } else if (sortType === 'subject_score') {
+                    sortSelect.value = sortSelect.value === 'subject_high' ? 'subject_low' : 'subject_high';
+                }
+                applyAndRenderExplorer();
+            });
+        });
+    }
 
     const tbody = document.querySelector('#explorer-table tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
 
+    const colSpan = viewMode === 'BROADSHEET' ? (6 + currentSubjects.length) : 8;
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-secondary);">No students match the active filter criteria.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center; padding:20px; color:var(--text-secondary);">No students match the active filter criteria.</td></tr>`;
         return;
     }
 
@@ -3864,19 +3912,6 @@ function applyAndRenderExplorer() {
         const scoreDisplay = isJunior
             ? (student.average !== undefined && student.average !== null ? `${student.average}%` : '-')
             : (student.mscePoints !== undefined && student.mscePoints !== null ? `${student.mscePoints} pts` : '-');
-
-        const mark = (student.marks && student.marks[targetSubject] !== undefined && student.marks[targetSubject] !== null && student.marks[targetSubject] !== '')
-            ? Number(student.marks[targetSubject])
-            : null;
-        
-        let markBadge = '-';
-        if (mark !== null) {
-            const color = mark >= 80 ? '#10b981' : mark >= 40 ? '#3b82f6' : '#ef4444';
-            markBadge = `<span style="font-weight:600; color:${color};">${mark}%</span>`;
-        }
-
-        const subjectsCount = student.subjects ? Object.keys(student.subjects).filter(k => student.subjects[k]).length : 0;
-        const isTargetEnrolled = student.subjects && student.subjects[targetSubject] === true;
 
         const stExpFee = getStudentExpectedFee(student);
         const stTotalDue = stExpFee.totalDue;
@@ -3894,71 +3929,117 @@ function applyAndRenderExplorer() {
         }
 
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong>#${student.rank || '-'}</strong></td>
-            <td><strong>${student.name}</strong></td>
-            <td>${student.gender || 'Male'}</td>
-            <td>${student.classLevel || 'Form 1'}</td>
-            <td>${subjectsCount} Subjects ${isTargetEnrolled ? `(<span style="color:#10b981;">✓ Enrolled</span>)` : ''}</td>
-            <td>${markBadge}</td>
-            <td><strong>${scoreDisplay}</strong></td>
-            <td>${feeBadge}</td>
-        `;
+
+        if (viewMode === 'BROADSHEET') {
+            const subjCells = currentSubjects.map(sub => {
+                const isTaking = student.subjects && student.subjects[sub] === true;
+                if (!isTaking) return `<td style="text-align:center; color:var(--text-secondary); opacity:0.4;">-</td>`;
+                const mark = (student.marks && student.marks[sub] !== undefined && student.marks[sub] !== null && student.marks[sub] !== '')
+                    ? Number(student.marks[sub])
+                    : null;
+                if (mark === null) return `<td style="text-align:center; color:#f59e0b;">-</td>`;
+                const color = mark >= 80 ? '#10b981' : mark >= 40 ? '#3b82f6' : '#ef4444';
+                return `<td style="text-align:center; font-weight:600; color:${color};">${mark}</td>`;
+            }).join('');
+
+            tr.innerHTML = `
+                <td><strong>#${student.rank || '-'}</strong></td>
+                <td><strong>${student.name}</strong></td>
+                <td>${student.gender || 'Male'}</td>
+                <td>${student.classLevel || 'Form 1'}</td>
+                ${subjCells}
+                <td><strong>${scoreDisplay}</strong></td>
+                <td>${feeBadge}</td>
+            `;
+        } else {
+            const mark = (student.marks && student.marks[targetSubject] !== undefined && student.marks[targetSubject] !== null && student.marks[targetSubject] !== '')
+                ? Number(student.marks[targetSubject])
+                : null;
+            
+            let markBadge = '-';
+            if (mark !== null) {
+                const color = mark >= 80 ? '#10b981' : mark >= 40 ? '#3b82f6' : '#ef4444';
+                markBadge = `<span style="font-weight:600; color:${color};">${mark}%</span>`;
+            }
+
+            const subjectsCount = student.subjects ? Object.keys(student.subjects).filter(k => student.subjects[k]).length : 0;
+            const isTargetEnrolled = student.subjects && student.subjects[targetSubject] === true;
+
+            tr.innerHTML = `
+                <td><strong>#${student.rank || '-'}</strong></td>
+                <td><strong>${student.name}</strong></td>
+                <td>${student.gender || 'Male'}</td>
+                <td>${student.classLevel || 'Form 1'}</td>
+                <td>${subjectsCount} Subjects ${isTargetEnrolled ? `(<span style="color:#10b981;">✓ Enrolled</span>)` : ''}</td>
+                <td>${markBadge}</td>
+                <td><strong>${scoreDisplay}</strong></td>
+                <td>${feeBadge}</td>
+            `;
+        }
         tbody.appendChild(tr);
     });
 }
 
 // Bind Explorer Control Listeners
-['exp-class-filter', 'exp-sort-field', 'exp-subject-select', 'exp-score-cutoff', 'exp-gender-filter', 'exp-fee-filter', 'exp-subject-enrolled'].forEach(id => {
+['exp-view-mode', 'exp-class-filter', 'exp-sort-field', 'exp-subject-select', 'exp-score-cutoff', 'exp-gender-filter', 'exp-fee-filter', 'exp-subject-enrolled'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', applyAndRenderExplorer);
 });
 document.getElementById('exp-search-input')?.addEventListener('input', applyAndRenderExplorer);
 
-// Clickable Table Headers Sort
-document.querySelectorAll('#explorer-table th[data-sort]').forEach(th => {
-    th.addEventListener('click', () => {
-        const sortType = th.getAttribute('data-sort');
-        const sortSelect = document.getElementById('exp-sort-field');
-        if (!sortSelect) return;
-        if (sortType === 'name') {
-            sortSelect.value = sortSelect.value === 'name_asc' ? 'name_desc' : 'name_asc';
-        } else if (sortType === 'rank') {
-            sortSelect.value = sortSelect.value === 'rank_asc' ? 'rank_desc' : 'rank_asc';
-        } else if (sortType === 'subject_score') {
-            sortSelect.value = sortSelect.value === 'subject_high' ? 'subject_low' : 'subject_high';
-        }
-        applyAndRenderExplorer();
-    });
-});
-
 // CSV Export for Explorer Tab
 document.getElementById('btn-export-explorer-csv')?.addEventListener('click', () => {
+    const viewMode = document.getElementById('exp-view-mode')?.value || 'SINGLE';
     const targetSubject = document.getElementById('exp-subject-select')?.value || 'Mathematics';
-    const rows = [
-        ['Rank', 'Student Name', 'Gender', 'Class Level', 'Target Subject', 'Subject Mark (%)', 'Overall Average/Points', 'Fee Status', 'Phone']
-    ];
+    const currentSubjects = subjectsList && subjectsList.length ? subjectsList : ['Mathematics', 'English'];
 
-    document.querySelectorAll('#explorer-table tbody tr').forEach(tr => {
-        const tds = tr.querySelectorAll('td');
-        if (tds.length >= 8) {
-            const rank = tds[0].textContent.replace('#', '').trim();
-            const name = tds[1].textContent.trim();
-            const gender = tds[2].textContent.trim();
-            const cls = tds[3].textContent.trim();
-            const mark = tds[5].textContent.trim();
-            const overall = tds[6].textContent.trim();
-            const feeStatus = tds[7].textContent.trim();
-            const studentObj = students.find(s => s.name === name);
-            const phone = studentObj ? (studentObj.phone || '') : '';
-            rows.push([rank, name, gender, cls, targetSubject, mark, overall, feeStatus, phone]);
-        }
-    });
+    let rows = [];
+
+    if (viewMode === 'BROADSHEET') {
+        rows.push(['Rank', 'Student Name', 'Gender', 'Class Level', ...currentSubjects, 'Overall Average/Points', 'Fee Status', 'Phone']);
+        document.querySelectorAll('#explorer-table tbody tr').forEach(tr => {
+            const tds = tr.querySelectorAll('td');
+            if (tds.length >= (5 + currentSubjects.length)) {
+                const rank = tds[0].textContent.replace('#', '').trim();
+                const name = tds[1].textContent.trim();
+                const gender = tds[2].textContent.trim();
+                const cls = tds[3].textContent.trim();
+                
+                const subjMarks = [];
+                for (let i = 0; i < currentSubjects.length; i++) {
+                    subjMarks.push(tds[4 + i].textContent.trim());
+                }
+
+                const overall = tds[4 + currentSubjects.length].textContent.trim();
+                const feeStatus = tds[5 + currentSubjects.length].textContent.trim();
+                const studentObj = students.find(s => s.name === name);
+                const phone = studentObj ? (studentObj.phone || '') : '';
+                rows.push([rank, name, gender, cls, ...subjMarks, overall, feeStatus, phone]);
+            }
+        });
+    } else {
+        rows.push(['Rank', 'Student Name', 'Gender', 'Class Level', 'Target Subject', 'Subject Mark (%)', 'Overall Average/Points', 'Fee Status', 'Phone']);
+        document.querySelectorAll('#explorer-table tbody tr').forEach(tr => {
+            const tds = tr.querySelectorAll('td');
+            if (tds.length >= 8) {
+                const rank = tds[0].textContent.replace('#', '').trim();
+                const name = tds[1].textContent.trim();
+                const gender = tds[2].textContent.trim();
+                const cls = tds[3].textContent.trim();
+                const mark = tds[5].textContent.trim();
+                const overall = tds[6].textContent.trim();
+                const feeStatus = tds[7].textContent.trim();
+                const studentObj = students.find(s => s.name === name);
+                const phone = studentObj ? (studentObj.phone || '') : '';
+                rows.push([rank, name, gender, cls, targetSubject, mark, overall, feeStatus, phone]);
+            }
+        });
+    }
 
     const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.map(val => `"${val}"`).join(",")).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Custom_Student_List_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `Student_List_${viewMode}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -3971,10 +4052,12 @@ function openExplorerPrintWindow() {
             ? schoolSettings.schoolName
             : (document.getElementById('sidebar-school-name')?.innerText || 'EXCEL ACADEMY');
 
+        const viewMode = document.getElementById('exp-view-mode')?.value || 'SINGLE';
         const classFilter = document.getElementById('exp-class-filter')?.value || 'CURRENT';
         const classLabel = classFilter === 'CURRENT' ? `Current Class (${currentClass})` : (classFilter === 'ALL' ? 'All Classes' : classFilter);
         const targetSubject = document.getElementById('exp-subject-select')?.value || 'Mathematics';
-        
+        const currentSubjects = subjectsList && subjectsList.length ? subjectsList : ['Mathematics', 'English'];
+
         const scoreSelect = document.getElementById('exp-score-cutoff');
         const scoreCutoffText = (scoreSelect && scoreSelect.selectedIndex >= 0 && scoreSelect.options[scoreSelect.selectedIndex])
             ? scoreSelect.options[scoreSelect.selectedIndex].text
@@ -3993,48 +4076,116 @@ function openExplorerPrintWindow() {
         const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         const staffName = (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.name || currentUser.username) : 'Staff';
 
-    // Collect rendered table rows
-    const tableRows = [];
-    document.querySelectorAll('#explorer-table tbody tr').forEach(tr => {
-        const tds = tr.querySelectorAll('td');
-        if (tds.length >= 8) {
-            tableRows.push({
-                rank: tds[0].textContent.trim(),
-                name: tds[1].textContent.trim(),
-                gender: tds[2].textContent.trim(),
-                classLevel: tds[3].textContent.trim(),
-                subjects: tds[4].textContent.trim(),
-                score: tds[5].textContent.trim(),
-                overall: tds[6].textContent.trim(),
-                feeStatus: tds[7].textContent.trim()
-            });
+        // Collect rendered table rows
+        const tableRows = [];
+        document.querySelectorAll('#explorer-table tbody tr').forEach(tr => {
+            const tds = tr.querySelectorAll('td');
+            if (viewMode === 'BROADSHEET' && tds.length >= (5 + currentSubjects.length)) {
+                const subjMarks = [];
+                for (let i = 0; i < currentSubjects.length; i++) {
+                    subjMarks.push(tds[4 + i].textContent.trim());
+                }
+                tableRows.push({
+                    rank: tds[0].textContent.trim(),
+                    name: tds[1].textContent.trim(),
+                    gender: tds[2].textContent.trim(),
+                    classLevel: tds[3].textContent.trim(),
+                    subjMarks: subjMarks,
+                    overall: tds[4 + currentSubjects.length].textContent.trim(),
+                    feeStatus: tds[5 + currentSubjects.length].textContent.trim()
+                });
+            } else if (viewMode === 'SINGLE' && tds.length >= 8) {
+                tableRows.push({
+                    rank: tds[0].textContent.trim(),
+                    name: tds[1].textContent.trim(),
+                    gender: tds[2].textContent.trim(),
+                    classLevel: tds[3].textContent.trim(),
+                    subjects: tds[4].textContent.trim(),
+                    score: tds[5].textContent.trim(),
+                    overall: tds[6].textContent.trim(),
+                    feeStatus: tds[7].textContent.trim()
+                });
+            }
+        });
+
+        const printWin = window.open('', '_blank', 'width=1100,height=800');
+        if (!printWin) {
+            alert('Please allow popups in your browser to generate the PDF / Print view.');
+            return;
         }
-    });
 
-    const printWin = window.open('', '_blank', 'width=1000,height=750');
-    if (!printWin) {
-        alert('Please allow popups in your browser to generate the PDF / Print view.');
-        return;
-    }
+        const pageSize = viewMode === 'BROADSHEET' ? 'A4 landscape' : 'A4 portrait';
 
-    const htmlContent = `
+        const tableHeaderHtml = viewMode === 'BROADSHEET'
+            ? `<tr>
+                <th style="width: 35px;">Rank</th>
+                <th>Student Name</th>
+                <th style="width: 50px;">Gender</th>
+                <th style="width: 50px;">Class</th>
+                ${currentSubjects.map(sub => `<th style="text-align:center;">${getAbbreviation(sub)}</th>`).join('')}
+                <th style="width: 65px;">Overall</th>
+                <th style="width: 90px;">Fee Status</th>
+               </tr>`
+            : `<tr>
+                <th style="width: 45px;">Rank</th>
+                <th>Student Name</th>
+                <th style="width: 65px;">Gender</th>
+                <th style="width: 65px;">Class</th>
+                <th>Enrolled Subjects</th>
+                <th style="width: 90px;">${targetSubject}</th>
+                <th style="width: 80px;">Overall Avg</th>
+                <th style="width: 110px;">Fee Status</th>
+               </tr>`;
+
+        const tableBodyHtml = tableRows.length === 0
+            ? `<tr><td colspan="${viewMode === 'BROADSHEET' ? (6 + currentSubjects.length) : 8}" style="text-align:center; padding:15px;">No students match the active filter criteria.</td></tr>`
+            : tableRows.map(r => {
+                if (viewMode === 'BROADSHEET') {
+                    return `
+                        <tr>
+                            <td><strong>${r.rank}</strong></td>
+                            <td><strong>${r.name}</strong></td>
+                            <td>${r.gender}</td>
+                            <td>${r.classLevel}</td>
+                            ${r.subjMarks.map(m => `<td style="text-align:center;">${m}</td>`).join('')}
+                            <td><strong>${r.overall}</strong></td>
+                            <td>${r.feeStatus}</td>
+                        </tr>
+                    `;
+                } else {
+                    return `
+                        <tr>
+                            <td><strong>${r.rank}</strong></td>
+                            <td><strong>${r.name}</strong></td>
+                            <td>${r.gender}</td>
+                            <td>${r.classLevel}</td>
+                            <td>${r.subjects}</td>
+                            <td>${r.score}</td>
+                            <td><strong>${r.overall}</strong></td>
+                            <td>${r.feeStatus}</td>
+                        </tr>
+                    `;
+                }
+            }).join('');
+
+        const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <title>Student Directory - ${schoolName}</title>
     <style>
-        @page { size: A4 portrait; margin: 12mm; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; margin: 0; padding: 20px; background: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        @page { size: ${pageSize}; margin: 10mm; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; margin: 0; padding: 15px; background: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .school-header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 12px; }
         .school-header h1 { margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 0.5px; color: #0f172a; }
         .school-header p { margin: 3px 0 0 0; font-size: 13px; font-weight: 600; color: #2563eb; letter-spacing: 1px; }
         .meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; margin-bottom: 14px; font-size: 11px; }
         .meta-item label { color: #64748b; font-size: 10px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px; }
         .meta-item span { font-weight: 600; color: #0f172a; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
-        th { background: #0f172a; color: #ffffff; padding: 7px 8px; text-align: left; font-weight: 600; text-transform: uppercase; font-size: 10px; border: 1px solid #0f172a; }
-        td { padding: 6px 8px; border: 1px solid #cbd5e1; vertical-align: middle; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10px; }
+        th { background: #0f172a; color: #ffffff; padding: 6px 6px; text-align: left; font-weight: 600; text-transform: uppercase; font-size: 9px; border: 1px solid #0f172a; }
+        td { padding: 5px 6px; border: 1px solid #cbd5e1; vertical-align: middle; }
         tr:nth-child(even) { background: #f8fafc; }
         .footer { margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 11px; color: #475569; page-break-inside: avoid; }
         .sig-box { width: 200px; text-align: center; border-top: 1px solid #0f172a; padding-top: 4px; margin-top: 35px; font-weight: 600; }
@@ -4046,12 +4197,12 @@ function openExplorerPrintWindow() {
 <body>
     <div class="school-header">
         <h1>${schoolName}</h1>
-        <p>STUDENT DIRECTORY & PERFORMANCE LIST</p>
+        <p>${viewMode === 'BROADSHEET' ? 'CLASS MASTER MARKSHEET (ALL SUBJECTS)' : 'STUDENT DIRECTORY & PERFORMANCE LIST'}</p>
     </div>
 
     <div class="meta-grid">
         <div class="meta-item"><label>Class Scope</label><span>${classLabel}</span></div>
-        <div class="meta-item"><label>Target Subject</label><span>${targetSubject}</span></div>
+        <div class="meta-item"><label>View Mode</label><span>${viewMode === 'BROADSHEET' ? 'All Subjects Broadsheet' : 'Single Subject Focus'}</span></div>
         <div class="meta-item"><label>Mark Cutoff</label><span>${scoreCutoffText}</span></div>
         <div class="meta-item"><label>Total Listed</label><span>${tableRows.length} Students</span></div>
         <div class="meta-item"><label>Gender Scope</label><span>${genderText}</span></div>
@@ -4062,33 +4213,10 @@ function openExplorerPrintWindow() {
 
     <table>
         <thead>
-            <tr>
-                <th style="width: 45px;">Rank</th>
-                <th>Student Name</th>
-                <th style="width: 65px;">Gender</th>
-                <th style="width: 65px;">Class</th>
-                <th>Enrolled Subjects</th>
-                <th style="width: 90px;">${targetSubject}</th>
-                <th style="width: 80px;">Overall Avg</th>
-                <th style="width: 110px;">Fee Status</th>
-            </tr>
+            ${tableHeaderHtml}
         </thead>
         <tbody>
-            ${tableRows.length === 0 
-                ? `<tr><td colspan="8" style="text-align:center; padding:15px;">No students match the active filter criteria.</td></tr>`
-                : tableRows.map(r => `
-                    <tr>
-                        <td><strong>${r.rank}</strong></td>
-                        <td><strong>${r.name}</strong></td>
-                        <td>${r.gender}</td>
-                        <td>${r.classLevel}</td>
-                        <td>${r.subjects}</td>
-                        <td>${r.score}</td>
-                        <td><strong>${r.overall}</strong></td>
-                        <td>${r.feeStatus}</td>
-                    </tr>
-                `).join('')
-            }
+            ${tableBodyHtml}
         </tbody>
     </table>
 
@@ -4113,9 +4241,9 @@ function openExplorerPrintWindow() {
 </html>
     `;
 
-    printWin.document.open();
-    printWin.document.write(htmlContent);
-    printWin.document.close();
+        printWin.document.open();
+        printWin.document.write(htmlContent);
+        printWin.document.close();
     } catch (err) {
         console.error('Error generating print window:', err);
         alert('Could not open print window: ' + err.message);
