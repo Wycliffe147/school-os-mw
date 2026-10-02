@@ -3966,25 +3966,32 @@ document.getElementById('btn-export-explorer-csv')?.addEventListener('click', ()
 
 // PDF & Print View for Explorer Tab
 function openExplorerPrintWindow() {
-    const schoolName = (schoolSettings && schoolSettings.schoolName)
-        ? schoolSettings.schoolName
-        : (document.getElementById('sidebar-school-name')?.innerText || 'EXCEL ACADEMY');
+    try {
+        const schoolName = (typeof schoolSettings !== 'undefined' && schoolSettings && schoolSettings.schoolName)
+            ? schoolSettings.schoolName
+            : (document.getElementById('sidebar-school-name')?.innerText || 'EXCEL ACADEMY');
 
-    const classFilter = document.getElementById('exp-class-filter')?.value || 'CURRENT';
-    const classLabel = classFilter === 'CURRENT' ? `Current Class (${currentClass})` : (classFilter === 'ALL' ? 'All Classes' : classFilter);
-    const targetSubject = document.getElementById('exp-subject-select')?.value || 'Mathematics';
-    
-    const scoreSelect = document.getElementById('exp-score-cutoff');
-    const scoreCutoffText = scoreSelect ? scoreSelect.options[scoreSelect.selectedIndex].text : 'Any Mark';
-    
-    const genderSelect = document.getElementById('exp-gender-filter');
-    const genderText = genderSelect ? genderSelect.options[genderSelect.selectedIndex].text : 'All Genders';
-    
-    const feeSelect = document.getElementById('exp-fee-filter');
-    const feeText = feeSelect ? feeSelect.options[feeSelect.selectedIndex].text : 'All Financial Statuses';
-    
-    const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    const staffName = currentUser ? (currentUser.name || currentUser.username) : 'Staff';
+        const classFilter = document.getElementById('exp-class-filter')?.value || 'CURRENT';
+        const classLabel = classFilter === 'CURRENT' ? `Current Class (${currentClass})` : (classFilter === 'ALL' ? 'All Classes' : classFilter);
+        const targetSubject = document.getElementById('exp-subject-select')?.value || 'Mathematics';
+        
+        const scoreSelect = document.getElementById('exp-score-cutoff');
+        const scoreCutoffText = (scoreSelect && scoreSelect.selectedIndex >= 0 && scoreSelect.options[scoreSelect.selectedIndex])
+            ? scoreSelect.options[scoreSelect.selectedIndex].text
+            : 'Any Mark';
+        
+        const genderSelect = document.getElementById('exp-gender-filter');
+        const genderText = (genderSelect && genderSelect.selectedIndex >= 0 && genderSelect.options[genderSelect.selectedIndex])
+            ? genderSelect.options[genderSelect.selectedIndex].text
+            : 'All Genders';
+        
+        const feeSelect = document.getElementById('exp-fee-filter');
+        const feeText = (feeSelect && feeSelect.selectedIndex >= 0 && feeSelect.options[feeSelect.selectedIndex])
+            ? feeSelect.options[feeSelect.selectedIndex].text
+            : 'All Financial Statuses';
+        
+        const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const staffName = (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.name || currentUser.username) : 'Staff';
 
     // Collect rendered table rows
     const tableRows = [];
@@ -4109,6 +4116,10 @@ function openExplorerPrintWindow() {
     printWin.document.open();
     printWin.document.write(htmlContent);
     printWin.document.close();
+    } catch (err) {
+        console.error('Error generating print window:', err);
+        alert('Could not open print window: ' + err.message);
+    }
 }
 
 document.getElementById('btn-export-explorer-pdf')?.addEventListener('click', openExplorerPrintWindow);
