@@ -3818,9 +3818,19 @@ function applyAndRenderExplorer() {
         } else if (sortField === 'name_desc') {
             return (b.name || '').localeCompare(a.name || '');
         } else if (sortField === 'rank_asc') {
-            return (a.rank || 999) - (b.rank || 999);
+            const rA = a.rank !== undefined && a.rank !== null ? Number(a.rank) : 999;
+            const rB = b.rank !== undefined && b.rank !== null ? Number(b.rank) : 999;
+            if (rA !== rB) return rA - rB;
+            const avA = a.average !== undefined ? a.average : (a.mscePoints !== undefined ? 100 - a.mscePoints : 0);
+            const avB = b.average !== undefined ? b.average : (b.mscePoints !== undefined ? 100 - b.mscePoints : 0);
+            return avB - avA;
         } else if (sortField === 'rank_desc') {
-            return (b.rank || 999) - (a.rank || 999);
+            const rA = a.rank !== undefined && a.rank !== null ? Number(a.rank) : -1;
+            const rB = b.rank !== undefined && b.rank !== null ? Number(b.rank) : -1;
+            if (rA !== rB) return rB - rA;
+            const avA = a.average !== undefined ? a.average : (a.mscePoints !== undefined ? 100 - a.mscePoints : 0);
+            const avB = b.average !== undefined ? b.average : (b.mscePoints !== undefined ? 100 - b.mscePoints : 0);
+            return avA - avB;
         } else if (sortField === 'subject_high') {
             const mA = (a.marks && a.marks[targetSubject] !== undefined && a.marks[targetSubject] !== null) ? Number(a.marks[targetSubject]) : -1;
             const mB = (b.marks && b.marks[targetSubject] !== undefined && b.marks[targetSubject] !== null) ? Number(b.marks[targetSubject]) : -1;
