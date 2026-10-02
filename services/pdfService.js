@@ -11,17 +11,32 @@ function getGrade(scoreStr, db, classLevel) {
     const score = Number(scoreStr);
     
     if (isJunior) {
-        const rules = [...(db.settings.gradingSystemJunior || [])].sort((a, b) => b.min - a.min);
+        const rules = [...((db.settings && db.settings.gradingSystemJunior) || [])].sort((a, b) => b.min - a.min);
         for (const rule of rules) {
-            if (score >= rule.min) return { gradeLetter: rule.gradeLetter, remark: rule.remark, points: '-' };
+            if (score >= rule.min) return { gradeLetter: rule.gradeLetter || rule.letter || 'A', remark: rule.remark || rule.label || 'Pass', points: '-' };
         }
-        return { gradeLetter: 'F', remark: "Fail", points: '-' };
+        if (score >= 80) return { gradeLetter: 'A', remark: 'Distinction', points: '-' };
+        if (score >= 65) return { gradeLetter: 'B', remark: 'Strong Credit', points: '-' };
+        if (score >= 50) return { gradeLetter: 'C', remark: 'Credit', points: '-' };
+        if (score >= 40) return { gradeLetter: 'D', remark: 'Pass', points: '-' };
+        return { gradeLetter: 'F', remark: 'Fail', points: '-' };
     } else {
-        const rules = [...(db.settings.gradingSystem || [])].sort((a, b) => b.min - a.min);
+        const rules = [...((db.settings && db.settings.gradingSystem) || [])].sort((a, b) => b.min - a.min);
         for (const rule of rules) {
-            if (score >= rule.min) return { points: rule.points, remark: rule.remark, gradeLetter: '-' };
+            if (score >= rule.min && rule.points !== undefined && rule.points !== null) {
+                return { points: Number(rule.points), remark: rule.remark || rule.label || 'Pass', gradeLetter: '-' };
+            }
         }
-        return { points: 9, remark: "Fail", gradeLetter: '-' };
+        // Standard MANEB Point Scale (1 to 9)
+        if (score >= 80) return { points: 1, remark: 'Distinction', gradeLetter: '-' };
+        if (score >= 75) return { points: 2, remark: 'Distinction', gradeLetter: '-' };
+        if (score >= 70) return { points: 3, remark: 'Strong Credit', gradeLetter: '-' };
+        if (score >= 65) return { points: 4, remark: 'Strong Credit', gradeLetter: '-' };
+        if (score >= 60) return { points: 5, remark: 'Credit', gradeLetter: '-' };
+        if (score >= 55) return { points: 6, remark: 'Credit', gradeLetter: '-' };
+        if (score >= 50) return { points: 7, remark: 'Pass', gradeLetter: '-' };
+        if (score >= 40) return { points: 8, remark: 'Pass', gradeLetter: '-' };
+        return { points: 9, remark: 'Fail', gradeLetter: '-' };
     }
 }
 
@@ -29,7 +44,7 @@ function rankStudents(db) {
     const forms = ['Form 1', 'Form 2', 'Form 3', 'Form 4'];
     
     forms.forEach(form => {
-        const classStudents = db.students.filter(s => (s.classLevel || 'Form 1') === form);
+        const classStudents = (db.students || []).filter(s => (s.classLevel || 'Form 1') === form);
         const isJunior = form === 'Form 1' || form === 'Form 2';
         
         classStudents.forEach(student => {
@@ -37,9 +52,11 @@ function rankStudents(db) {
             let markSum = 0;
             let markCount = 0;
             let pointsList = [];
-            let englishPoint = 9;
+            let englishPoint = null;
+            let englishPassed = false;
+            let totalPassed = 0;
             
-            db.subjects.forEach(sub => {
+            (db.subjects || []).forEach(sub => {
                 if (student.subjects && student.subjects[sub]) {
                     student.subjectsCount++;
                     const score = student.marks && student.marks[sub];
@@ -50,8 +67,11 @@ function rankStudents(db) {
                         const gradeInfo = getGrade(score, db, form);
                         if (!isJunior) {
                             const p = gradeInfo.points !== '-' ? Number(gradeInfo.points) : 9;
-                            if (sub === 'ENG' || sub === 'English') {
+                            if (p <= 8) totalPassed++;
+                            const subNorm = sub.trim().toLowerCase();
+                            if (subNorm === 'eng' || subNorm === 'english') {
                                 englishPoint = p;
+                                if (p <= 8) englishPassed = true;
                             } else {
                                 pointsList.push(p);
                             }
@@ -64,11 +84,33 @@ function rankStudents(db) {
             student.juniorTotalScore = markSum;
             
             if (!isJunior) {
+                // English is compulsory: if missing or fail, point is 9
+                const engPt = englishPoint !== null ? englishPoint : 9;
+
+                // Sort all other scored subjects from best (lowest points) to worst
                 pointsList.sort((a, b) => a - b);
-                const best5Others = pointsList.slice(0, 5);
-                student.mscePoints = [englishPoint, ...best5Others].reduce((acc, val) => acc + val, 0);
+                
+                // Best 5 other subjects: pad missing subjects up to 5 with 9 points (Fail)
+                const best5Others = [];
+                for (let i = 0; i < 5; i++) {
+                    best5Others.push(i < pointsList.length ? pointsList[i] : 9);
+                }
+
+                // Official Best 6 Aggregate (English + Best 5 Others)
+                student.mscePoints = engPt + best5Others.reduce((acc, val) => acc + val, 0);
+
+                // MANEB MSCE Qualification Rules:
+                // Must pass English (1-8) AND pass at least 6 subjects total (1-8)
+                if (markCount === 0) {
+                    student.msceStatus = 'INCOMPLETE';
+                } else if (englishPassed && totalPassed >= 6) {
+                    student.msceStatus = 'QUALIFIED';
+                } else {
+                    student.msceStatus = 'FAILED';
+                }
             } else {
                 student.mscePoints = null;
+                student.msceStatus = null;
             }
         });
         
@@ -76,7 +118,10 @@ function rankStudents(db) {
             if (isJunior) {
                 return (b.juniorTotalScore || 0) - (a.juniorTotalScore || 0);
             } else {
-                return (a.mscePoints || 99) - (b.mscePoints || 99);
+                const pA = a.mscePoints !== null && a.mscePoints !== undefined ? a.mscePoints : 99;
+                const pB = b.mscePoints !== null && b.mscePoints !== undefined ? b.mscePoints : 99;
+                if (pA !== pB) return pA - pB;
+                return (b.average || 0) - (a.average || 0);
             }
         });
         
