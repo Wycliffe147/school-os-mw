@@ -3769,12 +3769,18 @@ function applyAndRenderExplorer() {
         }
 
         // Fee / Bursary status filter
+        const expFeeObj = getStudentExpectedFee(s);
+        const totalDue = expFeeObj.totalDue;
+        const paidAmount = Number(s.paidAmount || 0);
+        const balance = totalDue - paidAmount;
+        const isBursary = Boolean(s.bursaryName && s.bursaryName.trim());
+
         if (feeFilter === 'PAID') {
-            if (s.bursaryName || (s.paidAmount || 0) < (s.totalFees || 0)) return false;
+            if (isBursary || balance > 0) return false;
         } else if (feeFilter === 'OWING') {
-            if (s.bursaryName || (s.paidAmount || 0) >= (s.totalFees || 0)) return false;
+            if (isBursary || balance <= 0) return false;
         } else if (feeFilter === 'BURSARY') {
-            if (!s.bursaryName) return false;
+            if (!isBursary) return false;
         }
 
         // Subject Enrollment filter
@@ -3862,14 +3868,19 @@ function applyAndRenderExplorer() {
         const subjectsCount = student.subjects ? Object.keys(student.subjects).filter(k => student.subjects[k]).length : 0;
         const isTargetEnrolled = student.subjects && student.subjects[targetSubject] === true;
 
+        const stExpFee = getStudentExpectedFee(student);
+        const stTotalDue = stExpFee.totalDue;
+        const stPaid = Number(student.paidAmount || 0);
+        const stBal = stTotalDue - stPaid;
+        const stIsBursary = Boolean(student.bursaryName && student.bursaryName.trim());
+
         let feeBadge = '';
-        if (student.bursaryName) {
+        if (stIsBursary) {
             feeBadge = `<span style="background:rgba(139,92,246,0.15); border:1px solid #8b5cf6; color:#8b5cf6; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:600;">Bursary (${student.bursaryName})</span>`;
-        } else if ((student.paidAmount || 0) >= (student.totalFees || 0)) {
+        } else if (stBal <= 0) {
             feeBadge = `<span style="background:rgba(16,185,129,0.15); border:1px solid #10b981; color:#10b981; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:600;">Fully Paid</span>`;
         } else {
-            const balance = (student.totalFees || 0) - (student.paidAmount || 0);
-            feeBadge = `<span style="background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ef4444; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:600;">Owes MWK ${balance.toLocaleString()}</span>`;
+            feeBadge = `<span style="background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ef4444; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:600;">Owes MWK ${stBal.toLocaleString()}</span>`;
         }
 
         const tr = document.createElement('tr');
