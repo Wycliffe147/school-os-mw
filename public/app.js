@@ -2286,9 +2286,173 @@ document.getElementById('btn-export-fees')?.addEventListener('click', () => {
 });
 
 // Print Fee Ledger Sheet
-document.getElementById('btn-print-fees')?.addEventListener('click', () => {
-    window.print();
-});
+function openFeeLedgerPrintWindow() {
+    try {
+        const schoolName = (typeof schoolSettings !== 'undefined' && schoolSettings && schoolSettings.schoolName)
+            ? schoolSettings.schoolName
+            : (document.getElementById('sidebar-school-name')?.innerText || 'EXCEL ACADEMY');
+
+        const classSelect = document.getElementById('fee-class-filter');
+        const classLabel = (classSelect && classSelect.selectedIndex >= 0) ? classSelect.options[classSelect.selectedIndex].text : 'Current Class';
+
+        const sectionSelect = document.getElementById('fee-section-filter');
+        const sectionLabel = (sectionSelect && sectionSelect.selectedIndex >= 0) ? sectionSelect.options[sectionSelect.selectedIndex].text : 'All Sections';
+
+        const statusSelect = document.getElementById('fee-status-filter');
+        const statusLabel = (statusSelect && statusSelect.selectedIndex >= 0) ? statusSelect.options[statusSelect.selectedIndex].text : 'All Statuses';
+
+        const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const staffName = (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.name || currentUser.username) : 'Staff';
+
+        // Summary values from DOM
+        const totalExp = document.getElementById('fee-summary-total')?.innerText || 'MK 0';
+        const totalColl = document.getElementById('fee-summary-collected')?.innerText || 'MK 0';
+        const totalOut = document.getElementById('fee-summary-outstanding')?.innerText || 'MK 0';
+        const rate = document.getElementById('fee-summary-rate')?.innerText || '0%';
+
+        // Collect table rows
+        const tableRows = [];
+        document.querySelectorAll('#fees-table-tbody tr').forEach(tr => {
+            const tds = tr.querySelectorAll('td');
+            if (tds.length >= 9) {
+                tableRows.push({
+                    name: tds[0].textContent.trim(),
+                    classLevel: tds[1].textContent.trim(),
+                    section: tds[2].textContent.trim(),
+                    termFee: tds[3].textContent.trim(),
+                    arrears: tds[4].textContent.trim(),
+                    totalDue: tds[5].textContent.trim(),
+                    paidAmount: tds[6].textContent.trim(),
+                    balance: tds[7].textContent.trim(),
+                    lockStatus: tds[8].textContent.trim()
+                });
+            }
+        });
+
+        const printWin = window.open('', '_blank', 'width=1100,height=800');
+        if (!printWin) {
+            alert('Please allow popups in your browser to generate the Fee Ledger print view.');
+            return;
+        }
+
+        const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Fee Ledger - ${schoolName}</title>
+    <style>
+        @page { size: A4 landscape; margin: 10mm; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; margin: 0; padding: 15px; background: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .school-header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 12px; }
+        .school-header h1 { margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 0.5px; color: #0f172a; }
+        .school-header p { margin: 3px 0 0 0; font-size: 13px; font-weight: 600; color: #059669; letter-spacing: 1px; }
+        
+        .summary-box { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; text-align: center; }
+        .summary-item label { color: #64748b; font-size: 9px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px; }
+        .summary-item h3 { margin: 0; font-size: 15px; color: #0f172a; }
+
+        .meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 11px; margin-bottom: 14px; padding: 0 4px; }
+        .meta-item label { color: #64748b; font-size: 9px; text-transform: uppercase; font-weight: bold; }
+        .meta-item span { font-weight: 600; color: #0f172a; display: block; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10px; }
+        th { background: #0f172a; color: #ffffff; padding: 6px 8px; text-align: left; font-weight: 600; text-transform: uppercase; font-size: 9px; border: 1px solid #0f172a; }
+        td { padding: 5px 8px; border: 1px solid #cbd5e1; vertical-align: middle; }
+        tr:nth-child(even) { background: #f8fafc; }
+        
+        .footer { margin-top: 25px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 11px; color: #475569; page-break-inside: avoid; }
+        .sig-box { width: 200px; text-align: center; border-top: 1px solid #0f172a; padding-top: 4px; margin-top: 30px; font-weight: 600; }
+        @media print {
+            body { padding: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="school-header">
+        <h1>${schoolName}</h1>
+        <p>STUDENT FEE LEDGER & PAYMENT STATUS REPORT</p>
+    </div>
+
+    <div class="summary-box">
+        <div class="summary-item"><label>Total Expected</label><h3>${totalExp}</h3></div>
+        <div class="summary-item"><label>Total Collected</label><h3 style="color:#059669;">${totalColl}</h3></div>
+        <div class="summary-item"><label>Total Outstanding</label><h3 style="color:#dc2626;">${totalOut}</h3></div>
+        <div class="summary-item"><label>Collection Rate</label><h3 style="color:#2563eb;">${rate}</h3></div>
+    </div>
+
+    <div class="meta-grid">
+        <div class="meta-item"><label>Class Scope:</label> <span>${classLabel}</span></div>
+        <div class="meta-item"><label>Section Scope:</label> <span>${sectionLabel}</span></div>
+        <div class="meta-item"><label>Status Filter:</label> <span>${statusLabel}</span></div>
+        <div class="meta-item"><label>Generated By / Date:</label> <span>${staffName} (${dateStr})</span></div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th style="width: 55px;">Class</th>
+                <th style="width: 75px;">Section</th>
+                <th style="width: 85px;">Term Fee</th>
+                <th style="width: 85px;">Arrears</th>
+                <th style="width: 90px;">Total Due</th>
+                <th style="width: 90px;">Paid</th>
+                <th style="width: 90px;">Balance</th>
+                <th style="width: 110px;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${tableRows.length === 0
+                ? `<tr><td colspan="9" style="text-align:center; padding:15px;">No fee records match the criteria.</td></tr>`
+                : tableRows.map(r => `
+                    <tr>
+                        <td><strong>${r.name}</strong></td>
+                        <td>${r.classLevel}</td>
+                        <td>${r.section}</td>
+                        <td>${r.termFee}</td>
+                        <td>${r.arrears}</td>
+                        <td><strong>${r.totalDue}</strong></td>
+                        <td style="color:#059669; font-weight:600;">${r.paidAmount}</td>
+                        <td style="${r.balance.includes('0') ? 'color:#059669;' : 'color:#dc2626; font-weight:600;'}">${r.balance}</td>
+                        <td>${r.lockStatus}</td>
+                    </tr>
+                `).join('')
+            }
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <div>
+            <p style="margin: 0;">Official Financial Report generated by School OS MW System.</p>
+            <p style="margin: 2px 0 0 0; font-size: 10px; color: #94a3b8;">Printed on ${dateStr}</p>
+        </div>
+        <div class="sig-box">
+            Bursar / Accountant Signature
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+            }, 300);
+        };
+    </script>
+</body>
+</html>
+    `;
+
+        printWin.document.open();
+        printWin.document.write(htmlContent);
+        printWin.document.close();
+    } catch(err) {
+        console.error('Error generating Fee Ledger print window:', err);
+        alert('Could not open print window: ' + err.message);
+    }
+}
+
+document.getElementById('btn-print-fees')?.addEventListener('click', openFeeLedgerPrintWindow);
 
 // Payment Modal Logic
 function openPaymentModal(studentId, studentName) {
