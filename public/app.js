@@ -223,6 +223,7 @@ async function checkLogin() {
             document.querySelectorAll('.nav-links li').forEach(li => li.style.display = 'none');
             document.querySelector('[data-tab="students-tab"]').style.display = 'block';
             document.querySelector('[data-tab="fees-tab"]').style.display = 'block';
+            if (document.querySelector('[data-tab="explorer-tab"]')) document.querySelector('[data-tab="explorer-tab"]').style.display = 'block';
 
             document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
             document.querySelector('[data-tab="fees-tab"]').classList.add('active');
@@ -233,6 +234,7 @@ async function checkLogin() {
             document.querySelectorAll('.nav-links li').forEach(li => li.style.display = 'none');
             document.querySelector('[data-tab="students-tab"]').style.display = 'block';
             document.querySelector('[data-tab="attendance-tab"]').style.display = 'block';
+            if (document.querySelector('[data-tab="explorer-tab"]')) document.querySelector('[data-tab="explorer-tab"]').style.display = 'block';
 
             document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
             document.querySelector('[data-tab="attendance-tab"]').classList.add('active');
@@ -3722,14 +3724,18 @@ document.getElementById('btn-refresh-analytics')?.addEventListener('click', () =
     renderAnalyticsTab();
 });
 
-// ── 3.5. Custom Lists & Reports (Explorer Tab) ──────────────────────────────────
+// ── 3.5. Lists & Reports (Explorer Tab) ──────────────────────────────────
 async function renderExplorerTab() {
     await fetchStudents();
 
-    // Populate target subject select dropdown if empty
+    // Populate target subject select dropdown if empty or needs updating
     const subjSelect = document.getElementById('exp-subject-select');
-    if (subjSelect && subjSelect.options.length === 0) {
-        subjSelect.innerHTML = subjectsList.map(s => `<option value="${s}">${s}</option>`).join('');
+    if (subjSelect) {
+        const curVal = subjSelect.value;
+        if (subjSelect.options.length === 0 && subjectsList && subjectsList.length > 0) {
+            subjSelect.innerHTML = subjectsList.map(s => `<option value="${s}">${s}</option>`).join('');
+            if (curVal && subjectsList.includes(curVal)) subjSelect.value = curVal;
+        }
     }
 
     applyAndRenderExplorer();
