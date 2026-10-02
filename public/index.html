@@ -114,38 +114,42 @@
                     </div>
                 </div>
 
-                <div class="two-column-layout">
-                    <!-- Left: Registration Form -->
+                <div class="students-layout" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <!-- Top: Registration Form -->
                     <div class="card form-card">
                         <h3>Add New Student</h3>
                         <form id="add-student-form">
-                            <div class="input-group">
-                                <label for="student-name">Full Name</label>
-                                <input type="text" id="student-name" required placeholder="e.g. John Doe">
+                            <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+                                <div class="input-group" style="flex: 1; min-width: 220px; margin-bottom: 0;">
+                                    <label for="student-name">Full Name</label>
+                                    <input type="text" id="student-name" required placeholder="e.g. John Doe">
+                                </div>
+                                <div class="input-group" style="flex: 1; min-width: 220px; margin-bottom: 0;">
+                                    <label for="student-phone">WhatsApp Number (with country code)</label>
+                                    <input type="text" id="student-phone" required placeholder="e.g. 265999123456">
+                                </div>
+                                <div class="input-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 0; padding-bottom: 10px;">
+                                    <input type="checkbox" id="student-on-bursary" style="width: auto; cursor:pointer;">
+                                    <label for="student-on-bursary" style="margin-bottom: 0; cursor:pointer;">On Bursary?</label>
+                                </div>
+                                <div class="input-group" id="student-bursary-group" style="display: none; flex: 1; min-width: 200px; margin-bottom: 0;">
+                                    <label for="student-bursary-name">Bursary Name</label>
+                                    <input type="text" id="student-bursary-name" placeholder="e.g. Save the Children">
+                                </div>
+                                <div class="input-group" id="student-section-group" style="display: none; flex: 1; min-width: 180px; margin-bottom: 0;">
+                                    <label for="student-section">Enrollment Section</label>
+                                    <select id="student-section">
+                                        <!-- Populated dynamically from school sections -->
+                                    </select>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn primary-btn" style="height: 42px;">Register Student</button>
+                                </div>
                             </div>
-                            <div class="input-group">
-                                <label for="student-phone">WhatsApp Number (with country code)</label>
-                                <input type="text" id="student-phone" required placeholder="e.g. 265999123456">
-                            </div>
-                            <div class="input-group" style="align-items: center; flex-direction: row; gap: 10px; margin-top: 15px;">
-                                <input type="checkbox" id="student-on-bursary" style="width: auto; cursor:pointer;">
-                                <label for="student-on-bursary" style="margin-bottom: 0; cursor:pointer;">On Bursary?</label>
-                            </div>
-                            <div class="input-group" id="student-bursary-group" style="display: none; margin-top: 10px;">
-                                <label for="student-bursary-name">Bursary Name</label>
-                                <input type="text" id="student-bursary-name" placeholder="e.g. Save the Children">
-                            </div>
-                            <div class="input-group" id="student-section-group" style="display: none; margin-top: 10px;">
-                                <label for="student-section">Enrollment Section</label>
-                                <select id="student-section">
-                                    <!-- Populated dynamically from school sections -->
-                                </select>
-                            </div>
-                            <button type="submit" class="btn primary-btn" style="margin-top: 15px;">Register Student</button>
                         </form>
                     </div>
 
-                    <!-- Right: Subject Selection Grid -->
+                    <!-- Bottom: Subject Selection Grid -->
                     <div class="card grid-card">
                         <h3>Student Subject Selection</h3>
                         <p class="subtitle">Select the subjects taken by each student and click Save</p>

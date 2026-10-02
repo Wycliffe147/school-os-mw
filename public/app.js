@@ -875,9 +875,6 @@ async function renderStudentsTab() {
     const saveSubjectsBtn = document.getElementById('save-subjects-btn');
     if (saveSubjectsBtn) saveSubjectsBtn.style.display = readOnly ? 'none' : '';
 
-    // Collapse to single-column whenever the form card is hidden (always for class_teacher).
-    const twoCol = document.querySelector('#students-tab .two-column-layout');
-    if (twoCol) twoCol.style.gridTemplateColumns = readOnly ? '1fr' : '';
 
     // Render dynamic table headers
     const thead = document.getElementById('subjects-table-header');
