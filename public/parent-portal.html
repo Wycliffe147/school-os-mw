@@ -381,8 +381,15 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* Responsive */
-        @media (max-width: 500px) {
-            .login-card { padding: 28px 20px; }
+        @media (max-width: 640px) {
+            #login-screen {
+                padding: 20px 16px;
+                background:
+                    linear-gradient(rgba(8,12,24,0.7), rgba(8,12,24,0.78)),
+                    url('school-bg.jpg') center 35% / auto 80vh no-repeat;
+                background-color: #0b0f19;
+            }
+            .login-card { padding: 32px 22px; }
             .portal-content { padding: 14px; }
         }
     </style>
