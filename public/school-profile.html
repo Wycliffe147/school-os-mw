@@ -131,30 +131,32 @@
 
         /* ── Page Container ── */
         .container {
-            max-width: 1100px;
+            max-width: 1240px;
             margin: 0 auto;
-            padding: 32px 20px 70px;
+            padding: 48px 24px 80px;
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 28px;
         }
 
         /* ── Hero Card ── */
         .hero-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 32px;
+            background: rgba(22, 26, 42, 0.76);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 22px;
+            padding: 36px;
             display: flex;
             flex-direction: column;
-            gap: 24px;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+            gap: 26px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
         }
 
         .hero-header {
             display: flex;
             align-items: flex-start;
-            gap: 22px;
+            gap: 24px;
             flex-wrap: wrap;
         }
 
@@ -188,7 +190,7 @@
         .school-info { flex: 1; min-width: 240px; }
 
         .school-title {
-            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-size: clamp(1.5rem, 3vw, 2.1rem);
             font-weight: 900;
             color: white;
             line-height: 1.2;
@@ -218,19 +220,19 @@
 
         /* ── Admission Callout ── */
         .admission-callout {
-            border-radius: 14px;
-            padding: 20px 24px;
+            border-radius: 16px;
+            padding: 22px 26px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 20px;
             flex-wrap: wrap;
-            border: 1px solid var(--border-color);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .admission-callout.status-open    { background: rgba(34,197,94,0.07); border-color: rgba(34,197,94,0.28); }
-        .admission-callout.status-limited { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.28); }
-        .admission-callout.status-closed  { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.28); }
+        .admission-callout.status-open    { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.35); }
+        .admission-callout.status-limited { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.35); }
+        .admission-callout.status-closed  { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.35); }
 
         .admission-status-badge {
             display: inline-flex;
@@ -255,50 +257,56 @@
 
         /* ── Section Card ── */
         .section-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 18px;
-            padding: 28px;
+            background: rgba(22, 26, 42, 0.76);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 32px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 22px;
+            box-shadow: 0 10px 32px rgba(0,0,0,0.35);
         }
 
         .section-title {
-            font-size: 1.15rem;
+            font-size: 1.18rem;
             font-weight: 800;
             color: white;
             display: flex;
             align-items: center;
             gap: 10px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             padding-bottom: 16px;
         }
 
         .section-subtitle {
             font-size: 0.88rem;
             color: var(--text-secondary);
-            margin-top: -12px;
+            margin-top: -10px;
             line-height: 1.6;
         }
 
         /* Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 14px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
         }
 
         .stat-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
+            background: rgba(12, 15, 26, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 14px;
-            padding: 20px;
+            padding: 22px;
             text-align: center;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, transform 0.2s;
         }
 
-        .stat-card:hover { border-color: var(--border-hover); }
+        .stat-card:hover {
+            border-color: rgba(91, 155, 248, 0.35);
+            transform: translateY(-2px);
+        }
 
         .stat-card .label {
             font-size: 0.72rem;
