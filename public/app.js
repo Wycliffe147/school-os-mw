@@ -1002,7 +1002,7 @@ async function renderStudentsTab() {
             const sname = btn.getAttribute('data-name');
             if (!confirm(`⚠️ Remove "${sname}"?\n\nThis will permanently delete the student and all their marks. This cannot be undone.`)) return;
             try {
-                const res = await fetch(`/api/students/${sid}`, { method: 'DELETE' });
+                const res = await apiFetch(`/api/students/${sid}`, { method: 'DELETE' });
                 let data;
                 const text = await res.text();
                 try { data = JSON.parse(text); } catch { data = {}; }
