@@ -1270,9 +1270,9 @@
                         <h1>📊 School Analytics Dashboard</h1>
                         <p class="subtitle" style="margin: 4px 0 0 0;">Data-driven insights into student performance, attendance, and fee collection.</p>
                     </div>
-                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <div class="analytics-header-controls">
                         <!-- Student Analytics Lookup -->
-                        <div style="position:relative; min-width:210px;">
+                        <div class="analytics-student-lookup">
                             <input type="text" id="analytics-student-search" placeholder="🔍 Search student..." autocomplete="off"
                                 style="padding:8px 12px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.85rem; width:100%;">
                             <div id="analytics-student-results" style="display:none; position:absolute; top:calc(100% + 4px); left:0; width:100%; max-height:220px; overflow-y:auto; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:6px; z-index:950; box-shadow:0 8px 24px rgba(0,0,0,0.35);"></div>
@@ -1298,10 +1298,10 @@
                 </div>
 
                 <!-- KPI Summary Cards -->
-                <div id="analytics-kpi-row" style="display:flex; gap:14px; margin-bottom:22px; flex-wrap:wrap;"></div>
+                <div id="analytics-kpi-row" class="analytics-kpi-grid"></div>
 
                 <!-- Row 1: Class performance bar chart + Subject pass rates -->
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px;">
+                <div class="analytics-grid-2col">
                     <div class="card" style="padding:20px;">
                         <h3 style="margin-bottom:16px; font-size:1rem;">Average Mark by Class</h3>
                         <div id="chart-class-avg" style="position:relative; height:220px;"></div>
@@ -1313,7 +1313,7 @@
                 </div>
 
                 <!-- Row 2: Fee collection donut-style + Monthly fee trend -->
-                <div style="display:grid; grid-template-columns:300px 1fr; gap:18px; margin-bottom:18px;">
+                <div class="analytics-grid-split">
                     <div class="card" style="padding:20px;">
                         <h3 style="margin-bottom:16px; font-size:1rem;">Fee Collection</h3>
                         <div id="chart-fee-donut" style="display:flex; flex-direction:column; gap:12px;"></div>
@@ -1325,7 +1325,7 @@
                 </div>
 
                 <!-- Row 3: Attendance by class + Daily attendance trend -->
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px;">
+                <div class="analytics-grid-2col">
                     <div class="card" style="padding:20px;">
                         <h3 style="margin-bottom:16px; font-size:1rem;">Attendance Rate by Class (%)</h3>
                         <div id="chart-attendance-class" style="position:relative; height:220px;"></div>
@@ -1343,7 +1343,7 @@
                 </div>
 
                 <!-- Row 5: Top 10 + At-risk students -->
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px;">
+                <div class="analytics-grid-2col">
                     <div class="card" style="padding:20px;">
                         <h3 style="margin-bottom:12px; font-size:1rem; color:var(--accent-success);">🏆 Top 10 Students</h3>
                         <div id="analytics-top10" class="table-container"></div>

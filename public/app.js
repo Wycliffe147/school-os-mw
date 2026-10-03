@@ -3586,7 +3586,7 @@ function renderStudentAnalyticsModalContent(st) {
     </div>
 
     <!-- Key Metrics Grid -->
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:20px;">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; margin-bottom:20px;">
         <div style="background:rgba(255,255,255,0.03); border-left:4px solid #3b82f6; border-radius:8px; padding:12px;">
             <p style="font-size:0.72rem; color:var(--text-secondary); margin:0 0 4px; text-transform:uppercase;">Overall Average</p>
             <h3 style="margin:0; font-size:1.3rem; color:${anGradeColour(st.studentAvg)};">${st.studentAvg !== null ? `${st.studentAvg}%` : '-'}</h3>
@@ -3616,12 +3616,12 @@ function renderStudentAnalyticsModalContent(st) {
 
     <!-- MANEB Subject Matrix -->
     <div style="margin-bottom:20px;">
-        <h4 style="margin:0 0 10px 0; font-size:0.95rem; display:flex; justify-content:space-between; align-items:center;">
+        <h4 style="margin:0 0 10px 0; font-size:0.95rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
             <span>🇲🇼 MANEB Subject Performance & Grade Points (1-9 Scale)</span>
             <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:400;">1=Distinction (80%+) | 9=Fail (<40%)</span>
         </h4>
-        <div class="table-container" style="max-height:240px; overflow-y:auto;">
-            <table style="width:100%; border-collapse:collapse;">
+        <div class="table-container" style="max-height:240px; overflow-y:auto; overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; min-width:460px;">
                 <thead>
                     <tr>
                         <th style="background:#0f172a;">Subject</th>
@@ -3646,7 +3646,7 @@ function renderStudentAnalyticsModalContent(st) {
     </div>
 
     <!-- Term History & Fee Payments Grid -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+    <div class="modal-grid-2col">
         <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:8px; padding:14px;">
             <h4 style="margin:0 0 10px 0; font-size:0.9rem;">📈 Term-over-Term Progression</h4>
             ${st.termHistory.length ? `
@@ -3728,7 +3728,7 @@ function renderStudentAnalyticsModalContent(st) {
 
 // ─── KPI card ────────────────────────────────────────────────────────────────
 function anKpiCard(icon, label, value, sub, accentColor) {
-    return `<div class="card" style="flex:1; min-width:160px; padding:16px; border-left:4px solid ${accentColor};">
+    return `<div class="card" style="padding:16px; border-left:4px solid ${accentColor};">
         <p style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">${icon} ${label}</p>
         <h2 style="font-size:1.4rem; color:${accentColor}; margin:0 0 2px;">${value}</h2>
         <span style="font-size:0.75rem; color:var(--text-secondary);">${sub}</span>

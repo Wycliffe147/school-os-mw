@@ -805,3 +805,118 @@ td input[type="number"]:disabled {
     height: 100%;
     overflow: visible;
 }
+
+/* ── Analytics Dashboard Responsive Grid ── */
+.analytics-header-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.analytics-student-lookup {
+    position: relative;
+    min-width: 210px;
+    flex: 1;
+    max-width: 280px;
+}
+
+.analytics-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.analytics-grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.analytics-grid-split {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.modal-grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* Mobile & Tablet Responsiveness for Analytics */
+@media (max-width: 860px) {
+    .analytics-grid-2col,
+    .analytics-grid-split,
+    .modal-grid-2col {
+        grid-template-columns: 1fr !important;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .analytics-header-controls {
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .analytics-student-lookup {
+        min-width: 100% !important;
+        max-width: 100% !important;
+        flex: none;
+    }
+
+    .analytics-header-controls .custom-dropdown {
+        flex: 1;
+        min-width: 140px;
+    }
+
+    .analytics-header-controls .btn {
+        flex-shrink: 0;
+    }
+
+    .analytics-kpi-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    #modal-student-analytics .card {
+        padding: 16px !important;
+        width: 95% !important;
+        max-height: 94vh !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .analytics-kpi-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px;
+    }
+
+    .analytics-kpi-grid .card {
+        padding: 12px 10px !important;
+    }
+
+    .analytics-kpi-grid .card h2 {
+        font-size: 1.15rem !important;
+    }
+
+    .an-bar-track {
+        gap: 6px;
+    }
+
+    .an-bar-label {
+        min-width: 60px;
+        font-size: 0.72rem;
+    }
+
+    .an-bar-val {
+        min-width: 34px;
+        font-size: 0.75rem;
+    }
+}
+
