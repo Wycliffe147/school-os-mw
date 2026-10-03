@@ -33,7 +33,10 @@
 
         body {
             font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-            background: var(--bg-primary);
+            background:
+                linear-gradient(rgba(8,10,18,0.86), rgba(8,10,18,0.86)),
+                url('/explore-assets/grid-bg.jpg') center / cover fixed;
+            background-color: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100dvh;
         }
@@ -126,10 +129,70 @@
 
         /* ── Hero ── */
         .hero {
-            background: linear-gradient(160deg, #1a1d2e 0%, #0d1018 60%);
-            padding: 52px 24px 36px;
+            position: relative;
+            overflow: hidden;
+            padding: 60px 24px 40px;
             text-align: center;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        /* Slideshow layers */
+        .hero-slides {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .hero-slide {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.4s ease;
+        }
+
+        .hero-slide.active { opacity: 1; }
+
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                175deg,
+                rgba(6,8,18,0.70) 0%,
+                rgba(6,8,18,0.60) 50%,
+                rgba(6,8,18,0.78) 100%
+            );
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Slideshow dot indicators */
+        .slide-dots {
+            display: flex;
+            gap: 7px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .slide-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.3);
+            transition: background 0.3s, width 0.3s;
+            cursor: pointer;
+            border: none;
+            padding: 0;
+        }
+
+        .slide-dot.active {
+            background: white;
+            width: 22px;
         }
 
         .hero-eyebrow {
@@ -802,99 +865,113 @@
 
     <!-- Hero -->
     <section class="hero">
-        <div class="hero-eyebrow">🇲🇼 Malawi · All 28 Districts</div>
-        <h1>Find the Right School<br>for Your Child</h1>
-        <p>Browse verified secondary schools across Malawi. Compare fees, facilities, and exam results — then apply directly online, right from this page.</p>
+        <!-- Slideshow background layer -->
+        <div class="hero-slides" id="hero-slides">
+            <div class="hero-slide active" style="background-image: url('/explore-assets/hero-slide-1.jpg');"></div>
+            <div class="hero-slide" style="background-image: url('/explore-assets/hero-slide-2.jpg');"></div>
+            <div class="hero-slide" style="background-image: url('/explore-assets/hero-slide-3.jpg');"></div>
+            <div class="hero-slide" style="background-image: url('/explore-assets/hero-slide-4.jpg');"></div>
+        </div>
+        <div class="hero-overlay"></div>
 
-        <div class="search-bar-container">
-            <div class="search-inputs">
-                <input type="text" id="search-q" class="search-input-text" placeholder="🔍  Search by school name or location…">
+        <div class="hero-content">
+            <div class="hero-eyebrow">🇲🇼 Malawi · All 28 Districts</div>
+            <h1>Find the Right School<br>for Your Child</h1>
+            <p>Browse verified secondary schools across Malawi. Compare fees, facilities, and exam results — then apply directly online, right from this page.</p>
 
-                <!-- Custom Searchable District Dropdown -->
-                <div class="custom-dropdown" id="district-dropdown">
-                    <div class="custom-dropdown-toggle" id="district-toggle">
-                        <span id="district-selected-text">📍 All Districts</span>
-                        <span style="font-size:0.75rem; color:var(--text-secondary);">▼</span>
-                    </div>
-                    <div class="custom-dropdown-menu" id="district-menu">
-                        <div class="dropdown-search-box">
-                            <input type="text" id="district-search-input" placeholder="🔍 Search district…">
+            <div class="search-bar-container">
+                <div class="search-inputs">
+                    <input type="text" id="search-q" class="search-input-text" placeholder="🔍  Search by school name or location…">
+
+                    <!-- Custom Searchable District Dropdown -->
+                    <div class="custom-dropdown" id="district-dropdown">
+                        <div class="custom-dropdown-toggle" id="district-toggle">
+                            <span id="district-selected-text">📍 All Districts</span>
+                            <span style="font-size:0.75rem; color:var(--text-secondary);">▼</span>
                         </div>
-                        <div id="district-options-list">
-                            <div class="dropdown-option active" data-val="All">📍 All Districts</div>
-                            <div class="dropdown-option" data-val="Balaka">Balaka</div>
-                            <div class="dropdown-option" data-val="Blantyre">Blantyre</div>
-                            <div class="dropdown-option" data-val="Chikwawa">Chikwawa</div>
-                            <div class="dropdown-option" data-val="Chiradzulu">Chiradzulu</div>
-                            <div class="dropdown-option" data-val="Chitipa">Chitipa</div>
-                            <div class="dropdown-option" data-val="Dedza">Dedza</div>
-                            <div class="dropdown-option" data-val="Dowa">Dowa</div>
-                            <div class="dropdown-option" data-val="Karonga">Karonga</div>
-                            <div class="dropdown-option" data-val="Kasungu">Kasungu</div>
-                            <div class="dropdown-option" data-val="Likoma">Likoma</div>
-                            <div class="dropdown-option" data-val="Lilongwe">Lilongwe</div>
-                            <div class="dropdown-option" data-val="Machinga">Machinga</div>
-                            <div class="dropdown-option" data-val="Mangochi">Mangochi</div>
-                            <div class="dropdown-option" data-val="Mchinji">Mchinji</div>
-                            <div class="dropdown-option" data-val="Mulanje">Mulanje</div>
-                            <div class="dropdown-option" data-val="Mwanza">Mwanza</div>
-                            <div class="dropdown-option" data-val="Mzimba">Mzimba</div>
-                            <div class="dropdown-option" data-val="Mzuzu">Mzuzu</div>
-                            <div class="dropdown-option" data-val="Neno">Neno</div>
-                            <div class="dropdown-option" data-val="Nkhata Bay">Nkhata Bay</div>
-                            <div class="dropdown-option" data-val="Nkhotakota">Nkhotakota</div>
-                            <div class="dropdown-option" data-val="Nsanje">Nsanje</div>
-                            <div class="dropdown-option" data-val="Ntcheu">Ntcheu</div>
-                            <div class="dropdown-option" data-val="Ntchisi">Ntchisi</div>
-                            <div class="dropdown-option" data-val="Phalombe">Phalombe</div>
-                            <div class="dropdown-option" data-val="Rumphi">Rumphi</div>
-                            <div class="dropdown-option" data-val="Salima">Salima</div>
-                            <div class="dropdown-option" data-val="Thyolo">Thyolo</div>
-                            <div class="dropdown-option" data-val="Zomba">Zomba</div>
-                        </div>
-                    </div>
-                    <input type="hidden" id="search-district" value="All">
-                </div>
-
-                <button class="btn-gps" id="btn-gps-search">
-                    <svg viewBox="0 0 32 32" width="16" height="16"><path fill="currentColor" d="M16 2C10.477 2 6 6.477 6 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/><ellipse cx="16" cy="30" rx="6" ry="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
-                    Near Me
-                </button>
-            </div>
-
-            <div class="filter-tags">
-                <span class="filter-label">Filter:</span>
-                <label class="filter-checkbox"><input type="checkbox" id="chk-boarding"> 🏠 Boarding</label>
-                <label class="filter-checkbox"><input type="checkbox" id="chk-science"> 🔬 Science Lab</label>
-                <label class="filter-checkbox"><input type="checkbox" id="chk-ict"> 💻 Computer Lab</label>
-                <label class="filter-checkbox"><input type="checkbox" id="chk-library"> 📚 Library</label>
-                <label class="filter-checkbox"><input type="checkbox" id="chk-sports"> ⚽ Sports</label>
-
-                <div class="sort-row">
-                    <span class="sort-label">Sort:</span>
-                    <div class="custom-dropdown" id="sort-dropdown">
-                        <div class="custom-dropdown-toggle" id="sort-toggle" style="height:36px; padding:4px 12px; font-size:0.83rem;">
-                            <span id="sort-selected-text">A – Z</span>
-                            <span style="font-size:0.7rem; color:var(--text-secondary);">▼</span>
-                        </div>
-                        <div class="custom-dropdown-menu" id="sort-menu" style="min-width:180px; right:0; left:auto;">
-                            <div class="dropdown-option active" data-val="name_asc">🏛️ A – Z (School Name)</div>
-                            <div class="dropdown-option" data-val="distance">
-                                <svg viewBox="0 0 32 32" width="13" height="13" style="vertical-align:-1px;display:inline-block;"><path fill="currentColor" d="M16 2C10.477 2 6 6.477 6 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
-                                Nearest to Me
+                        <div class="custom-dropdown-menu" id="district-menu">
+                            <div class="dropdown-search-box">
+                                <input type="text" id="district-search-input" placeholder="🔍 Search district…">
                             </div>
-                            <div class="dropdown-option" data-val="fees_asc">💰 Lowest Fees First</div>
-                            <div class="dropdown-option" data-val="fees_desc">💎 Highest Fees First</div>
+                            <div id="district-options-list">
+                                <div class="dropdown-option active" data-val="All">📍 All Districts</div>
+                                <div class="dropdown-option" data-val="Balaka">Balaka</div>
+                                <div class="dropdown-option" data-val="Blantyre">Blantyre</div>
+                                <div class="dropdown-option" data-val="Chikwawa">Chikwawa</div>
+                                <div class="dropdown-option" data-val="Chiradzulu">Chiradzulu</div>
+                                <div class="dropdown-option" data-val="Chitipa">Chitipa</div>
+                                <div class="dropdown-option" data-val="Dedza">Dedza</div>
+                                <div class="dropdown-option" data-val="Dowa">Dowa</div>
+                                <div class="dropdown-option" data-val="Karonga">Karonga</div>
+                                <div class="dropdown-option" data-val="Kasungu">Kasungu</div>
+                                <div class="dropdown-option" data-val="Likoma">Likoma</div>
+                                <div class="dropdown-option" data-val="Lilongwe">Lilongwe</div>
+                                <div class="dropdown-option" data-val="Machinga">Machinga</div>
+                                <div class="dropdown-option" data-val="Mangochi">Mangochi</div>
+                                <div class="dropdown-option" data-val="Mchinji">Mchinji</div>
+                                <div class="dropdown-option" data-val="Mulanje">Mulanje</div>
+                                <div class="dropdown-option" data-val="Mwanza">Mwanza</div>
+                                <div class="dropdown-option" data-val="Mzimba">Mzimba</div>
+                                <div class="dropdown-option" data-val="Mzuzu">Mzuzu</div>
+                                <div class="dropdown-option" data-val="Neno">Neno</div>
+                                <div class="dropdown-option" data-val="Nkhata Bay">Nkhata Bay</div>
+                                <div class="dropdown-option" data-val="Nkhotakota">Nkhotakota</div>
+                                <div class="dropdown-option" data-val="Nsanje">Nsanje</div>
+                                <div class="dropdown-option" data-val="Ntcheu">Ntcheu</div>
+                                <div class="dropdown-option" data-val="Ntchisi">Ntchisi</div>
+                                <div class="dropdown-option" data-val="Phalombe">Phalombe</div>
+                                <div class="dropdown-option" data-val="Rumphi">Rumphi</div>
+                                <div class="dropdown-option" data-val="Salima">Salima</div>
+                                <div class="dropdown-option" data-val="Thyolo">Thyolo</div>
+                                <div class="dropdown-option" data-val="Zomba">Zomba</div>
+                            </div>
                         </div>
-                        <input type="hidden" id="sort-by" value="name_asc">
+                        <input type="hidden" id="search-district" value="All">
                     </div>
+
+                    <button class="btn-gps" id="btn-gps-search">
+                        <svg viewBox="0 0 32 32" width="16" height="16"><path fill="currentColor" d="M16 2C10.477 2 6 6.477 6 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/><ellipse cx="16" cy="30" rx="6" ry="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+                        Near Me
+                    </button>
                 </div>
 
-                <span id="gps-status">
-                    <svg viewBox="0 0 32 32" width="13" height="13"><path fill="currentColor" d="M16 2C10.477 2 6 6.477 6 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
-                    Showing schools nearest to you
-                </span>
+                <div class="filter-tags">
+                    <span class="filter-label">Filter:</span>
+                    <label class="filter-checkbox"><input type="checkbox" id="chk-boarding"> 🏠 Boarding</label>
+                    <label class="filter-checkbox"><input type="checkbox" id="chk-science"> 🔬 Science Lab</label>
+                    <label class="filter-checkbox"><input type="checkbox" id="chk-ict"> 💻 Computer Lab</label>
+                    <label class="filter-checkbox"><input type="checkbox" id="chk-library"> 📚 Library</label>
+                    <label class="filter-checkbox"><input type="checkbox" id="chk-sports"> ⚽ Sports</label>
+
+                    <div class="sort-row">
+                        <span class="sort-label">Sort:</span>
+                        <div class="custom-dropdown" id="sort-dropdown">
+                            <div class="custom-dropdown-toggle" id="sort-toggle" style="height:36px; padding:4px 12px; font-size:0.83rem;">
+                                <span id="sort-selected-text">A – Z</span>
+                                <span style="font-size:0.7rem; color:var(--text-secondary);">▼</span>
+                            </div>
+                            <div class="custom-dropdown-menu" id="sort-menu" style="min-width:180px; right:0; left:auto;">
+                                <div class="dropdown-option active" data-val="name_asc">🏛️ A – Z (School Name)</div>
+                                <div class="dropdown-option" data-val="distance">
+                                    <svg viewBox="0 0 32 32" width="13" height="13" style="vertical-align:-1px;display:inline-block;"><path fill="currentColor" d="M16 2C10.477 2 6 6.477 6 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+                                    Nearest to Me
+                                </div>
+                                <div class="dropdown-option" data-val="fees_asc">💰 Lowest Fees First</div>
+                                <div class="dropdown-option" data-val="fees_desc">💎 Highest Fees First</div>
+                            </div>
+                            <input type="hidden" id="sort-by" value="name_asc">
+                        </div>
+                    </div>
+
+                    <span id="gps-status">
+                        <svg viewBox="0 0 32 32" width="13" height="13"><path fill="currentColor" d="M16 2C10.477 2 6 6.477 6 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+                        Showing schools nearest to you
+                    </span>
+                </div>
             </div>
+
+            <!-- Slideshow Dots -->
+            <div class="slide-dots" id="slide-dots"></div>
         </div>
     </section>
 
@@ -1345,6 +1422,54 @@
     document.getElementById('chk-ict').addEventListener('change', loadSchools);
     document.getElementById('chk-library').addEventListener('change', loadSchools);
     document.getElementById('chk-sports').addEventListener('change', loadSchools);
+
+    /* ── Hero Slideshow ── */
+    function initHeroSlideshow() {
+        const slides = document.querySelectorAll('.hero-slide');
+        const dotsContainer = document.getElementById('slide-dots');
+        if (!slides.length) return;
+
+        let currentIndex = 0;
+        let slideTimer = null;
+
+        // Create indicator dots
+        dotsContainer.innerHTML = '';
+        slides.forEach((_, idx) => {
+            const dot = document.createElement('button');
+            dot.className = `slide-dot ${idx === 0 ? 'active' : ''}`;
+            dot.setAttribute('aria-label', `Go to slide ${idx + 1}`);
+            dot.addEventListener('click', () => {
+                goToSlide(idx);
+                resetTimer();
+            });
+            dotsContainer.appendChild(dot);
+        });
+
+        const dots = dotsContainer.querySelectorAll('.slide-dot');
+
+        function goToSlide(index) {
+            slides[currentIndex].classList.remove('active');
+            if (dots[currentIndex]) dots[currentIndex].classList.remove('active');
+
+            currentIndex = (index + slides.length) % slides.length;
+
+            slides[currentIndex].classList.add('active');
+            if (dots[currentIndex]) dots[currentIndex].classList.add('active');
+        }
+
+        function nextSlide() {
+            goToSlide(currentIndex + 1);
+        }
+
+        function resetTimer() {
+            if (slideTimer) clearInterval(slideTimer);
+            slideTimer = setInterval(nextSlide, 5500);
+        }
+
+        resetTimer();
+    }
+
+    initHeroSlideshow();
 
     /* ── Initial load ── */
     loadSchools();
