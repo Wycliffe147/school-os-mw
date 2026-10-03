@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { readDb } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { rankStudents } = require('../services/pdfService');
 
 router.use(authenticateToken);
 
@@ -347,16 +348,9 @@ router.get('/analytics/student/:id', (req, res) => {
         const isJunior = ['Form 1', 'Form 2'].includes(classLevel);
         const classStudents = students.filter(s => (s.classLevel || 'Form 1') === classLevel);
 
-        // 1. Calculate class rank/position
-        const rankedClass = classStudents.map(s => {
-            const subs = Object.keys(s.subjects || {}).filter(k => s.subjects[k]);
-            const marks = subs.map(sub => computeMark(s, sub, catW, examW)).filter(m => m !== null);
-            const avg = marks.length ? marks.reduce((a, b) => a + b, 0) / marks.length : 0;
-            return { id: s.id, avg };
-        }).sort((a, b) => b.avg - a.avg);
-
-        const rankIndex = rankedClass.findIndex(s => s.id === student.id);
-        const position = rankIndex !== -1 ? rankIndex + 1 : null;
+        // 1. Calculate class rank/position with standard competition ranking
+        rankStudents(db);
+        const position = student.rank !== undefined && student.rank !== null ? student.rank : null;
         const totalClassStudents = classStudents.length;
 
         // 2. Individual Subject Performance

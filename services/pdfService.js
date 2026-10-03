@@ -125,8 +125,25 @@ function rankStudents(db) {
             }
         });
         
+        let currentRank = 1;
         classStudents.forEach((student, index) => {
-            student.rank = index + 1;
+            if (index > 0) {
+                const prev = classStudents[index - 1];
+                let isTie = false;
+                if (isJunior) {
+                    isTie = ((student.juniorTotalScore || 0) === (prev.juniorTotalScore || 0));
+                } else {
+                    const pCur = student.mscePoints !== null && student.mscePoints !== undefined ? student.mscePoints : 99;
+                    const pPrev = prev.mscePoints !== null && prev.mscePoints !== undefined ? prev.mscePoints : 99;
+                    isTie = (pCur === pPrev && (student.average || 0) === (prev.average || 0));
+                }
+                if (!isTie) {
+                    currentRank = index + 1;
+                }
+            } else {
+                currentRank = 1;
+            }
+            student.rank = currentRank;
         });
     });
 }
