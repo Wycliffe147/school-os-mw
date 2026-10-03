@@ -116,7 +116,10 @@ function rankStudents(db) {
         
         classStudents.sort((a, b) => {
             if (isJunior) {
-                return (b.juniorTotalScore || 0) - (a.juniorTotalScore || 0);
+                const sA = a.juniorTotalScore || 0;
+                const sB = b.juniorTotalScore || 0;
+                if (sA !== sB) return sB - sA;
+                return (b.average || 0) - (a.average || 0);
             } else {
                 const pA = a.mscePoints !== null && a.mscePoints !== undefined ? a.mscePoints : 99;
                 const pB = b.mscePoints !== null && b.mscePoints !== undefined ? b.mscePoints : 99;
@@ -131,7 +134,9 @@ function rankStudents(db) {
                 const prev = classStudents[index - 1];
                 let isTie = false;
                 if (isJunior) {
-                    isTie = ((student.juniorTotalScore || 0) === (prev.juniorTotalScore || 0));
+                    const sCur = student.juniorTotalScore || 0;
+                    const sPrev = prev.juniorTotalScore || 0;
+                    isTie = (sCur === sPrev && (student.average || 0) === (prev.average || 0));
                 } else {
                     const pCur = student.mscePoints !== null && student.mscePoints !== undefined ? student.mscePoints : 99;
                     const pPrev = prev.mscePoints !== null && prev.mscePoints !== undefined ? prev.mscePoints : 99;
