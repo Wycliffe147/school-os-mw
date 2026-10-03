@@ -3512,7 +3512,7 @@ function anRenderRankTable(containerId, students, rankColor) {
             <td style="font-weight:700; color:${rankColor};">${i + 1}</td>
             <td><button type="button" class="btn-student-analytics" data-id="${s.id}" style="background:none;border:none;color:var(--accent-blue);font-weight:600;cursor:pointer;padding:0;text-align:left;font-family:inherit;font-size:0.88rem;text-decoration:underline;">${s.name}</button></td>
             <td style="color:var(--text-secondary);">${s.classLevel}</td>
-            <td style="text-align:center; font-weight:700; color:${anGradeColour(s.avg)};">${s.avg}%</td>
+            <td style="text-align:center; font-weight:700; color:${anGradeColour(s.avg)};">${s.avg !== null ? `${s.avg}%` : '-'}</td>
         </tr>`).join('')}</tbody>
     </table>`;
 

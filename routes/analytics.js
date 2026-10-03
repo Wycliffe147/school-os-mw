@@ -116,16 +116,19 @@ router.get('/analytics/summary', (req, res) => {
         });
 
         // ── 4. Top 10 students (school-wide average) ─────────────────────────
-        const studentAverages = students.map(s => {
+        const allStudentAverages = students.map(s => {
             const subs = Object.keys(s.subjects || {}).filter(k => s.subjects[k]);
             const marks = subs.map(sub => computeMark(s, sub, catW, examW)).filter(m => m !== null);
             const avg = marks.length ? Math.round((marks.reduce((a, b) => a + b, 0) / marks.length) * 10) / 10 : null;
             return { id: s.id, name: s.name, classLevel: s.classLevel || 'Form 1', avg };
-        }).filter(s => s.avg !== null).sort((a, b) => b.avg - a.avg);
+        });
+        const studentAverages = allStudentAverages.filter(s => s.avg !== null).sort((a, b) => b.avg - a.avg);
         const top10 = studentAverages.slice(0, 10);
 
-        // ── 5. Bottom 10 at-risk students ────────────────────────────────────
-        const bottom10 = [...studentAverages].sort((a, b) => a.avg - b.avg).slice(0, 10);
+        // ── 5. Bottom 10 at-risk students (includes students with no marks entered) ───
+        const bottom10 = [...allStudentAverages]
+            .sort((a, b) => (a.avg ?? -1) - (b.avg ?? -1))
+            .slice(0, 10);
 
         // ── 6. Fee collection stats ──────────────────────────────────────────
         let totalFees = 0, totalPaid = 0, fullyPaid = 0, bursaryCount = 0;
