@@ -949,7 +949,8 @@ async function renderStudentsTab() {
     const thead = document.getElementById('subjects-table-header');
     if (thead) {
         thead.innerHTML = `<th>Student</th><th>Gender</th><th>Phone</th><th>Bursary</th>` + 
-            subjectsList.map(sub => `<th title="${sub}" style="font-size: 10px; writing-mode: vertical-rl; transform: rotate(180deg);">${getAbbreviation(sub)}</th>`).join('');
+            subjectsList.map(sub => `<th title="${sub}" style="font-size: 10px; writing-mode: vertical-rl; transform: rotate(180deg);">${getAbbreviation(sub)}</th>`).join('') +
+            (!readOnly ? `<th style="width:40px;"></th>` : '');
     }
 
     const tbody = document.querySelector('#subjects-table tbody');
@@ -986,9 +987,33 @@ async function renderStudentsTab() {
                     <td>
                         <input type="checkbox" data-student-id="${student.id}" data-subject="${sub}" ${student.subjects[sub] ? 'checked' : ''}>
                     </td>
-                `).join('');
+                `).join('') +
+                `<td style="text-align:center;">
+                    <button class="btn-delete-student" data-id="${student.id}" data-name="${student.name}" title="Remove student" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:1.1rem;padding:2px 6px;">🗑</button>
+                </td>`;
         }
         tbody.appendChild(tr);
+    });
+
+    // Wire delete buttons
+    tbody.querySelectorAll('.btn-delete-student').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const sid = btn.getAttribute('data-id');
+            const sname = btn.getAttribute('data-name');
+            if (!confirm(`⚠️ Remove "${sname}"?\n\nThis will permanently delete the student and all their marks. This cannot be undone.`)) return;
+            try {
+                const res = await fetch(`/api/students/${sid}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    students = students.filter(s => s.id !== sid);
+                    renderStudentsTab();
+                } else {
+                    alert('Failed to delete student.');
+                }
+            } catch (e) {
+                alert('Error deleting student: ' + e.message);
+            }
+        });
     });
 }
 
@@ -1321,7 +1346,8 @@ async function renderMarksTab(skipFetch) {
     const tbody = document.querySelector('#marks-entry-table tbody');
     tbody.innerHTML = '';
     
-    const classStudents = students.filter(s => (s.classLevel || 'Form 1') === currentClass);
+    const classStudents = students.filter(s => (s.classLevel || 'Form 1') === currentClass)
+        .sort((a, b) => a.name.localeCompare(b.name));
 
     // In quick entry mode (homeroom class), only show students enrolled in at least one allowed subject.
     // For non-homeroom class (subject-only), always show all students (same as plain teacher).
