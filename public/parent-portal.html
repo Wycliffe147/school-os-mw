@@ -218,8 +218,13 @@
         .pp-dropdown-option:hover { background: rgba(79,142,247,0.14); }
         .pp-dropdown-option.selected { color: var(--accent-blue); font-weight: 600; background: rgba(79,142,247,0.08); }
         .pp-dropdown-option .pp-opt-district { font-size: 0.78rem; color: var(--text-secondary); }
-        .pp-dropdown-option.placeholder { color: var(--text-secondary); text-align: center; padding: 14px; }
-        #portal-app { display: none; }
+        #portal-app {
+            display: none;
+            min-height: 100dvh;
+            background:
+                linear-gradient(rgba(10, 14, 26, 0.88), rgba(10, 14, 26, 0.94)),
+                url('school-bg2.jpg') center/cover no-repeat fixed;
+        }
 
         /* ── Portal Header ── */
         .portal-header {
@@ -655,6 +660,11 @@
                     linear-gradient(rgba(8,12,24,0.68), rgba(8,12,24,0.78)),
                     url('school-bg.jpg') center 30% / cover no-repeat;
             }
+            #portal-app {
+                background:
+                    linear-gradient(rgba(10, 14, 26, 0.88), rgba(10, 14, 26, 0.94)),
+                    url('school-bg2.jpg') center 30% / cover no-repeat fixed;
+            }
             .login-card { padding: 30px 20px; }
 
             /* Show bottom nav, hide top tabs on mobile */
@@ -738,20 +748,41 @@
 
     <nav class="portal-tabs">
         <div class="portal-tab active" data-panel="panel-overview">📊 Overview</div>
+        <div class="portal-tab" data-panel="panel-marks">📝 Marks</div>
+        <div class="portal-tab" data-panel="panel-academic-history">🎓 Academic History</div>
         <div class="portal-tab" data-panel="panel-fees">💳 Fees</div>
-        <div class="portal-tab" data-panel="panel-attendance">📋 Attendance</div>
-        <div class="portal-tab" data-panel="panel-marks">📄 Reports</div>
         <div class="portal-tab" data-panel="panel-fee-history">💳 Fee History</div>
-        <div class="portal-tab" data-panel="panel-academic-history">🎓 Past Reports</div>
+        <div class="portal-tab" data-panel="panel-attendance">📋 Attendance</div>
         <div class="portal-tab" data-panel="panel-notices">📢 Notices</div>
     </nav>
 
-    <!-- Mobile bottom nav with Drop-ups for Fees & Reports -->
+    <!-- Mobile bottom nav with Drop-ups for Reports & Fees -->
     <nav class="portal-bottom-nav" id="portal-bottom-nav">
         <div class="portal-bottom-nav-inner">
             <div class="bottom-nav-item">
                 <button class="bottom-nav-btn active" id="bnav-overview" data-panel="panel-overview" onclick="switchTabMobile('panel-overview')">
                     <span class="bnav-icon">📊</span>Overview
+                </button>
+            </div>
+            <div class="bottom-nav-item">
+                <div class="dropup-menu" id="dropup-reports">
+                    <button class="dropup-item" data-panel="panel-marks" onclick="selectDropupTab('panel-marks', 'dropup-reports')">
+                        <span class="dropup-icon">📄</span>
+                        <div class="dropup-text">
+                            <strong>Current Term</strong>
+                            <span>Grades &amp; Report Card</span>
+                        </div>
+                    </button>
+                    <button class="dropup-item" data-panel="panel-academic-history" onclick="selectDropupTab('panel-academic-history', 'dropup-reports')">
+                        <span class="dropup-icon">🎓</span>
+                        <div class="dropup-text">
+                            <strong>Past Terms</strong>
+                            <span>Academic History</span>
+                        </div>
+                    </button>
+                </div>
+                <button class="bottom-nav-btn" id="bnav-reports" onclick="toggleDropup('dropup-reports', event)">
+                    <span class="bnav-icon">📄</span><span>Reports<span class="bnav-arrow">▴</span></span>
                 </button>
             </div>
             <div class="bottom-nav-item">
@@ -778,27 +809,6 @@
             <div class="bottom-nav-item">
                 <button class="bottom-nav-btn" id="bnav-attendance" data-panel="panel-attendance" onclick="switchTabMobile('panel-attendance')">
                     <span class="bnav-icon">📋</span>Attend.
-                </button>
-            </div>
-            <div class="bottom-nav-item">
-                <div class="dropup-menu" id="dropup-reports">
-                    <button class="dropup-item" data-panel="panel-marks" onclick="selectDropupTab('panel-marks', 'dropup-reports')">
-                        <span class="dropup-icon">📄</span>
-                        <div class="dropup-text">
-                            <strong>Current Term</strong>
-                            <span>Grades &amp; Report Card</span>
-                        </div>
-                    </button>
-                    <button class="dropup-item" data-panel="panel-academic-history" onclick="selectDropupTab('panel-academic-history', 'dropup-reports')">
-                        <span class="dropup-icon">🎓</span>
-                        <div class="dropup-text">
-                            <strong>Past Terms</strong>
-                            <span>Academic History</span>
-                        </div>
-                    </button>
-                </div>
-                <button class="bottom-nav-btn" id="bnav-reports" onclick="toggleDropup('dropup-reports', event)">
-                    <span class="bnav-icon">📄</span><span>Reports<span class="bnav-arrow">▴</span></span>
                 </button>
             </div>
             <div class="bottom-nav-item">
