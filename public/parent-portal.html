@@ -535,6 +535,94 @@
             white-space: nowrap;
         }
 
+        /* ── Notification Badges ── */
+        .portal-tab { position: relative; }
+
+        .portal-tab-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1px 6px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            border-radius: 99px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            line-height: 1.3;
+            margin-left: 6px;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+            animation: badgePulse 2s infinite;
+        }
+
+        .portal-tab-badge.badge-amber {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+        }
+
+        .bnav-icon-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bnav-badge {
+            position: absolute;
+            top: -4px;
+            right: -8px;
+            min-width: 15px;
+            height: 15px;
+            padding: 0 3px;
+            font-size: 0.58rem;
+            font-weight: 800;
+            border-radius: 99px;
+            background: #ef4444;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #0d1221;
+            box-shadow: 0 0 6px rgba(239, 68, 68, 0.7);
+            animation: badgePulse 2s infinite;
+        }
+
+        .bnav-badge.badge-dot {
+            min-width: 8px;
+            width: 8px;
+            height: 8px;
+            padding: 0;
+            top: -2px;
+            right: -4px;
+        }
+
+        .bnav-badge.badge-amber {
+            background: #f59e0b;
+            box-shadow: 0 0 6px rgba(245, 158, 11, 0.7);
+        }
+
+        .dropup-badge {
+            margin-left: auto;
+            padding: 2px 7px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            border-radius: 99px;
+            background: #ef4444;
+            color: white;
+            box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+            animation: badgePulse 2s infinite;
+        }
+
+        .dropup-badge.badge-amber {
+            background: #f59e0b;
+            box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
+        }
+
+        @keyframes badgePulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+
         /* ── Content ── */
         .portal-content { padding: 20px; max-width: 780px; margin: 0 auto; }
 
@@ -748,12 +836,12 @@
 
     <nav class="portal-tabs">
         <div class="portal-tab active" data-panel="panel-overview">📊 Overview</div>
-        <div class="portal-tab" data-panel="panel-marks">📝 Marks</div>
-        <div class="portal-tab" data-panel="panel-academic-history">🎓 Academic History</div>
-        <div class="portal-tab" data-panel="panel-fees">💳 Fees</div>
-        <div class="portal-tab" data-panel="panel-fee-history">💳 Fee History</div>
-        <div class="portal-tab" data-panel="panel-attendance">📋 Attendance</div>
-        <div class="portal-tab" data-panel="panel-notices">📢 Notices</div>
+        <div class="portal-tab" data-panel="panel-marks">📝 Marks <span class="portal-tab-badge" id="dtab-badge-marks" style="display:none;"></span></div>
+        <div class="portal-tab" data-panel="panel-academic-history">🎓 Academic History <span class="portal-tab-badge" id="dtab-badge-academic-history" style="display:none;"></span></div>
+        <div class="portal-tab" data-panel="panel-fees">💳 Fees <span class="portal-tab-badge" id="dtab-badge-fees" style="display:none;"></span></div>
+        <div class="portal-tab" data-panel="panel-fee-history">💳 Fee History <span class="portal-tab-badge" id="dtab-badge-fee-history" style="display:none;"></span></div>
+        <div class="portal-tab" data-panel="panel-attendance">📋 Attendance <span class="portal-tab-badge" id="dtab-badge-attendance" style="display:none;"></span></div>
+        <div class="portal-tab" data-panel="panel-notices">📢 Notices <span class="portal-tab-badge" id="dtab-badge-notices" style="display:none;"></span></div>
     </nav>
 
     <!-- Mobile bottom nav with Drop-ups for Reports & Fees -->
@@ -761,7 +849,7 @@
         <div class="portal-bottom-nav-inner">
             <div class="bottom-nav-item">
                 <button class="bottom-nav-btn active" id="bnav-overview" data-panel="panel-overview" onclick="switchTabMobile('panel-overview')">
-                    <span class="bnav-icon">📊</span>Overview
+                    <span class="bnav-icon-wrap"><span class="bnav-icon">📊</span></span>Overview
                 </button>
             </div>
             <div class="bottom-nav-item">
@@ -772,6 +860,7 @@
                             <strong>Current Term</strong>
                             <span>Grades &amp; Report Card</span>
                         </div>
+                        <span class="dropup-badge" id="dropup-badge-marks" style="display:none;"></span>
                     </button>
                     <button class="dropup-item" data-panel="panel-academic-history" onclick="selectDropupTab('panel-academic-history', 'dropup-reports')">
                         <span class="dropup-icon">🎓</span>
@@ -779,10 +868,15 @@
                             <strong>Past Terms</strong>
                             <span>Academic History</span>
                         </div>
+                        <span class="dropup-badge" id="dropup-badge-achist" style="display:none;"></span>
                     </button>
                 </div>
                 <button class="bottom-nav-btn" id="bnav-reports" onclick="toggleDropup('dropup-reports', event)">
-                    <span class="bnav-icon">📄</span><span>Reports<span class="bnav-arrow">▴</span></span>
+                    <span class="bnav-icon-wrap">
+                        <span class="bnav-icon">📄</span>
+                        <span class="bnav-badge" id="mnav-badge-reports" style="display:none;"></span>
+                    </span>
+                    <span>Reports<span class="bnav-arrow">▴</span></span>
                 </button>
             </div>
             <div class="bottom-nav-item">
@@ -793,6 +887,7 @@
                             <strong>Current Term</strong>
                             <span>Balance &amp; Payments</span>
                         </div>
+                        <span class="dropup-badge" id="dropup-badge-fees" style="display:none;"></span>
                     </button>
                     <button class="dropup-item" data-panel="panel-fee-history" onclick="selectDropupTab('panel-fee-history', 'dropup-fees')">
                         <span class="dropup-icon">📂</span>
@@ -800,20 +895,31 @@
                             <strong>Past Terms</strong>
                             <span>Archived Fee Records</span>
                         </div>
+                        <span class="dropup-badge" id="dropup-badge-feehist" style="display:none;"></span>
                     </button>
                 </div>
                 <button class="bottom-nav-btn" id="bnav-fees" onclick="toggleDropup('dropup-fees', event)">
-                    <span class="bnav-icon">💳</span><span>Fees<span class="bnav-arrow">▴</span></span>
+                    <span class="bnav-icon-wrap">
+                        <span class="bnav-icon">💳</span>
+                        <span class="bnav-badge" id="mnav-badge-fees" style="display:none;"></span>
+                    </span>
+                    <span>Fees<span class="bnav-arrow">▴</span></span>
                 </button>
             </div>
             <div class="bottom-nav-item">
                 <button class="bottom-nav-btn" id="bnav-attendance" data-panel="panel-attendance" onclick="switchTabMobile('panel-attendance')">
-                    <span class="bnav-icon">📋</span>Attend.
+                    <span class="bnav-icon-wrap">
+                        <span class="bnav-icon">📋</span>
+                        <span class="bnav-badge" id="mnav-badge-attendance" style="display:none;"></span>
+                    </span>Attend.
                 </button>
             </div>
             <div class="bottom-nav-item">
                 <button class="bottom-nav-btn" id="bnav-notices" data-panel="panel-notices" onclick="switchTabMobile('panel-notices')">
-                    <span class="bnav-icon">📢</span>Notices
+                    <span class="bnav-icon-wrap">
+                        <span class="bnav-icon">📢</span>
+                        <span class="bnav-badge" id="mnav-badge-notices" style="display:none;"></span>
+                    </span>Notices
                 </button>
             </div>
         </div>
@@ -1163,13 +1269,8 @@
             // Reload currently active panel
             const activeTab = document.querySelector('.portal-tab.active');
             const panelId = activeTab ? activeTab.getAttribute('data-panel') : 'panel-overview';
-            if (panelId === 'panel-overview') loadOverview();
-            else if (panelId === 'panel-fees') loadFees();
-            else if (panelId === 'panel-attendance') loadAttendance();
-            else if (panelId === 'panel-marks') loadMarks();
-            else if (panelId === 'panel-history' || panelId === 'panel-fee-history') loadFeeHistory();
-            else if (panelId === 'panel-academic-history') loadAcademicHistory();
-            else if (panelId === 'panel-notices') loadNotices();
+            activatePanel(panelId);
+            updateUnreadBadges();
 
         } catch (e) {
             console.error('Error switching student:', e);
@@ -1187,6 +1288,164 @@
         document.getElementById('portal-app').style.display = 'none';
         document.getElementById('login-phone').value = '';
     });
+
+    // ── Unread Badge System ──
+    async function updateUnreadBadges() {
+        if (!portalStudent || !portalSchoolId) return;
+        const sId = portalStudent.id;
+        const scId = portalSchoolId;
+
+        // 1. Notices: check unread count against seen notice IDs
+        let unreadNotices = 0;
+        try {
+            const nRes = await apiFetch('/api/parent-portal/notices');
+            if (nRes.ok) {
+                const notices = await nRes.json();
+                const seenNotices = JSON.parse(localStorage.getItem(`pp_seen_notices_${scId}`) || '[]');
+                unreadNotices = (notices || []).filter(n => n.id && !seenNotices.includes(String(n.id))).length;
+            }
+        } catch(e) {}
+
+        // 2. Marks / Reports (current term): check if student has marks and whether seen
+        const markKeys = Object.keys(portalStudent.marks || {});
+        let unreadMarks = 0;
+        if (markKeys.length > 0) {
+            const seenMarksKey = localStorage.getItem(`pp_seen_marks_${sId}`);
+            const currentMarksKey = markKeys.sort().map(k => `${k}:${portalStudent.marks[k]}`).join(',');
+            if (seenMarksKey !== currentMarksKey) {
+                unreadMarks = 1;
+            }
+        }
+
+        // 3. Academic History (past terms)
+        const acHistLen = (portalStudent.academicHistory || []).length;
+        let unreadAcHist = 0;
+        if (acHistLen > 0) {
+            const seenAcHist = Number(localStorage.getItem(`pp_seen_achist_${sId}`) || 0);
+            if (acHistLen > seenAcHist) {
+                unreadAcHist = acHistLen - seenAcHist;
+            }
+        }
+
+        // 4. Fees: outstanding balance alert or unviewed payment receipts
+        const totalFee = Number(portalStudent.expectedFee || 0);
+        const paidFee = Number(portalStudent.paidAmount || 0);
+        const balFee = totalFee - paidFee;
+        const pymtLen = (portalStudent.paymentHistory || []).length;
+        let unreadFees = 0;
+        let isFeeAlert = false;
+        if (balFee > 0) {
+            isFeeAlert = true;
+            unreadFees = '!';
+        } else if (pymtLen > 0) {
+            const seenPymt = Number(localStorage.getItem(`pp_seen_pymts_${sId}`) || 0);
+            if (pymtLen > seenPymt) {
+                unreadFees = pymtLen - seenPymt;
+            }
+        }
+
+        const feeHistLen = (portalStudent.termHistory || []).length;
+        let unreadFeeHist = 0;
+        if (feeHistLen > 0) {
+            const seenFeeHist = Number(localStorage.getItem(`pp_seen_feehist_${sId}`) || 0);
+            if (feeHistLen > seenFeeHist) {
+                unreadFeeHist = feeHistLen - seenFeeHist;
+            }
+        }
+
+        // 5. Attendance: new unviewed records
+        let unreadAtt = 0;
+        try {
+            const attRes = await apiFetch(`/api/parent-portal/attendance/${sId}`);
+            if (attRes.ok) {
+                const attData = await attRes.json();
+                const totalAtt = (attData.records || []).length;
+                if (totalAtt > 0) {
+                    const seenAtt = Number(localStorage.getItem(`pp_seen_att_${sId}`) || 0);
+                    if (totalAtt > seenAtt) {
+                        unreadAtt = totalAtt - seenAtt;
+                    }
+                }
+            }
+        } catch(e) {}
+
+        // Helper to update badge DOM elements
+        function setBadge(elId, count, isAlert = false, isDot = false) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            if (count) {
+                el.textContent = isDot ? '' : String(count);
+                el.style.display = isDot ? 'block' : 'inline-flex';
+                if (isAlert) el.classList.add('badge-amber');
+                else el.classList.remove('badge-amber');
+                if (isDot) el.classList.add('badge-dot');
+                else el.classList.remove('badge-dot');
+            } else {
+                el.style.display = 'none';
+            }
+        }
+
+        // Desktop tab badges
+        setBadge('dtab-badge-notices', unreadNotices);
+        setBadge('dtab-badge-marks', unreadMarks ? 'NEW' : 0);
+        setBadge('dtab-badge-academic-history', unreadAcHist ? 'NEW' : 0);
+        setBadge('dtab-badge-fees', unreadFees, isFeeAlert);
+        setBadge('dtab-badge-fee-history', unreadFeeHist ? 'NEW' : 0);
+        setBadge('dtab-badge-attendance', unreadAtt ? 'NEW' : 0);
+
+        // Mobile dropup item badges
+        setBadge('dropup-badge-marks', unreadMarks ? 'NEW' : 0);
+        setBadge('dropup-badge-achist', unreadAcHist ? 'NEW' : 0);
+        setBadge('dropup-badge-fees', unreadFees, isFeeAlert);
+        setBadge('dropup-badge-feehist', unreadFeeHist ? 'NEW' : 0);
+
+        // Mobile bottom nav main button badges
+        const totalReportsUnread = unreadMarks || unreadAcHist;
+        setBadge('mnav-badge-reports', totalReportsUnread ? (unreadMarks + unreadAcHist) : 0, false, totalReportsUnread === 1 && !unreadAcHist);
+        setBadge('mnav-badge-fees', unreadFees || (unreadFeeHist ? 'NEW' : 0), isFeeAlert, typeof unreadFees !== 'number' && isFeeAlert);
+        setBadge('mnav-badge-attendance', unreadAtt ? 'NEW' : 0, false, true);
+        setBadge('mnav-badge-notices', unreadNotices, false, false);
+    }
+
+    async function markTabAsViewed(panelId) {
+        if (!portalStudent || !portalSchoolId) return;
+        const sId = portalStudent.id;
+        const scId = portalSchoolId;
+
+        if (panelId === 'panel-notices') {
+            try {
+                const nRes = await apiFetch('/api/parent-portal/notices');
+                if (nRes.ok) {
+                    const notices = await nRes.json();
+                    const allIds = (notices || []).map(n => String(n.id)).filter(Boolean);
+                    localStorage.setItem(`pp_seen_notices_${scId}`, JSON.stringify(allIds));
+                }
+            } catch(e) {}
+        } else if (panelId === 'panel-marks') {
+            const markKeys = Object.keys(portalStudent.marks || {});
+            const currentMarksKey = markKeys.sort().map(k => `${k}:${portalStudent.marks[k]}`).join(',');
+            localStorage.setItem(`pp_seen_marks_${sId}`, currentMarksKey);
+        } else if (panelId === 'panel-academic-history') {
+            const len = (portalStudent.academicHistory || []).length;
+            localStorage.setItem(`pp_seen_achist_${sId}`, String(len));
+        } else if (panelId === 'panel-fees') {
+            const pymtLen = (portalStudent.paymentHistory || []).length;
+            localStorage.setItem(`pp_seen_pymts_${sId}`, String(pymtLen));
+        } else if (panelId === 'panel-fee-history') {
+            const len = (portalStudent.termHistory || []).length;
+            localStorage.setItem(`pp_seen_feehist_${sId}`, String(len));
+        } else if (panelId === 'panel-attendance') {
+            try {
+                const attRes = await apiFetch(`/api/parent-portal/attendance/${sId}`);
+                if (attRes.ok) {
+                    const attData = await attRes.json();
+                    localStorage.setItem(`pp_seen_att_${sId}`, String((attData.records || []).length));
+                }
+            } catch(e) {}
+        }
+
+        updateUnreadBadges();
+    }
 
     // ── Tab navigation & Drop-ups ──
     function toggleDropup(menuId, e) {
@@ -1260,6 +1519,9 @@
         if (panelId === 'panel-fee-history') loadFeeHistory();
         if (panelId === 'panel-academic-history') loadAcademicHistory();
         if (panelId === 'panel-notices') loadNotices();
+
+        // Mark current tab as seen
+        markTabAsViewed(panelId);
     }
 
     document.querySelectorAll('.portal-tab').forEach(tab => {
