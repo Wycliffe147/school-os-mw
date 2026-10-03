@@ -1327,20 +1327,23 @@
             }
         }
 
-        // 4. Fees: outstanding balance alert or unviewed payment receipts
+        // 4. Fees: check if balance or payments have changed since last viewed
         const totalFee = Number(portalStudent.expectedFee || 0);
         const paidFee = Number(portalStudent.paidAmount || 0);
         const balFee = totalFee - paidFee;
         const pymtLen = (portalStudent.paymentHistory || []).length;
         let unreadFees = 0;
         let isFeeAlert = false;
-        if (balFee > 0) {
-            isFeeAlert = true;
-            unreadFees = '!';
-        } else if (pymtLen > 0) {
-            const seenPymt = Number(localStorage.getItem(`pp_seen_pymts_${sId}`) || 0);
-            if (pymtLen > seenPymt) {
-                unreadFees = pymtLen - seenPymt;
+
+        const seenFeeState = localStorage.getItem(`pp_seen_fees_${sId}`);
+        const currentFeeState = `${totalFee}:${paidFee}:${pymtLen}`;
+
+        if (seenFeeState !== currentFeeState) {
+            if (balFee > 0) {
+                isFeeAlert = true;
+                unreadFees = '!';
+            } else if (pymtLen > 0 || totalFee > 0) {
+                unreadFees = 'NEW';
             }
         }
 
@@ -1429,8 +1432,10 @@
             const len = (portalStudent.academicHistory || []).length;
             localStorage.setItem(`pp_seen_achist_${sId}`, String(len));
         } else if (panelId === 'panel-fees') {
+            const totalFee = Number(portalStudent.expectedFee || 0);
+            const paidFee = Number(portalStudent.paidAmount || 0);
             const pymtLen = (portalStudent.paymentHistory || []).length;
-            localStorage.setItem(`pp_seen_pymts_${sId}`, String(pymtLen));
+            localStorage.setItem(`pp_seen_fees_${sId}`, `${totalFee}:${paidFee}:${pymtLen}`);
         } else if (panelId === 'panel-fee-history') {
             const len = (portalStudent.termHistory || []).length;
             localStorage.setItem(`pp_seen_feehist_${sId}`, String(len));
