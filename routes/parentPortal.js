@@ -1,10 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const path = require('path');
 
 const { readDb, writeDb } = require('../db');
 const { JWT_SECRET } = require('../middleware/auth');
 const { generatePDF } = require('../services/pdfService');
+
+function resolveSchoolLogo(settings) {
+    if (!settings) return null;
+    if (settings.logoBase64) return settings.logoBase64;
+    if (settings.logoPath) {
+        const p = settings.logoPath;
+        if (p.startsWith('data:') || p.startsWith('http')) return p;
+        const basename = path.basename(p);
+        return `/uploads/${basename}`;
+    }
+    return null;
+}
 
 // Normalise phone: strip non-digits, return last 9 digits for suffix matching
 function normPhone(p) {
@@ -51,6 +64,7 @@ router.post('/parent-portal/login', (req, res) => {
         })),
         school: {
             name: schoolSettings.schoolName || schoolId,
+            logo: resolveSchoolLogo(schoolSettings),
             term: schoolSettings.currentTerm || '',
             year: schoolSettings.academicYear || new Date().getFullYear()
         }
@@ -154,6 +168,7 @@ router.get('/parent-portal/me', authenticateParent, (req, res) => {
         }).filter(Boolean),
         school: {
             name: settings.schoolName || schoolId,
+            logo: resolveSchoolLogo(settings),
             term: settings.currentTerm || '',
             year: settings.academicYear || new Date().getFullYear()
         }

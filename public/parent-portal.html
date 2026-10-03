@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Parent Portal - School Management System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -21,7 +24,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100dvh;
@@ -218,40 +221,142 @@
         .pp-dropdown-option.placeholder { color: var(--text-secondary); text-align: center; padding: 14px; }
         #portal-app { display: none; }
 
+        /* ── Portal Header ── */
         .portal-header {
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-color);
-            padding: 14px 20px;
+            background: linear-gradient(to right, #0d1221, #131929);
+            border-bottom: 1px solid rgba(79,142,247,0.18);
+            box-shadow: 0 2px 16px rgba(0,0,0,0.4);
+            padding: 12px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 12px;
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
+        .portal-header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .portal-header-logo {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: var(--bg-secondary);
+        }
+
+        .portal-header-logo-placeholder {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(79,142,247,0.25), rgba(79,142,247,0.08));
+            border: 1px solid rgba(79,142,247,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .portal-header-text { min-width: 0; }
+
         .portal-header .school-name {
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 700;
-            color: var(--accent-blue);
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .portal-header .student-name {
-            font-size: 0.85rem;
+            font-size: 0.78rem;
             color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .portal-header .btn-logout {
             background: none;
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            padding: 6px 12px;
-            border-radius: 6px;
+            border: 1px solid rgba(239,68,68,0.35);
+            color: rgba(239,68,68,0.8);
+            padding: 7px 13px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 0.8rem;
+            font-family: inherit;
+            font-weight: 600;
+            flex-shrink: 0;
+            transition: background 0.18s, color 0.18s;
+        }
+        .portal-header .btn-logout:hover {
+            background: rgba(239,68,68,0.12);
+            color: var(--accent-danger);
         }
 
-        /* ── Tabs ── */
+        /* ── Student Hero Card ── */
+        .student-hero {
+            background: linear-gradient(135deg, rgba(79,142,247,0.1) 0%, rgba(22,26,42,0.6) 100%);
+            border: 1px solid rgba(79,142,247,0.2);
+            border-top: 1px solid rgba(255,255,255,0.07);
+            border-radius: 16px;
+            padding: 24px 20px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .student-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4f8ef7, #2563eb);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 3px rgba(79,142,247,0.25);
+            letter-spacing: -0.5px;
+        }
+
+        .student-hero-info { flex: 1; min-width: 0; }
+
+        .student-hero-name {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .student-hero-class {
+            display: inline-block;
+            margin-top: 5px;
+            padding: 3px 10px;
+            background: rgba(79,142,247,0.15);
+            border: 1px solid rgba(79,142,247,0.3);
+            color: var(--accent-blue);
+            border-radius: 99px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        /* ── Tabs (desktop) ── */
         .portal-tabs {
             display: flex;
             overflow-x: auto;
@@ -259,24 +364,68 @@
             border-bottom: 1px solid var(--border-color);
             scrollbar-width: none;
         }
-
         .portal-tabs::-webkit-scrollbar { display: none; }
 
         .portal-tab {
-            padding: 12px 20px;
-            font-size: 0.88rem;
+            padding: 14px 20px;
+            font-size: 0.85rem;
             font-weight: 600;
             color: var(--text-secondary);
             cursor: pointer;
             white-space: nowrap;
             border-bottom: 3px solid transparent;
-            transition: color 0.2s, border-color 0.2s;
+            transition: color 0.2s, border-color 0.2s, background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
-
+        .portal-tab:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
         .portal-tab.active {
             color: var(--accent-blue);
             border-bottom-color: var(--accent-blue);
         }
+
+        /* ── Mobile Bottom Nav ── */
+        .portal-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: linear-gradient(to top, #0d1221, #111827);
+            border-top: 1px solid rgba(79,142,247,0.18);
+            z-index: 200;
+            padding: 6px 0 max(6px, env(safe-area-inset-bottom));
+            box-shadow: 0 -4px 24px rgba(0,0,0,0.5);
+        }
+
+        .portal-bottom-nav-inner {
+            display: flex;
+            justify-content: space-around;
+            align-items: stretch;
+        }
+
+        .bottom-nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 6px 4px;
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.62rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            cursor: pointer;
+            transition: color 0.18s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bottom-nav-btn .bnav-icon { font-size: 1.2rem; line-height: 1; }
+        .bottom-nav-btn.active { color: var(--accent-blue); }
+        .bottom-nav-btn:active { opacity: 0.7; }
 
         /* ── Content ── */
         .portal-content { padding: 20px; max-width: 780px; margin: 0 auto; }
@@ -284,21 +433,26 @@
         .panel { display: none; }
         .panel.active { display: block; }
 
+        /* ── Info Cards (with polish) ── */
         .info-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
             padding: 20px;
             margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
         }
 
         .info-card h2 {
-            font-size: 1.05rem;
+            font-size: 1rem;
             font-weight: 700;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
             display: flex;
             align-items: center;
             gap: 8px;
+            padding-left: 10px;
+            border-left: 3px solid var(--accent-blue);
         }
 
         /* Summary Grid */
@@ -310,9 +464,10 @@
         }
 
         .summary-card {
-            background: var(--bg-card);
+            background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
             border: 1px solid var(--border-color);
-            border-radius: 10px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
             padding: 16px;
             text-align: center;
         }
@@ -324,31 +479,31 @@
         }
 
         .summary-card .label {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--text-secondary);
-            margin-top: 5px;
+            margin-top: 6px;
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.05em;
         }
 
         /* Table */
         .portal-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
         .portal-table th {
-            background: var(--bg-secondary);
+            background: rgba(255,255,255,0.03);
             padding: 10px 12px;
             text-align: left;
             color: var(--text-secondary);
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.05em;
             border-bottom: 1px solid var(--border-color);
         }
         .portal-table td {
-            padding: 10px 12px;
+            padding: 11px 12px;
             border-bottom: 1px solid var(--border-color);
         }
         .portal-table tr:last-child td { border-bottom: none; }
-        .portal-table tr:hover td { background: rgba(79,142,247,0.04); }
+        .portal-table tbody tr:hover td { background: rgba(79,142,247,0.05); }
 
         /* Badges */
         .badge {
@@ -367,13 +522,22 @@
         .notice-item {
             background: var(--bg-card);
             border-left: 3px solid var(--accent-blue);
-            border-radius: 0 10px 10px 0;
+            border-radius: 0 12px 12px 0;
             padding: 14px 16px;
             margin-bottom: 12px;
         }
         .notice-item .notice-title { font-weight: 700; margin-bottom: 4px; }
         .notice-item .notice-date  { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 6px; }
-        .notice-item .notice-body  { font-size: 0.9rem; color: var(--text-secondary); }
+        .notice-item .notice-body  { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; }
+
+        /* Empty states */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 10px; opacity: 0.6; }
+        .empty-state p { font-size: 0.9rem; line-height: 1.5; }
 
         /* Loading / Error */
         .loading { text-align: center; color: var(--text-secondary); padding: 40px; }
@@ -389,7 +553,17 @@
                     url('school-bg.jpg') center 30% / cover no-repeat;
             }
             .login-card { padding: 30px 20px; }
-            .portal-content { padding: 14px; }
+
+            /* Show bottom nav, hide top tabs on mobile */
+            .portal-tabs { display: none; }
+            .portal-bottom-nav { display: block; }
+
+            /* Add bottom padding so content isn't hidden behind the nav */
+            .portal-content { padding: 14px 14px 90px; }
+
+            .student-hero { gap: 14px; padding: 18px 16px; }
+            .student-avatar { width: 52px; height: 52px; font-size: 1.2rem; }
+            .student-hero-name { font-size: 1.1rem; }
         }
     </style>
 </head>
@@ -439,15 +613,21 @@
 <!-- ════════════════════ PORTAL APP ════════════════════ -->
 <div id="portal-app">
     <header class="portal-header">
-        <div>
-            <div class="school-name" id="ph-school-name">-</div>
-            <div class="student-name" id="ph-student-name">-</div>
-            <div id="child-switcher-container" style="display:none; margin-top: 6px; position: relative;">
-                <label style="font-size: 0.75rem; color: var(--accent-blue); font-weight:600; margin-right: 6px;">🧒 Switch Child:</label>
-                <button id="child-switcher-btn" onclick="toggleChildSwitcher(event)" style="padding: 4px 10px; border-radius: 6px; background: var(--bg-secondary); color: white; border: 1px solid var(--accent-blue); font-size: 0.85rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
-                    <span id="child-switcher-label">-</span> <span style="font-size:0.7rem; opacity:0.7;">▼</span>
-                </button>
-                <ul id="child-switcher-list" style="display:none; position:absolute; top:calc(100% + 4px); left:0; z-index:999; list-style:none; margin:0; padding:4px 0; background:var(--bg-secondary); border:1px solid var(--accent-blue); border-radius:8px; min-width:180px; box-shadow:0 8px 24px rgba(0,0,0,0.5);"></ul>
+        <div class="portal-header-brand">
+            <div id="ph-logo-wrap">
+                <!-- Logo or placeholder injected by JS -->
+                <div class="portal-header-logo-placeholder">🎓</div>
+            </div>
+            <div class="portal-header-text">
+                <div class="school-name" id="ph-school-name">-</div>
+                <div class="student-name" id="ph-student-name">-</div>
+                <div id="child-switcher-container" style="display:none; margin-top: 6px; position: relative;">
+                    <label style="font-size: 0.75rem; color: var(--accent-blue); font-weight:600; margin-right: 6px;">🧒 Switch Child:</label>
+                    <button id="child-switcher-btn" onclick="toggleChildSwitcher(event)" style="padding: 4px 10px; border-radius: 6px; background: var(--bg-secondary); color: white; border: 1px solid var(--accent-blue); font-size: 0.85rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                        <span id="child-switcher-label">-</span> <span style="font-size:0.7rem; opacity:0.7;">▼</span>
+                    </button>
+                    <ul id="child-switcher-list" style="display:none; position:absolute; top:calc(100% + 4px); left:0; z-index:999; list-style:none; margin:0; padding:4px 0; background:var(--bg-secondary); border:1px solid var(--accent-blue); border-radius:8px; min-width:180px; box-shadow:0 8px 24px rgba(0,0,0,0.5);"></ul>
+                </div>
             </div>
         </div>
         <button class="btn-logout" id="btn-portal-logout">Logout</button>
@@ -463,12 +643,34 @@
         <div class="portal-tab" data-panel="panel-notices">📢 Notices</div>
     </nav>
 
+    <!-- Mobile bottom nav -->
+    <nav class="portal-bottom-nav" id="portal-bottom-nav">
+        <div class="portal-bottom-nav-inner">
+            <button class="bottom-nav-btn active" data-panel="panel-overview" onclick="switchTabMobile(this)">
+                <span class="bnav-icon">📊</span>Overview
+            </button>
+            <button class="bottom-nav-btn" data-panel="panel-fees" onclick="switchTabMobile(this)">
+                <span class="bnav-icon">💳</span>Fees
+            </button>
+            <button class="bottom-nav-btn" data-panel="panel-attendance" onclick="switchTabMobile(this)">
+                <span class="bnav-icon">📋</span>Attend.
+            </button>
+            <button class="bottom-nav-btn" data-panel="panel-marks" onclick="switchTabMobile(this)">
+                <span class="bnav-icon">📝</span>Marks
+            </button>
+            <button class="bottom-nav-btn" data-panel="panel-notices" onclick="switchTabMobile(this)">
+                <span class="bnav-icon">📢</span>Notices
+            </button>
+        </div>
+    </nav>
+
     <div class="portal-content">
 
         <!-- Overview -->
         <div id="panel-overview" class="panel active">
             <div id="overview-loading" class="loading"><span class="spinner">⏳</span><br><br>Loading your child's data...</div>
             <div id="overview-content" style="display:none;">
+                <div id="overview-student-hero"></div>
                 <div class="summary-grid" id="overview-summary"></div>
                 <div class="info-card">
                     <h2>🎓 Student Details</h2>
@@ -762,7 +964,15 @@
             portalSiblings = data.siblings || [];
             sessionStorage.setItem('parentPortalStudentId', portalStudent.id);
 
-            // Update UI headers
+            // Update UI headers & logo
+            const logoWrap = document.getElementById('ph-logo-wrap');
+            if (logoWrap) {
+                if (portalSchool.logo) {
+                    logoWrap.innerHTML = `<img src="${portalSchool.logo}" alt="School Logo" class="portal-header-logo" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'portal-header-logo-placeholder\\'>🎓</div>';">`;
+                } else {
+                    logoWrap.innerHTML = '<div class="portal-header-logo-placeholder">🎓</div>';
+                }
+            }
             document.getElementById('ph-school-name').textContent = portalSchool.name || 'Your School';
             document.getElementById('ph-student-name').textContent = `Viewing: ${portalStudent.name} · ${portalStudent.classLevel || ''}`;
 
@@ -798,8 +1008,7 @@
             else if (panelId === 'panel-fees') loadFees();
             else if (panelId === 'panel-attendance') loadAttendance();
             else if (panelId === 'panel-marks') loadMarks();
-            else if (panelId === 'panel-history') loadFeeHistory();
-            else if (panelId === 'panel-fee-history') loadFeeHistory();
+            else if (panelId === 'panel-history' || panelId === 'panel-fee-history') loadFeeHistory();
             else if (panelId === 'panel-academic-history') loadAcademicHistory();
             else if (panelId === 'panel-notices') loadNotices();
 
@@ -821,23 +1030,37 @@
     });
 
     // ── Tab navigation ──
+    function activatePanel(panelId) {
+        document.querySelectorAll('.portal-tab').forEach(t => {
+            if (t.getAttribute('data-panel') === panelId) t.classList.add('active');
+            else t.classList.remove('active');
+        });
+        document.querySelectorAll('.bottom-nav-btn').forEach(b => {
+            if (b.getAttribute('data-panel') === panelId) b.classList.add('active');
+            else b.classList.remove('active');
+        });
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        const panel = document.getElementById(panelId);
+        if (panel) panel.classList.add('active');
+
+        if (panelId === 'panel-overview') loadOverview();
+        if (panelId === 'panel-fees') loadFees();
+        if (panelId === 'panel-attendance') loadAttendance();
+        if (panelId === 'panel-marks') loadMarks();
+        if (panelId === 'panel-fee-history') loadFeeHistory();
+        if (panelId === 'panel-academic-history') loadAcademicHistory();
+        if (panelId === 'panel-notices') loadNotices();
+    }
+
     document.querySelectorAll('.portal-tab').forEach(tab => {
         tab.addEventListener('click', () => {
-            document.querySelectorAll('.portal-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-            tab.classList.add('active');
-            const panel = document.getElementById(tab.getAttribute('data-panel'));
-            if (panel) panel.classList.add('active');
-
-            const panelId = tab.getAttribute('data-panel');
-            if (panelId === 'panel-fees') loadFees();
-            if (panelId === 'panel-attendance') loadAttendance();
-            if (panelId === 'panel-marks') loadMarks();
-            if (panelId === 'panel-fee-history') loadFeeHistory();
-            if (panelId === 'panel-academic-history') loadAcademicHistory();
-            if (panelId === 'panel-notices') loadNotices();
+            activatePanel(tab.getAttribute('data-panel'));
         });
     });
+
+    function switchTabMobile(btn) {
+        activatePanel(btn.getAttribute('data-panel'));
+    }
 
     // ── Overview ──
     async function loadOverview() {
@@ -845,6 +1068,21 @@
         document.getElementById('overview-content').style.display = 'none';
 
         const s = portalStudent;
+
+        // Student hero card with initials avatar
+        const heroEl = document.getElementById('overview-student-hero');
+        if (heroEl) {
+            const initials = (s.name || 'S').trim().split(/\s+/).map(n => n[0]).slice(0, 2).join('').toUpperCase();
+            heroEl.innerHTML = `
+                <div class="student-hero">
+                    <div class="student-avatar">${initials}</div>
+                    <div class="student-hero-info">
+                        <div class="student-hero-name">${s.name}</div>
+                        <span class="student-hero-class">🎓 ${s.classLevel || 'Student'} &nbsp;·&nbsp; ID: ${s.id}</span>
+                    </div>
+                </div>
+            `;
+        }
 
         // Fee stats
         const total = Number(s.expectedFee || 0);
@@ -922,7 +1160,12 @@
         const history = s.paymentHistory || [];
         const histEl = document.getElementById('fees-history-table');
         if (!history.length) {
-            histEl.innerHTML = '<p style="color:var(--text-secondary); padding:10px 0;">No payment records found.</p>';
+            histEl.innerHTML = `
+                <div class="empty-state" style="padding: 24px 10px;">
+                    <div class="empty-icon">💳</div>
+                    <p>No payment records found for this term.</p>
+                </div>
+            `;
         } else {
             histEl.innerHTML = `
                 <table class="portal-table">
@@ -976,7 +1219,12 @@
             const detailEl = document.getElementById('attendance-detail-table');
 
             if (!records.length) {
-                detailEl.innerHTML = '<p style="color:var(--text-secondary); padding:10px 0;">No attendance records yet.</p>';
+                detailEl.innerHTML = `
+                    <div class="empty-state" style="padding: 24px 10px;">
+                        <div class="empty-icon">📋</div>
+                        <p>No attendance records recorded yet.</p>
+                    </div>
+                `;
             } else {
                 detailEl.innerHTML = `
                     <table class="portal-table">
@@ -1004,6 +1252,8 @@
         const s = portalStudent;
         const marks = s.marks || {};
         const subjects = Object.keys(marks);
+        const container = document.getElementById('marks-table-container');
+        if (!container) return;
 
         const total = Number(s.expectedFee || 0);
         const paid  = Number(s.paidAmount || 0);
@@ -1024,6 +1274,16 @@
                 🔒 Full Report Card PDF download is locked due to an outstanding fee balance of MK ${bal.toLocaleString()}.
             </div>
         `;
+
+        if (!subjects.length) {
+            container.innerHTML = pdfActions + `
+                <div class="empty-state">
+                    <div class="empty-icon">📝</div>
+                    <p>No marks recorded yet for this term.</p>
+                </div>
+            `;
+            return;
+        }
 
         container.innerHTML = pdfActions + `
             <table class="portal-table">
@@ -1068,7 +1328,12 @@
         const feesEl = document.getElementById('history-fees-container');
         if (!feesEl) return;
         if (!termHistory.length) {
-            feesEl.innerHTML = '<p style="color:var(--text-secondary);">No past term fee records yet. Records appear here after each term is closed.</p>';
+            feesEl.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📂</div>
+                    <p>No past term fee records yet.<br><span style="font-size:0.8rem; opacity:0.8;">Records appear here after each term is closed.</span></p>
+                </div>
+            `;
         } else {
             feesEl.innerHTML = termHistory.map(t => {
                 const paid    = Number(t.paidAmount  || 0);
@@ -1135,7 +1400,12 @@
         const acEl = document.getElementById('history-academic-container');
         if (!acEl) return;
         if (!historyList.length) {
-            acEl.innerHTML = '<p style="color:var(--text-secondary);">No past academic records yet. Records appear here after each term is closed.</p>';
+            acEl.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📜</div>
+                    <p>No past academic records yet.<br><span style="font-size:0.8rem; opacity:0.8;">Records appear here after each term is closed.</span></p>
+                </div>
+            `;
         } else {
             acEl.innerHTML = historyList.map(a => {
                 const posText = a.position ? `Position: ${a.position} of ${a.outOf}` : 'Position: -';
@@ -1177,7 +1447,12 @@
             if (!res.ok) throw new Error();
             const notices = await res.json();
             if (!notices.length) {
-                container.innerHTML = '<p style="color:var(--text-secondary);">No notices at this time.</p>';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📢</div>
+                        <p>No notices from your school at this time.</p>
+                    </div>
+                `;
                 return;
             }
             container.innerHTML = notices.map(n => `
