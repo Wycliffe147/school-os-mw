@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-title">School Profile - Discovery Network</title>
+    <title id="page-title">School Profile – Discovery Network</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
             color-scheme: dark;
-            --bg-primary: #0f1117;
-            --bg-secondary: #1a1d26;
-            --bg-card: #1e2130;
-            --border-color: #2e3250;
+            --bg-primary: #0d1018;
+            --bg-secondary: #161926;
+            --bg-card: #1c2033;
+            --border-color: #2a2f4a;
+            --border-hover: #3d4575;
             --text-primary: #e8eaf6;
-            --text-secondary: #94a3b8;
-            --accent-blue: #4f8ef7;
+            --text-secondary: #8892b0;
+            --accent-blue: #5b9bf8;
             --accent-green: #22c55e;
             --accent-amber: #f59e0b;
             --accent-purple: #a855f7;
@@ -23,18 +27,52 @@
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100dvh;
             line-height: 1.5;
         }
 
+        /* ── Toast ── */
+        #toast-container {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: #2a2f4a;
+            color: white;
+            padding: 12px 22px;
+            border-radius: 99px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+            animation: toastIn 0.25s ease, toastOut 0.3s ease 2.7s forwards;
+            pointer-events: auto;
+            white-space: nowrap;
+        }
+
+        .toast.success { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.12); }
+        .toast.error   { border-color: rgba(239,68,68,0.4);  background: rgba(239,68,68,0.12); }
+
+        @keyframes toastIn  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes toastOut { from { opacity:1; } to { opacity:0; transform:translateY(6px); } }
+
         /* ── Header ── */
         .site-header {
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-color);
-            padding: 16px 32px;
+            padding: 14px 28px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -47,13 +85,13 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             font-weight: 800;
             color: white;
             text-decoration: none;
         }
 
-        .header-links { display: flex; gap: 12px; align-items: center; }
+        .header-links { display: flex; gap: 10px; align-items: center; }
 
         .btn-link {
             color: var(--text-secondary);
@@ -66,7 +104,7 @@
             transition: all 0.2s;
         }
 
-        .btn-link:hover { color: white; border-color: var(--accent-blue); background: rgba(79,142,247,0.1); }
+        .btn-link:hover { color: white; border-color: var(--accent-blue); background: rgba(91,155,248,0.08); }
 
         .btn-primary {
             background: var(--accent-blue);
@@ -75,6 +113,7 @@
             padding: 10px 20px;
             border-radius: 8px;
             font-size: 0.9rem;
+            font-family: 'Outfit', sans-serif;
             font-weight: 700;
             cursor: pointer;
             text-decoration: none;
@@ -91,73 +130,90 @@
         .container {
             max-width: 1100px;
             margin: 0 auto;
-            padding: 32px 20px 60px;
+            padding: 32px 20px 70px;
             display: flex;
             flex-direction: column;
-            gap: 28px;
+            gap: 24px;
         }
 
         /* ── Hero Card ── */
         .hero-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 32px;
             display: flex;
             flex-direction: column;
             gap: 24px;
-            box-shadow: 0 12px 35px rgba(0,0,0,0.4);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
         }
 
         .hero-header {
             display: flex;
             align-items: flex-start;
-            gap: 24px;
+            gap: 22px;
             flex-wrap: wrap;
         }
 
-        .school-logo {
+        .school-logo-wrap {
             width: 88px;
             height: 88px;
-            object-fit: contain;
-            background: #ffffff;
-            border-radius: 14px;
-            padding: 8px;
+            border-radius: 16px;
+            background: white;
             border: 1px solid var(--border-color);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.3);
         }
 
-        .school-info { flex: 1; min-width: 260px; }
+        .school-logo-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 8px;
+        }
+
+        .logo-initials {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--accent-blue);
+        }
+
+        .school-info { flex: 1; min-width: 240px; }
 
         .school-title {
-            font-size: 2.1rem;
-            font-weight: 800;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: 900;
             color: white;
             line-height: 1.2;
             margin-bottom: 6px;
         }
 
         .school-motto {
-            font-size: 1.05rem;
+            font-size: 1rem;
             color: var(--text-secondary);
             font-style: italic;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
+            line-height: 1.5;
         }
 
         .location-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.88rem;
+            font-size: 0.9rem;
             font-weight: 700;
             color: var(--accent-blue);
-            background: rgba(79, 142, 247, 0.12);
-            padding: 6px 14px;
+            background: rgba(91, 155, 248, 0.1);
+            padding: 6px 16px;
             border-radius: 99px;
-            border: 1px solid rgba(79, 142, 247, 0.3);
+            border: 1px solid rgba(91, 155, 248, 0.25);
         }
 
-        /* ── Admission Status Callout ── */
+        /* ── Admission Callout ── */
         .admission-callout {
             border-radius: 14px;
             padding: 20px 24px;
@@ -169,20 +225,9 @@
             border: 1px solid var(--border-color);
         }
 
-        .admission-callout.status-open {
-            background: rgba(34, 197, 94, 0.08);
-            border-color: rgba(34, 197, 94, 0.3);
-        }
-
-        .admission-callout.status-limited {
-            background: rgba(245, 158, 11, 0.08);
-            border-color: rgba(245, 158, 11, 0.3);
-        }
-
-        .admission-callout.status-closed {
-            background: rgba(239, 68, 68, 0.08);
-            border-color: rgba(239, 68, 68, 0.3);
-        }
+        .admission-callout.status-open    { background: rgba(34,197,94,0.07); border-color: rgba(34,197,94,0.28); }
+        .admission-callout.status-limited { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.28); }
+        .admission-callout.status-closed  { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.28); }
 
         .admission-status-badge {
             display: inline-flex;
@@ -190,30 +235,26 @@
             gap: 8px;
             font-size: 1rem;
             font-weight: 800;
-            padding: 6px 14px;
+            padding: 7px 16px;
             border-radius: 99px;
+            margin-bottom: 8px;
         }
 
-        .status-open .admission-status-badge {
-            background: rgba(34, 197, 94, 0.2);
-            color: var(--accent-green);
+        .status-open   .admission-status-badge { background: rgba(34,197,94,0.18); color: var(--accent-green); }
+        .status-limited .admission-status-badge { background: rgba(245,158,11,0.18); color: var(--accent-amber); }
+        .status-closed  .admission-status-badge { background: rgba(239,68,68,0.18); color: var(--accent-red); }
+
+        .admission-note {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
         }
 
-        .status-limited .admission-status-badge {
-            background: rgba(245, 158, 11, 0.2);
-            color: var(--accent-amber);
-        }
-
-        .status-closed .admission-status-badge {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--accent-red);
-        }
-
-        /* ── Grid Sections ── */
+        /* ── Section Card ── */
         .section-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
+            border-radius: 18px;
             padding: 28px;
             display: flex;
             flex-direction: column;
@@ -221,51 +262,62 @@
         }
 
         .section-title {
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             font-weight: 800;
             color: white;
             display: flex;
             align-items: center;
             gap: 10px;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 14px;
+            padding-bottom: 16px;
+        }
+
+        .section-subtitle {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            margin-top: -12px;
+            line-height: 1.6;
         }
 
         /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
+            gap: 14px;
         }
 
         .stat-card {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 18px;
+            border-radius: 14px;
+            padding: 20px;
             text-align: center;
+            transition: border-color 0.2s;
         }
 
+        .stat-card:hover { border-color: var(--border-hover); }
+
         .stat-card .label {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--text-secondary);
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
-            margin-bottom: 6px;
+            letter-spacing: 0.07em;
+            margin-bottom: 8px;
         }
 
         .stat-card .value {
-            font-size: 1.5rem;
-            font-weight: 800;
+            font-size: 1.45rem;
+            font-weight: 900;
             color: white;
+            line-height: 1.2;
         }
 
-        /* Photo Gallery Grid */
+        /* Gallery */
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
+            gap: 14px;
         }
 
         .gallery-img {
@@ -278,16 +330,13 @@
             transition: transform 0.2s, border-color 0.2s;
         }
 
-        .gallery-img:hover {
-            transform: scale(1.02);
-            border-color: var(--accent-blue);
-        }
+        .gallery-img:hover { transform: scale(1.02); border-color: var(--accent-blue); }
 
         /* MANEB Cards */
         .maneb-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
         }
 
         .maneb-card {
@@ -297,7 +346,7 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
         }
 
         .maneb-header {
@@ -308,29 +357,24 @@
 
         .maneb-pass-meter {
             height: 10px;
-            background: rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.07);
             border-radius: 99px;
             overflow: hidden;
-            margin-top: 6px;
         }
 
         .maneb-pass-fill {
             height: 100%;
             border-radius: 99px;
-            transition: width 0.6s ease;
+            transition: width 0.7s ease;
         }
 
-        /* Facilities & Subjects badges */
-        .tag-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
+        /* Facilities & Subjects tags */
+        .tag-list { display: flex; flex-wrap: wrap; gap: 10px; }
 
         .tag-badge {
-            background: rgba(79, 142, 247, 0.12);
+            background: rgba(91, 155, 248, 0.1);
             color: var(--accent-blue);
-            border: 1px solid rgba(79, 142, 247, 0.3);
+            border: 1px solid rgba(91, 155, 248, 0.28);
             padding: 8px 16px;
             border-radius: 99px;
             font-size: 0.9rem;
@@ -341,14 +385,10 @@
         .apply-form {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px;
+            gap: 14px;
         }
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
 
         .form-group label {
             font-size: 0.85rem;
@@ -360,21 +400,25 @@
             padding: 12px 14px;
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 10px;
             color: white;
             font-size: 0.95rem;
+            font-family: 'Outfit', sans-serif;
             outline: none;
+            transition: border-color 0.2s;
         }
 
-        .form-group input:focus, .form-group select:focus {
-            border-color: var(--accent-blue);
-        }
+        .form-group input:focus, .form-group select:focus { border-color: var(--accent-blue); }
+        .form-group input::placeholder { color: var(--text-secondary); }
+
+        /* Apply section highlight border */
+        #apply-section { border-color: rgba(91,155,248,0.35); }
 
         /* Image Lightbox */
         .lightbox-overlay {
             position: fixed;
             top:0; left:0; right:0; bottom:0;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.92);
             display: none;
             align-items: center;
             justify-content: center;
@@ -385,8 +429,8 @@
         .lightbox-img {
             max-width: 90vw;
             max-height: 90vh;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            border-radius: 14px;
+            box-shadow: 0 12px 50px rgba(0,0,0,0.8);
         }
 
         .lightbox-close {
@@ -396,12 +440,30 @@
             color: white;
             font-size: 2rem;
             cursor: pointer;
-            background: none;
+            background: rgba(255,255,255,0.1);
             border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 99px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            .site-header { padding: 12px 16px; }
+            .hero-card { padding: 22px; }
+            .section-card { padding: 20px; }
+            .admission-callout { flex-direction: column; align-items: flex-start; }
+            .school-title { font-size: 1.5rem; }
+            .header-links .btn-link:not([href="#apply-section"]) { display: none; }
         }
     </style>
 </head>
 <body>
+
+    <div id="toast-container"></div>
 
     <!-- Header -->
     <header class="site-header">
@@ -411,7 +473,7 @@
         <div class="header-links">
             <a href="/explore.html" class="btn-link">← Back to Explore</a>
             <a href="/parent-portal.html" class="btn-link">🔑 Parent Portal</a>
-            <a href="#apply-section" class="btn-primary">🚀 Apply for Admission</a>
+            <a href="#apply-section" class="btn-primary">🚀 Apply Now</a>
         </div>
     </header>
 
@@ -421,129 +483,109 @@
         <!-- Hero Header -->
         <section class="hero-card" id="hero-section">
             <div class="hero-header">
-                <img id="school-logo-img" src="" alt="School Logo" class="school-logo" style="display:none;">
+                <div class="school-logo-wrap" id="school-logo-wrap">
+                    <span class="logo-initials" id="logo-initials">…</span>
+                </div>
                 <div class="school-info">
-                    <h1 class="school-title" id="school-name-text">Loading School...</h1>
+                    <h1 class="school-title" id="school-name-text">Loading…</h1>
                     <div class="school-motto" id="school-motto-text"></div>
                     <div class="location-badge" id="school-location-badge">📍 Malawi</div>
                 </div>
             </div>
 
-            <!-- Admission Space Status Callout -->
+            <!-- Admission Status Callout -->
             <div class="admission-callout status-open" id="admission-callout-box">
                 <div>
                     <div class="admission-status-badge" id="admission-status-badge">
                         <span>🟢</span> <span id="admission-status-label">Open for Admission</span>
                     </div>
-                    <p style="font-size:0.9rem; color:var(--text-secondary); margin-top:8px;" id="admission-notes-text">
-                        Applications are currently being accepted.
+                    <p class="admission-note" id="admission-notes-text">
+                        Applications are open. Submit your details below — the school will contact you.
                     </p>
                 </div>
-                <a href="#apply-section" class="btn-primary" style="padding:12px 24px; font-size:0.95rem;">
-                    Submit Application Online
+                <a href="#apply-section" class="btn-primary" style="padding:13px 26px; font-size:0.95rem; flex-shrink:0;">
+                    Submit Application →
                 </a>
             </div>
         </section>
 
-        <!-- Key Stats Grid -->
+        <!-- Key Stats -->
         <section class="stats-grid" id="stats-section">
             <div class="stat-card">
-                <div class="label">TERMLY FEE</div>
-                <div class="value" style="color:var(--accent-green);" id="stat-fee">MK -</div>
+                <div class="label">Termly Fees</div>
+                <div class="value" style="color:var(--accent-green);" id="stat-fee">MK —</div>
             </div>
             <div class="stat-card">
-                <div class="label">TOTAL ENROLLMENT</div>
-                <div class="value" id="stat-students">-</div>
+                <div class="label">Total Students Enrolled</div>
+                <div class="value" id="stat-students">—</div>
             </div>
             <div class="stat-card">
-                <div class="label">CONTACT NUMBER</div>
-                <div class="value" style="font-size:1.1rem; margin-top:4px;" id="stat-phone">-</div>
+                <div class="label">Contact Number</div>
+                <div class="value" style="font-size:1.05rem; margin-top:4px;" id="stat-phone">—</div>
             </div>
             <div class="stat-card">
-                <div class="label">LOCATION</div>
-                <div class="value" style="font-size:1.1rem; margin-top:4px;" id="stat-district">-</div>
+                <div class="label">District</div>
+                <div class="value" style="font-size:1.05rem; margin-top:4px;" id="stat-district">—</div>
             </div>
         </section>
 
         <!-- Photo Gallery -->
         <section class="section-card" id="gallery-section" style="display:none;">
-            <div class="section-title">
-                <span>📸</span> School Photos & Campus Gallery
-            </div>
+            <div class="section-title"><span>📸</span> Campus Gallery</div>
             <div class="gallery-grid" id="gallery-grid"></div>
         </section>
 
         <!-- MANEB Exam Results -->
         <section class="section-card" id="maneb-section" style="display:none;">
-            <div class="section-title">
-                <span>🎓</span> MANEB National Examination Performance
-            </div>
-            <p style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:6px;">
-                Verified sittings record for Junior Certificate (JCE) and Malawi School Certificate of Education (MSCE).
+            <div class="section-title"><span>🎓</span> National Exam Performance</div>
+            <p class="section-subtitle">
+                Verified results for Junior Certificate (JCE) and Malawi School Certificate of Education (MSCE).
             </p>
             <div class="maneb-grid" id="maneb-cards-grid"></div>
         </section>
 
-        <!-- Student Enrollment Breakdown -->
+        <!-- Class Enrollment -->
         <section class="section-card">
-            <div class="section-title">
-                <span>📊</span> Class Enrollment Breakdown
-            </div>
+            <div class="section-title"><span>📊</span> Students by Class</div>
             <div class="stats-grid" id="enrollment-forms-grid">
-                <div class="stat-card">
-                    <div class="label">FORM 1</div>
-                    <div class="value" id="count-f1">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="label">FORM 2</div>
-                    <div class="value" id="count-f2">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="label">FORM 3</div>
-                    <div class="value" id="count-f3">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="label">FORM 4</div>
-                    <div class="value" id="count-f4">0</div>
-                </div>
+                <div class="stat-card"><div class="label">Form 1</div><div class="value" id="count-f1">0</div></div>
+                <div class="stat-card"><div class="label">Form 2</div><div class="value" id="count-f2">0</div></div>
+                <div class="stat-card"><div class="label">Form 3</div><div class="value" id="count-f3">0</div></div>
+                <div class="stat-card"><div class="label">Form 4</div><div class="value" id="count-f4">0</div></div>
             </div>
         </section>
 
         <!-- Facilities & Curriculum -->
         <section class="section-card">
-            <div class="section-title">
-                <span>🏗️</span> Campus Facilities & Curriculum
-            </div>
+            <div class="section-title"><span>🏗️</span> Facilities &amp; Subjects</div>
             <div>
-                <div style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:10px;">FACILITIES & AMENITIES</div>
+                <div style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:12px;">Facilities &amp; Amenities</div>
                 <div class="tag-list" id="facilities-tags-list"></div>
             </div>
-            <div style="margin-top:16px;">
-                <div style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:10px;">SUBJECTS OFFERED</div>
+            <div>
+                <div style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:12px;">Subjects Offered</div>
                 <div class="tag-list" id="subjects-tags-list"></div>
             </div>
         </section>
 
-        <!-- Fee Sections Breakdown (if multiple sections exist) -->
+        <!-- Fee Sections -->
         <section class="section-card" id="sections-fee-card" style="display:none;">
-            <div class="section-title">
-                <span>💳</span> Termly Fee Structure
-            </div>
+            <div class="section-title"><span>💳</span> Termly Fee Structure</div>
             <div class="stats-grid" id="sections-fee-grid"></div>
         </section>
 
-        <!-- Online Admission Application Section -->
-        <section class="section-card" id="apply-section" style="border-color:var(--accent-blue);">
+        <!-- Apply Section -->
+        <section class="section-card" id="apply-section">
             <div class="section-title" style="color:var(--accent-blue);">
                 <span>🚀</span> Apply for Admission
             </div>
-            <p style="font-size:0.9rem; color:var(--text-secondary);">
-                Submit an instant application directly to the school administration. You will be contacted via WhatsApp/Phone.
+            <p class="section-subtitle" style="margin-top:-12px;">
+                Fill in the form below and the school admin will contact you via WhatsApp or phone. No account needed.
             </p>
-            <form id="public-apply-form" style="display:flex; flex-direction:column; gap:16px; margin-top:8px;">
+            <form id="public-apply-form" style="display:flex; flex-direction:column; gap:16px;">
                 <div class="apply-form">
                     <div class="form-group">
-                        <label>Student Full Name *</label>
+                        <label>Student's Full Name *</label>
                         <input type="text" id="app-student-name" required placeholder="e.g. Chisomo Banda">
                     </div>
                     <div class="form-group">
@@ -564,105 +606,119 @@
                         </select>
                     </div>
                 </div>
-                <button type="submit" class="btn-primary" style="padding:14px; font-size:1rem; width:100%;">
-                    Submit Application Now
+                <button type="submit" class="btn-primary" style="padding:15px; font-size:1rem; width:100%;">
+                    Submit Application Now →
                 </button>
             </form>
         </section>
 
     </main>
 
-    <!-- Image Lightbox Modal -->
+    <!-- Image Lightbox -->
     <div class="lightbox-overlay" id="lightbox-modal">
         <button class="lightbox-close" onclick="closeLightbox()">✕</button>
         <img id="lightbox-img-el" class="lightbox-img" src="" alt="Full view">
     </div>
 
 <script>
+    /* ── Toast ── */
+    function showToast(msg, type = 'info', duration = 3000) {
+        const container = document.getElementById('toast-container');
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.textContent = msg;
+        container.appendChild(el);
+        setTimeout(() => el.remove(), duration + 300);
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
-    const schoolId = urlParams.get('id');
+    const schoolId  = urlParams.get('id');
 
     if (!schoolId) {
-        alert('No school specified.');
-        window.location.href = '/explore.html';
+        showToast('No school specified — redirecting.', 'error');
+        setTimeout(() => window.location.href = '/explore.html', 1500);
     }
 
     async function fetchProfile() {
         try {
             const res = await fetch(`/api/public/explore/${schoolId}`);
-            if (!res.ok) throw new Error('School not found');
+            if (!res.ok) throw new Error('Not found');
             const data = await res.json();
             renderProfile(data);
         } catch (e) {
-            document.getElementById('school-name-text').textContent = 'Error Loading School Profile';
-            console.error(e);
+            document.getElementById('school-name-text').textContent = 'School not found';
+            showToast('Could not load this school profile.', 'error');
         }
     }
 
+    function getInitials(name) {
+        return (name || 'S').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    }
+
     function renderProfile(s) {
-        document.title = `${s.schoolName} - School Profile & MANEB Performance`;
-        
-        // Header info
+        document.title = `${s.schoolName} – School Profile`;
+
         document.getElementById('school-name-text').textContent = s.schoolName;
-        const mapPinSvg = '<svg viewBox="0 0 32 32" width="14" height="14" style="vertical-align: -2px; display: inline-block;"><path fill="currentColor" d="M16 2C10.477 2 6 6.477 6 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/><ellipse cx="16" cy="30" rx="6" ry="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>';
-        document.getElementById('school-location-badge').innerHTML = `${mapPinSvg} ${s.district}, Malawi`;
+        document.getElementById('school-motto-text').textContent = s.motto ? `"${s.motto}"` : '';
+        document.getElementById('logo-initials').textContent = getInitials(s.schoolName);
+
+        const mapPin = `<svg viewBox="0 0 32 32" width="13" height="13" style="vertical-align:-1px;display:inline-block;"><path fill="currentColor" d="M16 2C10.477 2 6 6.477 6 12c0 7.5 10 16 10 16s10-8.5 10-16c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>`;
+        document.getElementById('school-location-badge').innerHTML = `${mapPin} ${s.district}, Malawi`;
 
         // Logo
         if (s.logoBase64) {
-            const logoImg = document.getElementById('school-logo-img');
-            logoImg.src = s.logoBase64;
-            logoImg.style.display = 'block';
+            const wrap = document.getElementById('school-logo-wrap');
+            wrap.innerHTML = `<img src="${s.logoBase64}" alt="${s.schoolName} logo">`;
         }
 
-        // Admission Status Callout
-        const calloutBox = document.getElementById('admission-callout-box');
+        // Admission Status
+        const calloutBox  = document.getElementById('admission-callout-box');
         const statusBadge = document.getElementById('admission-status-badge');
-        const statusLabel = document.getElementById('admission-status-label');
-        const notesText = document.getElementById('admission-notes-text');
-
+        const notesText   = document.getElementById('admission-notes-text');
         const status = s.admissionStatus || 'Open';
-        calloutBox.className = 'admission-callout ' + (status === 'Closed' ? 'status-closed' : status === 'Limited' ? 'status-limited' : 'status-open');
+
+        calloutBox.className = 'admission-callout ' + (
+            status === 'Closed' ? 'status-closed' :
+            status === 'Limited' ? 'status-limited' : 'status-open'
+        );
 
         if (status === 'Closed') {
             statusBadge.innerHTML = '<span>🔴</span> <span>Applications Closed</span>';
-            statusLabel.textContent = 'Applications Closed';
-            notesText.textContent = s.admissionNotes || 'Applications are currently closed for this session.';
+            notesText.textContent = s.admissionNotes || 'Applications are currently closed for this session. Check back later.';
         } else if (status === 'Limited') {
             statusBadge.innerHTML = '<span>🟡</span> <span>Limited Spaces Remaining</span>';
-            statusLabel.textContent = 'Limited Spaces Remaining';
-            notesText.textContent = s.admissionNotes || 'Spaces are limited. Submit your application early.';
+            notesText.textContent = s.admissionNotes || 'Only a few spaces left. Submit your application as soon as possible.';
         } else {
             statusBadge.innerHTML = '<span>🟢</span> <span>Open for Admission</span>';
-            statusLabel.textContent = 'Open for Admission';
-            notesText.textContent = s.admissionNotes || 'Applications are open. All form levels accepting candidates.';
+            notesText.textContent = s.admissionNotes || 'Applications are open for all form levels. Submit your details below.';
         }
 
         // Key Stats
-        document.getElementById('stat-fee').textContent = s.approxFees ? `MK ${Number(s.approxFees).toLocaleString()}` : 'MK -';
+        document.getElementById('stat-fee').textContent = s.approxFees
+            ? `MK ${Number(s.approxFees).toLocaleString()}`
+            : 'MK —';
         document.getElementById('stat-students').textContent = s.totalStudents || '0';
         document.getElementById('stat-phone').textContent = s.headerContactNumber || s.phone || 'N/A';
         document.getElementById('stat-district').textContent = s.district || 'Malawi';
 
-        // Photos Gallery
+        // Gallery
         if (s.photos && s.photos.length > 0) {
-            const galleryGrid = document.getElementById('gallery-grid');
-            galleryGrid.innerHTML = s.photos.map(src => `
-                <img src="${src}" class="gallery-img" onclick="openLightbox('${src}')" alt="Campus Photo">
-            `).join('');
+            document.getElementById('gallery-grid').innerHTML = s.photos.map(src =>
+                `<img src="${src}" class="gallery-img" onclick="openLightbox('${src}')" alt="Campus Photo">`
+            ).join('');
             document.getElementById('gallery-section').style.display = 'flex';
         }
 
         // MANEB Results
         if (s.manebResults && s.manebResults.length > 0) {
-            const manebGrid = document.getElementById('maneb-cards-grid');
-            manebGrid.innerHTML = s.manebResults.map(r => {
+            document.getElementById('maneb-cards-grid').innerHTML = s.manebResults.map(r => {
                 const passRate = r.sat > 0 ? Math.round(r.passed / r.sat * 100) : 0;
                 const barColor = passRate >= 70 ? 'var(--accent-green)' : passRate >= 50 ? 'var(--accent-amber)' : 'var(--accent-red)';
                 return `
                 <div class="maneb-card">
                     <div class="maneb-header">
-                        <span style="font-size:1.1rem; font-weight:800; color:white;">${r.exam} (${r.year})</span>
-                        <span style="font-size:1.3rem; font-weight:800; color:${barColor};">${passRate}% Pass</span>
+                        <span style="font-size:1.05rem; font-weight:800; color:white;">${r.exam} (${r.year})</span>
+                        <span style="font-size:1.3rem; font-weight:900; color:${barColor};">${passRate}% Pass Rate</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--text-secondary);">
                         <span>Sat: <strong style="color:white;">${r.sat}</strong></span>
@@ -692,19 +748,21 @@
             'Library': '📚 Library',
             'Sports Ground': '⚽ Sports Ground'
         };
-        const facilitiesList = (s.facilities || []).map(f => `<span class="tag-badge">${facMap[f] || f}</span>`).join('') || '<span style="color:var(--text-secondary);">No facilities listed</span>';
-        document.getElementById('facilities-tags-list').innerHTML = facilitiesList;
+        document.getElementById('facilities-tags-list').innerHTML =
+            (s.facilities || []).map(f => `<span class="tag-badge">${facMap[f] || f}</span>`).join('') ||
+            `<span style="color:var(--text-secondary);">No facilities listed yet.</span>`;
 
         // Subjects
-        const subjectsList = (s.subjects || []).map(sub => `<span class="tag-badge" style="background:rgba(255,255,255,0.06); color:white; border-color:var(--border-color);">${sub}</span>`).join('');
-        document.getElementById('subjects-tags-list').innerHTML = subjectsList;
+        document.getElementById('subjects-tags-list').innerHTML =
+            (s.subjects || []).map(sub =>
+                `<span class="tag-badge" style="background:rgba(255,255,255,0.05); color:var(--text-primary); border-color:var(--border-color);">${sub}</span>`
+            ).join('') || `<span style="color:var(--text-secondary);">No subjects listed yet.</span>`;
 
         // Fee Sections
         if (s.sections && s.sections.length > 1) {
-            const secGrid = document.getElementById('sections-fee-grid');
-            secGrid.innerHTML = s.sections.map(sec => `
+            document.getElementById('sections-fee-grid').innerHTML = s.sections.map(sec => `
                 <div class="stat-card">
-                    <div class="label">${sec.name} ${sec.isDefault ? '(DEFAULT)' : ''}</div>
+                    <div class="label">${sec.name} ${sec.isDefault ? '(Default)' : ''}</div>
                     <div class="value" style="color:var(--accent-green);">MK ${Number(sec.fee).toLocaleString()}</div>
                 </div>
             `).join('');
@@ -722,13 +780,17 @@
         document.getElementById('lightbox-modal').style.display = 'none';
     }
 
-    // Apply Form Submission
+    // Apply Form
     document.getElementById('public-apply-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const studentName = document.getElementById('app-student-name').value;
-        const parentName = document.getElementById('app-parent-name').value;
-        const parentPhone = document.getElementById('app-parent-phone').value;
+        const studentName  = document.getElementById('app-student-name').value;
+        const parentName   = document.getElementById('app-parent-name').value;
+        const parentPhone  = document.getElementById('app-parent-phone').value;
         const classApplied = document.getElementById('app-class').value;
+
+        const btn = e.target.querySelector('[type="submit"]');
+        btn.disabled = true;
+        btn.textContent = 'Submitting…';
 
         try {
             const res = await fetch('/api/public/apply', {
@@ -738,14 +800,16 @@
             });
 
             if (res.ok) {
-                const data = await res.json();
-                alert(data.message || 'Application submitted successfully!');
-                document.getElementById('public-apply-form').reset();
+                e.target.reset();
+                showToast('✅ Application submitted! The school will contact you soon.', 'success', 4500);
             } else {
-                alert('Failed to submit application. Please try again.');
+                showToast('⚠️ Could not submit application — please try again.', 'error');
             }
         } catch (err) {
-            alert('Error submitting application.');
+            showToast('⚠️ Network error. Please check your connection.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Submit Application Now →';
         }
     });
 
