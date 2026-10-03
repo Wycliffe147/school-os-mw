@@ -865,14 +865,14 @@
 
     <!-- Hero -->
     <section class="hero">
-        <!-- Slideshow background layer -->
+        <!-- Slideshow background layer (Progressively loaded) -->
         <div class="hero-slides" id="hero-slides">
             <div class="hero-slide active" style="background-image: url('/explore-assets/hero-slide-1.jpg');"></div>
-            <div class="hero-slide" style="background-image: url('/explore-assets/hero-slide-2.jpg');"></div>
-            <div class="hero-slide" style="background-image: url('/explore-assets/hero-slide-3.jpg');"></div>
-            <div class="hero-slide" style="background-image: url('/explore-assets/hero-slide-4.jpg');"></div>
-            <div class="hero-slide" style="background-image: url('/explore-assets/hero-slide-5.jpg');"></div>
-            <div class="hero-slide" style="background-image: url('/explore-assets/hero-slide-6.jpg');"></div>
+            <div class="hero-slide" data-bg="/explore-assets/hero-slide-2.jpg"></div>
+            <div class="hero-slide" data-bg="/explore-assets/hero-slide-3.jpg"></div>
+            <div class="hero-slide" data-bg="/explore-assets/hero-slide-4.jpg"></div>
+            <div class="hero-slide" data-bg="/explore-assets/hero-slide-5.jpg"></div>
+            <div class="hero-slide" data-bg="/explore-assets/hero-slide-6.jpg"></div>
         </div>
         <div class="hero-overlay"></div>
 
@@ -1417,15 +1417,19 @@
         if (sortDropdown && !sortDropdown.contains(e.target)) sortDropdown.classList.remove('open');
     });
 
-    /* ── Event listeners ── */
-    document.getElementById('search-q').addEventListener('input', loadSchools);
+    /* ── Debounced Search ── */
+    let searchDebounceTimer = null;
+    document.getElementById('search-q').addEventListener('input', () => {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(loadSchools, 220);
+    });
     document.getElementById('chk-boarding').addEventListener('change', loadSchools);
     document.getElementById('chk-science').addEventListener('change', loadSchools);
     document.getElementById('chk-ict').addEventListener('change', loadSchools);
     document.getElementById('chk-library').addEventListener('change', loadSchools);
     document.getElementById('chk-sports').addEventListener('change', loadSchools);
 
-    /* ── Hero Slideshow ── */
+    /* ── Hero Slideshow (Progressive Loading) ── */
     function initHeroSlideshow() {
         const slides = document.querySelectorAll('.hero-slide');
         const dotsContainer = document.getElementById('slide-dots');
@@ -1433,6 +1437,15 @@
 
         let currentIndex = 0;
         let slideTimer = null;
+
+        function loadSlideImage(slideEl) {
+            if (!slideEl) return;
+            const bg = slideEl.getAttribute('data-bg');
+            if (bg) {
+                slideEl.style.backgroundImage = `url('${bg}')`;
+                slideEl.removeAttribute('data-bg');
+            }
+        }
 
         // Create indicator dots
         dotsContainer.innerHTML = '';
@@ -1455,8 +1468,15 @@
 
             currentIndex = (index + slides.length) % slides.length;
 
+            // Ensure image is loaded before showing
+            loadSlideImage(slides[currentIndex]);
+
             slides[currentIndex].classList.add('active');
             if (dots[currentIndex]) dots[currentIndex].classList.add('active');
+
+            // Preload the next upcoming slide in the queue
+            const nextIdx = (currentIndex + 1) % slides.length;
+            loadSlideImage(slides[nextIdx]);
         }
 
         function nextSlide() {
@@ -1468,12 +1488,16 @@
             slideTimer = setInterval(nextSlide, 5500);
         }
 
+        // Preload slide 2 after initial page setup
+        setTimeout(() => {
+            if (slides[1]) loadSlideImage(slides[1]);
+        }, 1200);
+
         resetTimer();
     }
 
+    // Launch immediately
     initHeroSlideshow();
-
-    /* ── Initial load ── */
     loadSchools();
 </script>
 </body>
