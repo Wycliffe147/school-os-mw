@@ -385,7 +385,7 @@
             border-bottom-color: var(--accent-blue);
         }
 
-        /* ── Mobile Bottom Nav ── */
+        /* ── Mobile Bottom Nav & Drop-ups ── */
         .portal-bottom-nav {
             display: none;
             position: fixed;
@@ -393,7 +393,7 @@
             background: linear-gradient(to top, #0d1221, #111827);
             border-top: 1px solid rgba(79,142,247,0.18);
             z-index: 200;
-            padding: 6px 0 max(6px, env(safe-area-inset-bottom));
+            padding: 6px 4px max(6px, env(safe-area-inset-bottom));
             box-shadow: 0 -4px 24px rgba(0,0,0,0.5);
         }
 
@@ -401,6 +401,14 @@
             display: flex;
             justify-content: space-around;
             align-items: stretch;
+            position: relative;
+        }
+
+        .bottom-nav-item {
+            position: relative;
+            flex: 1;
+            display: flex;
+            justify-content: center;
         }
 
         .bottom-nav-btn {
@@ -409,8 +417,8 @@
             align-items: center;
             justify-content: center;
             gap: 3px;
-            padding: 6px 4px;
-            flex: 1;
+            padding: 6px 2px;
+            width: 100%;
             background: none;
             border: none;
             color: var(--text-secondary);
@@ -424,8 +432,103 @@
             -webkit-tap-highlight-color: transparent;
         }
         .bottom-nav-btn .bnav-icon { font-size: 1.2rem; line-height: 1; }
-        .bottom-nav-btn.active { color: var(--accent-blue); }
+        .bottom-nav-btn.active { color: var(--accent-blue); font-weight: 700; }
         .bottom-nav-btn:active { opacity: 0.7; }
+
+        .bnav-arrow {
+            font-size: 0.6rem;
+            opacity: 0.75;
+            margin-left: 2px;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+        .bottom-nav-btn.open .bnav-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* Drop-up Menus */
+        .dropup-menu {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 12px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(18, 22, 37, 0.96);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(79, 142, 247, 0.35);
+            border-radius: 14px;
+            padding: 6px;
+            min-width: 200px;
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.75), 0 0 16px rgba(79, 142, 247, 0.15);
+            z-index: 300;
+            animation: dropupFadeIn 0.16s ease-out;
+        }
+
+        @keyframes dropupFadeIn {
+            from { opacity: 0; transform: translate(-50%, 8px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        .dropup-menu.open {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .dropup-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: transparent;
+            border: none;
+            border-radius: 9px;
+            color: var(--text-primary);
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.14s, color 0.14s;
+            width: 100%;
+        }
+
+        .dropup-item:hover, .dropup-item:active {
+            background: rgba(79, 142, 247, 0.15);
+        }
+
+        .dropup-item.active {
+            background: rgba(79, 142, 247, 0.22);
+            color: var(--accent-blue);
+        }
+
+        .dropup-item.active strong {
+            color: var(--accent-blue);
+        }
+
+        .dropup-icon {
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+
+        .dropup-text {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .dropup-text strong {
+            font-size: 0.82rem;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--text-primary);
+        }
+
+        .dropup-text span {
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            white-space: nowrap;
+        }
 
         /* ── Content ── */
         .portal-content { padding: 20px; max-width: 780px; margin: 0 auto; }
@@ -637,30 +740,72 @@
         <div class="portal-tab active" data-panel="panel-overview">📊 Overview</div>
         <div class="portal-tab" data-panel="panel-fees">💳 Fees</div>
         <div class="portal-tab" data-panel="panel-attendance">📋 Attendance</div>
-        <div class="portal-tab" data-panel="panel-marks">📝 Marks</div>
+        <div class="portal-tab" data-panel="panel-marks">📄 Reports</div>
         <div class="portal-tab" data-panel="panel-fee-history">💳 Fee History</div>
-        <div class="portal-tab" data-panel="panel-academic-history">🎓 Academic History</div>
+        <div class="portal-tab" data-panel="panel-academic-history">🎓 Past Reports</div>
         <div class="portal-tab" data-panel="panel-notices">📢 Notices</div>
     </nav>
 
-    <!-- Mobile bottom nav -->
+    <!-- Mobile bottom nav with Drop-ups for Fees & Reports -->
     <nav class="portal-bottom-nav" id="portal-bottom-nav">
         <div class="portal-bottom-nav-inner">
-            <button class="bottom-nav-btn active" data-panel="panel-overview" onclick="switchTabMobile(this)">
-                <span class="bnav-icon">📊</span>Overview
-            </button>
-            <button class="bottom-nav-btn" data-panel="panel-fees" onclick="switchTabMobile(this)">
-                <span class="bnav-icon">💳</span>Fees
-            </button>
-            <button class="bottom-nav-btn" data-panel="panel-attendance" onclick="switchTabMobile(this)">
-                <span class="bnav-icon">📋</span>Attend.
-            </button>
-            <button class="bottom-nav-btn" data-panel="panel-marks" onclick="switchTabMobile(this)">
-                <span class="bnav-icon">📝</span>Marks
-            </button>
-            <button class="bottom-nav-btn" data-panel="panel-notices" onclick="switchTabMobile(this)">
-                <span class="bnav-icon">📢</span>Notices
-            </button>
+            <div class="bottom-nav-item">
+                <button class="bottom-nav-btn active" id="bnav-overview" data-panel="panel-overview" onclick="switchTabMobile('panel-overview')">
+                    <span class="bnav-icon">📊</span>Overview
+                </button>
+            </div>
+            <div class="bottom-nav-item">
+                <div class="dropup-menu" id="dropup-fees">
+                    <button class="dropup-item" data-panel="panel-fees" onclick="selectDropupTab('panel-fees', 'dropup-fees')">
+                        <span class="dropup-icon">💳</span>
+                        <div class="dropup-text">
+                            <strong>Current Term</strong>
+                            <span>Balance &amp; Payments</span>
+                        </div>
+                    </button>
+                    <button class="dropup-item" data-panel="panel-fee-history" onclick="selectDropupTab('panel-fee-history', 'dropup-fees')">
+                        <span class="dropup-icon">📂</span>
+                        <div class="dropup-text">
+                            <strong>Past Terms</strong>
+                            <span>Archived Fee Records</span>
+                        </div>
+                    </button>
+                </div>
+                <button class="bottom-nav-btn" id="bnav-fees" onclick="toggleDropup('dropup-fees', event)">
+                    <span class="bnav-icon">💳</span><span>Fees<span class="bnav-arrow">▴</span></span>
+                </button>
+            </div>
+            <div class="bottom-nav-item">
+                <button class="bottom-nav-btn" id="bnav-attendance" data-panel="panel-attendance" onclick="switchTabMobile('panel-attendance')">
+                    <span class="bnav-icon">📋</span>Attend.
+                </button>
+            </div>
+            <div class="bottom-nav-item">
+                <div class="dropup-menu" id="dropup-reports">
+                    <button class="dropup-item" data-panel="panel-marks" onclick="selectDropupTab('panel-marks', 'dropup-reports')">
+                        <span class="dropup-icon">📄</span>
+                        <div class="dropup-text">
+                            <strong>Current Term</strong>
+                            <span>Grades &amp; Report Card</span>
+                        </div>
+                    </button>
+                    <button class="dropup-item" data-panel="panel-academic-history" onclick="selectDropupTab('panel-academic-history', 'dropup-reports')">
+                        <span class="dropup-icon">🎓</span>
+                        <div class="dropup-text">
+                            <strong>Past Terms</strong>
+                            <span>Academic History</span>
+                        </div>
+                    </button>
+                </div>
+                <button class="bottom-nav-btn" id="bnav-reports" onclick="toggleDropup('dropup-reports', event)">
+                    <span class="bnav-icon">📄</span><span>Reports<span class="bnav-arrow">▴</span></span>
+                </button>
+            </div>
+            <div class="bottom-nav-item">
+                <button class="bottom-nav-btn" id="bnav-notices" data-panel="panel-notices" onclick="switchTabMobile('panel-notices')">
+                    <span class="bnav-icon">📢</span>Notices
+                </button>
+            </div>
         </div>
     </nav>
 
@@ -847,10 +992,14 @@
 
     // Close when clicking outside
     document.addEventListener('click', () => {
-        document.getElementById('pp-school-toggle').classList.remove('open');
-        document.getElementById('pp-school-menu').classList.remove('open');
+        const schoolToggle = document.getElementById('pp-school-toggle');
+        const schoolMenu = document.getElementById('pp-school-menu');
+        if (schoolToggle) schoolToggle.classList.remove('open');
+        if (schoolMenu) schoolMenu.classList.remove('open');
         const list = document.getElementById('child-switcher-list');
         if (list) list.style.display = 'none';
+        document.querySelectorAll('.dropup-menu').forEach(d => d.classList.remove('open'));
+        document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('open'));
     });
 
     function selectPPSchool(schoolId, label) {
@@ -1029,16 +1178,67 @@
         document.getElementById('login-phone').value = '';
     });
 
-    // ── Tab navigation ──
+    // ── Tab navigation & Drop-ups ──
+    function toggleDropup(menuId, e) {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById(menuId);
+        const btn = e ? e.currentTarget : null;
+        const isOpen = menu && menu.classList.contains('open');
+
+        // Close all dropups first
+        document.querySelectorAll('.dropup-menu').forEach(d => d.classList.remove('open'));
+        document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('open'));
+
+        if (!isOpen && menu) {
+            menu.classList.add('open');
+            if (btn) btn.classList.add('open');
+        }
+    }
+
+    function selectDropupTab(panelId, menuId) {
+        document.querySelectorAll('.dropup-menu').forEach(d => d.classList.remove('open'));
+        document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('open'));
+        activatePanel(panelId);
+    }
+
+    function switchTabMobile(panelId) {
+        document.querySelectorAll('.dropup-menu').forEach(d => d.classList.remove('open'));
+        document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('open'));
+        activatePanel(panelId);
+    }
+
     function activatePanel(panelId) {
+        // Desktop top tabs
         document.querySelectorAll('.portal-tab').forEach(t => {
             if (t.getAttribute('data-panel') === panelId) t.classList.add('active');
             else t.classList.remove('active');
         });
-        document.querySelectorAll('.bottom-nav-btn').forEach(b => {
-            if (b.getAttribute('data-panel') === panelId) b.classList.add('active');
-            else b.classList.remove('active');
+
+        // Mobile bottom nav buttons & dropup items
+        document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.dropup-item').forEach(item => {
+            if (item.getAttribute('data-panel') === panelId) item.classList.add('active');
+            else item.classList.remove('active');
         });
+
+        if (panelId === 'panel-overview') {
+            const b = document.getElementById('bnav-overview');
+            if (b) b.classList.add('active');
+        } else if (panelId === 'panel-fees' || panelId === 'panel-fee-history') {
+            const b = document.getElementById('bnav-fees');
+            if (b) b.classList.add('active');
+        } else if (panelId === 'panel-attendance') {
+            const b = document.getElementById('bnav-attendance');
+            if (b) b.classList.add('active');
+        } else if (panelId === 'panel-marks' || panelId === 'panel-academic-history') {
+            const b = document.getElementById('bnav-reports');
+            if (b) b.classList.add('active');
+        } else if (panelId === 'panel-notices') {
+            const b = document.getElementById('bnav-notices');
+            if (b) b.classList.add('active');
+        }
+
+        // Switch panels
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         const panel = document.getElementById(panelId);
         if (panel) panel.classList.add('active');
@@ -1057,10 +1257,6 @@
             activatePanel(tab.getAttribute('data-panel'));
         });
     });
-
-    function switchTabMobile(btn) {
-        activatePanel(btn.getAttribute('data-panel'));
-    }
 
     // ── Overview ──
     async function loadOverview() {
