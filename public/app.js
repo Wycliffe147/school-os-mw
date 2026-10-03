@@ -955,7 +955,8 @@ async function renderStudentsTab() {
     const tbody = document.querySelector('#subjects-table tbody');
     tbody.innerHTML = '';
     
-    const classStudents = students.filter(s => (s.classLevel || 'Form 1') === currentClass);
+    const classStudents = students.filter(s => (s.classLevel || 'Form 1') === currentClass)
+        .sort((a, b) => a.name.localeCompare(b.name));
     
     classStudents.forEach(student => {
         const tr = document.createElement('tr');
