@@ -626,6 +626,60 @@ td input[type="number"]:disabled {
 #school-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
 
 
+/* ── Password Visibility Toggle ── */
+.password-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.password-input-wrap input {
+    width: 100%;
+    padding-right: 42px !important;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+    line-height: 0;
+    z-index: 2;
+}
+
+.password-toggle-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.password-toggle-btn:focus {
+    outline: none;
+    color: var(--accent-blue);
+}
+
+.password-toggle-btn .eye-hide {
+    display: none;
+}
+
+.password-toggle-btn.revealed .eye-show {
+    display: none;
+}
+
+.password-toggle-btn.revealed .eye-hide {
+    display: block;
+}
+
 /* ── Custom div-based dropdown (replaces native <select> to avoid desktop glitch) ── */
 .custom-dropdown {
     position: relative;

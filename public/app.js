@@ -1,3 +1,17 @@
+// Password Visibility Toggle
+function togglePasswordVisibility(btn) {
+    if (!btn) return;
+    const wrap = btn.closest('.password-input-wrap');
+    if (!wrap) return;
+    const input = wrap.querySelector('input');
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    btn.classList.toggle('revealed', isPassword);
+    btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+}
+window.togglePasswordVisibility = togglePasswordVisibility;
+
 let students = [];
 let masterSubjects = [];
 let subjectsList = [];
