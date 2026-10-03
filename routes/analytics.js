@@ -286,19 +286,49 @@ router.get('/analytics/summary', (req, res) => {
     }
 });
 
-// ─── Helper: Convert percentage mark to MANEB Points (1 to 9) ─────────────────
-function getManebPoint(mark) {
-    if (mark === null || mark === undefined || isNaN(mark)) return { point: null, label: 'No Mark', code: '-' };
+// ─── Helper: Resolve Grade from School Settings (Junior vs Senior) ─────────────
+function resolveGrade(mark, settings, classLevel) {
+    if (mark === null || mark === undefined || isNaN(mark)) {
+        return { grade: '-', points: null, gradeLetter: '-', remark: 'No Mark' };
+    }
     const m = Number(mark);
-    if (m >= 80) return { point: 1, label: 'Distinction', code: '1' };
-    if (m >= 75) return { point: 2, label: 'Distinction', code: '2' };
-    if (m >= 70) return { point: 3, label: 'Credit', code: '3' };
-    if (m >= 65) return { point: 4, label: 'Credit', code: '4' };
-    if (m >= 60) return { point: 5, label: 'Credit', code: '5' };
-    if (m >= 50) return { point: 6, label: 'Credit', code: '6' };
-    if (m >= 45) return { point: 7, label: 'Pass', code: '7' };
-    if (m >= 40) return { point: 8, label: 'Pass', code: '8' };
-    return { point: 9, label: 'Fail', code: '9' };
+    const isJunior = ['Form 1', 'Form 2'].includes(classLevel);
+
+    if (isJunior) {
+        const rules = [...(settings.gradingSystemJunior || [])].sort((a, b) => Number(b.min) - Number(a.min));
+        for (const r of rules) {
+            if (m >= Number(r.min)) {
+                const letter = r.gradeLetter || r.letter || 'A';
+                const remark = r.remark || r.label || 'Pass';
+                return { grade: letter, points: null, gradeLetter: letter, remark };
+            }
+        }
+        // Standard Junior (JCE) fallback
+        if (m >= 80) return { grade: 'A', points: null, gradeLetter: 'A', remark: 'Distinction' };
+        if (m >= 65) return { grade: 'B', points: null, gradeLetter: 'B', remark: 'Strong Credit' };
+        if (m >= 50) return { grade: 'C', points: null, gradeLetter: 'C', remark: 'Credit' };
+        if (m >= 40) return { grade: 'D', points: null, gradeLetter: 'D', remark: 'Pass' };
+        return { grade: 'F', points: null, gradeLetter: 'F', remark: 'Fail' };
+    } else {
+        const rules = [...(settings.gradingSystem || [])].sort((a, b) => Number(b.min) - Number(a.min));
+        for (const r of rules) {
+            if (m >= Number(r.min) && r.points !== undefined && r.points !== null) {
+                const points = Number(r.points);
+                const remark = r.remark || r.label || 'Pass';
+                return { grade: points, points, gradeLetter: '-', remark };
+            }
+        }
+        // Standard Senior (MSCE) 1-9 points fallback
+        if (m >= 80) return { grade: 1, points: 1, gradeLetter: '-', remark: 'Distinction' };
+        if (m >= 75) return { grade: 2, points: 2, gradeLetter: '-', remark: 'Distinction' };
+        if (m >= 70) return { grade: 3, points: 3, gradeLetter: '-', remark: 'Strong Credit' };
+        if (m >= 65) return { grade: 4, points: 4, gradeLetter: '-', remark: 'Strong Credit' };
+        if (m >= 60) return { grade: 5, points: 5, gradeLetter: '-', remark: 'Credit' };
+        if (m >= 55) return { grade: 6, points: 6, gradeLetter: '-', remark: 'Credit' };
+        if (m >= 50) return { grade: 7, points: 7, gradeLetter: '-', remark: 'Pass' };
+        if (m >= 40) return { grade: 8, points: 8, gradeLetter: '-', remark: 'Pass' };
+        return { grade: 9, points: 9, gradeLetter: '-', remark: 'Fail' };
+    }
 }
 
 // ─── GET /api/analytics/student/:id ──────────────────────────────────────────
@@ -314,6 +344,7 @@ router.get('/analytics/student/:id', (req, res) => {
         if (!student) return res.status(404).json({ error: 'Student not found' });
 
         const classLevel = student.classLevel || 'Form 1';
+        const isJunior = ['Form 1', 'Form 2'].includes(classLevel);
         const classStudents = students.filter(s => (s.classLevel || 'Form 1') === classLevel);
 
         // 1. Calculate class rank/position
@@ -328,7 +359,7 @@ router.get('/analytics/student/:id', (req, res) => {
         const position = rankIndex !== -1 ? rankIndex + 1 : null;
         const totalClassStudents = classStudents.length;
 
-        // 2. Individual Subject Performance & MANEB Points
+        // 2. Individual Subject Performance
         const activeSubjects = Object.keys(student.subjects || {}).filter(k => student.subjects[k]);
         let totalMarkSum = 0;
         let markCount = 0;
@@ -337,7 +368,7 @@ router.get('/analytics/student/:id', (req, res) => {
             const cat = student.catMarks && student.catMarks[sub] != null ? Number(student.catMarks[sub]) : null;
             const exam = student.examMarks && student.examMarks[sub] != null ? Number(student.examMarks[sub]) : null;
             const mark = computeMark(student, sub, catW, examW);
-            const maneb = getManebPoint(mark);
+            const gradeInfo = resolveGrade(mark, settings, classLevel);
 
             if (mark !== null) {
                 totalMarkSum += mark;
@@ -349,34 +380,37 @@ router.get('/analytics/student/:id', (req, res) => {
                 catMark: cat,
                 examMark: exam,
                 finalMark: mark,
-                manebPoint: maneb.point,
-                manebLabel: maneb.label,
-                manebCode: maneb.code
+                grade: gradeInfo.grade,
+                points: gradeInfo.points,
+                gradeLetter: gradeInfo.gradeLetter,
+                remark: gradeInfo.remark
             };
         }).sort((a, b) => (b.finalMark || 0) - (a.finalMark || 0));
 
         const studentAvg = markCount > 0 ? Math.round((totalMarkSum / markCount) * 10) / 10 : null;
 
-        // 3. Best 6 MSCE Points Calculation (MANEB Rules)
-        const englishEntry = subjectDetails.find(s => s.subject.toLowerCase().includes('english'));
-        const englishPoint = englishEntry && englishEntry.manebPoint !== null ? englishEntry.manebPoint : 9;
-        
-        const otherSubjects = subjectDetails
-            .filter(s => !s.subject.toLowerCase().includes('english') && s.manebPoint !== null)
-            .map(s => s.manebPoint)
-            .sort((a, b) => a - b); // Lowest points first (1 is best)
-
-        const top5Others = otherSubjects.slice(0, 5);
+        // 3. Best 6 MSCE Points Calculation (Senior only: Form 3 & 4)
         let best6Points = null;
         let msceQualified = false;
 
-        if (subjectDetails.length >= 6) {
-            const totalPointsList = [englishPoint, ...top5Others];
-            best6Points = totalPointsList.reduce((a, b) => a + b, 0);
+        if (!isJunior && subjectDetails.length >= 6) {
+            const englishEntry = subjectDetails.find(s => s.subject.toLowerCase().includes('english'));
+            const englishPoint = (englishEntry && englishEntry.points !== null) ? englishEntry.points : 9;
             
-            // MANEB MSCE pass criteria: Pass English (Point <= 8) and pass at least 5 other subjects
-            const passedSubjectsCount = subjectDetails.filter(s => s.manebPoint !== null && s.manebPoint <= 8).length;
-            msceQualified = (englishPoint <= 8) && (passedSubjectsCount >= 6);
+            const otherSubjects = subjectDetails
+                .filter(s => !s.subject.toLowerCase().includes('english') && s.points !== null)
+                .map(s => s.points)
+                .sort((a, b) => a - b); // Lowest points first (1 is best)
+
+            const top5Others = otherSubjects.slice(0, 5);
+            if (top5Others.length === 5) {
+                const totalPointsList = [englishPoint, ...top5Others];
+                best6Points = totalPointsList.reduce((a, b) => a + b, 0);
+                
+                // Senior pass criteria: Pass English (Point <= 8) and pass at least 5 other subjects (total >= 6 passed)
+                const passedSubjectsCount = subjectDetails.filter(s => s.points !== null && s.points <= 8).length;
+                msceQualified = (englishPoint <= 8) && (passedSubjectsCount >= 6);
+            }
         }
 
         // 4. Attendance Summary
@@ -424,6 +458,7 @@ router.get('/analytics/student/:id', (req, res) => {
             parentName: student.parentName || '-',
             parentPhone: student.parentPhone || '-',
             classLevel,
+            isJunior,
             sectionName: secObj.name || 'General',
             bursaryName: student.bursaryName || null,
             position,

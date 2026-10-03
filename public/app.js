@@ -3548,15 +3548,32 @@ function renderStudentAnalyticsModalContent(st) {
     if (!content) return;
 
     const isForm3Or4 = st.classLevel === 'Form 3' || st.classLevel === 'Form 4';
+    const isJunior = st.isJunior !== undefined ? st.isJunior : !isForm3Or4;
 
-    function pointBadge(p, label) {
-        if (p === null) return `<span style="color:var(--text-secondary);">-</span>`;
+    function gradeBadge(gradeVal, remark) {
+        if (gradeVal === null || gradeVal === undefined || gradeVal === '-' || gradeVal === '') {
+            return `<span style="color:var(--text-secondary);">-</span>`;
+        }
         let color = '#ef4444';
-        if (p <= 2) color = '#10b981';
-        else if (p <= 6) color = '#3b82f6';
-        else if (p <= 8) color = '#f59e0b';
-
-        return `<span style="background:${color}; color:#fff; font-weight:700; padding:3px 9px; border-radius:4px; font-size:0.78rem; display:inline-block;">Pt ${p} (${label})</span>`;
+        if (isJunior) {
+            const g = String(gradeVal).toUpperCase().trim();
+            if (g === 'A') color = '#10b981';
+            else if (g === 'B') color = '#3b82f6';
+            else if (g === 'C') color = '#06b6d4';
+            else if (g === 'D') color = '#f59e0b';
+            else color = '#ef4444';
+            return `<span style="background:${color}; color:#fff; font-weight:700; padding:3px 9px; border-radius:4px; font-size:0.78rem; display:inline-block;">${g} (${remark || 'Pass'})</span>`;
+        } else {
+            const p = Number(gradeVal);
+            if (!isNaN(p)) {
+                if (p <= 2) color = '#10b981';
+                else if (p <= 6) color = '#3b82f6';
+                else if (p <= 8) color = '#f59e0b';
+                else color = '#ef4444';
+                return `<span style="background:${color}; color:#fff; font-weight:700; padding:3px 9px; border-radius:4px; font-size:0.78rem; display:inline-block;">Pt ${p} (${remark || 'Pass'})</span>`;
+            }
+            return `<span style="background:#64748b; color:#fff; font-weight:700; padding:3px 9px; border-radius:4px; font-size:0.78rem; display:inline-block;">${gradeVal}</span>`;
+        }
     }
 
     const msceBadge = st.msceQualified
@@ -3595,7 +3612,7 @@ function renderStudentAnalyticsModalContent(st) {
         <div style="background:rgba(255,255,255,0.03); border-left:4px solid #8b5cf6; border-radius:8px; padding:12px;">
             <p style="font-size:0.72rem; color:var(--text-secondary); margin:0 0 4px; text-transform:uppercase;">MSCE Best 6 Points</p>
             <h3 style="margin:0; font-size:1.3rem; color:#8b5cf6;">${st.best6Points !== null ? `${st.best6Points} Points` : '-'}</h3>
-            <span style="font-size:0.7rem; color:var(--text-secondary);">Lower is better (MANEB)</span>
+            <span style="font-size:0.7rem; color:var(--text-secondary);">Lower points = Higher rank</span>
         </div>` : `
         <div style="background:rgba(255,255,255,0.03); border-left:4px solid #8b5cf6; border-radius:8px; padding:12px;">
             <p style="font-size:0.72rem; color:var(--text-secondary); margin:0 0 4px; text-transform:uppercase;">Class Position</p>
@@ -3614,11 +3631,11 @@ function renderStudentAnalyticsModalContent(st) {
         </div>
     </div>
 
-    <!-- MANEB Subject Matrix -->
+    <!-- Subject Performance Table -->
     <div style="margin-bottom:20px;">
         <h4 style="margin:0 0 10px 0; font-size:0.95rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-            <span>🇲🇼 MANEB Subject Performance & Grade Points (1-9 Scale)</span>
-            <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:400;">1=Distinction (80%+) | 9=Fail (<40%)</span>
+            <span>${isJunior ? '📚 Subject Performance & Letter Grades' : '📚 Subject Performance & Grade Points'}</span>
+            <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:400;">${isJunior ? 'A=Distinction | F=Fail' : '1=Distinction (80%+) | 9=Fail (<40%)'}</span>
         </h4>
         <div class="table-container" style="max-height:240px; overflow-y:auto; overflow-x:auto;">
             <table style="width:100%; border-collapse:collapse; min-width:460px;">
@@ -3628,7 +3645,7 @@ function renderStudentAnalyticsModalContent(st) {
                         <th style="background:#0f172a; text-align:center;">CAT (30%)</th>
                         <th style="background:#0f172a; text-align:center;">Exam (70%)</th>
                         <th style="background:#0f172a; text-align:center;">Final %</th>
-                        <th style="background:#0f172a; text-align:center;">MANEB Grade Point</th>
+                        <th style="background:#0f172a; text-align:center;">${isJunior ? 'Grade' : 'Points'}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -3638,7 +3655,7 @@ function renderStudentAnalyticsModalContent(st) {
                         <td style="text-align:center;">${sub.catMark !== null ? sub.catMark : '-'}</td>
                         <td style="text-align:center;">${sub.examMark !== null ? sub.examMark : '-'}</td>
                         <td style="text-align:center; font-weight:700; color:${anGradeColour(sub.finalMark)};">${sub.finalMark !== null ? `${sub.finalMark}%` : '-'}</td>
-                        <td style="text-align:center;">${pointBadge(sub.manebPoint, sub.manebLabel)}</td>
+                        <td style="text-align:center;">${gradeBadge(sub.grade, sub.remark)}</td>
                     </tr>`).join('')}
                 </tbody>
             </table>
