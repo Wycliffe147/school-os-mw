@@ -892,6 +892,44 @@
         .grid-message p { font-size: 0.95rem; line-height: 1.6; }
 
         /* ── Responsive ── */
+        /* ── Hamburger ── */
+        .hamburger-btn {
+            display: none;
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            padding: 7px 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            line-height: 1;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .hamburger-btn:hover { border-color: var(--accent-blue); color: white; }
+
+        .mobile-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            left: 0;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px 16px;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 99;
+        }
+        .mobile-menu.open { display: flex; }
+        .mobile-menu .btn-link,
+        .mobile-menu .btn-primary {
+            width: 100%;
+            text-align: center;
+            padding: 11px 18px;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+        }
+
         @media (max-width: 600px) {
             .hero { padding: 32px 16px 28px; min-height: calc(100dvh - 56px); }
             .search-bar-container { padding: 14px; border-radius: 14px; }
@@ -900,9 +938,9 @@
             .btn-gps { width: 100%; }
             .school-grid { grid-template-columns: 1fr; }
             .filter-tags { gap: 6px; }
-            .site-header { padding: 12px 16px; }
-            .brand span { display: none; }
-            .header-links .btn-link { display: none; }
+            .site-header { padding: 12px 16px; position: relative; }
+            .header-links { display: none; }
+            .hamburger-btn { display: block; }
             #compare-bar { bottom: 16px; padding: 10px 18px; }
             .modal-box { padding: 22px; }
         }
@@ -916,9 +954,17 @@
     <!-- Header -->
     <header class="site-header">
         <a href="/explore.html" class="brand">
-            <span>🇲🇼</span> School Discovery Network
+            🇲🇼 School Discovery Network
         </a>
+        <!-- Desktop nav -->
         <div class="header-links">
+            <a href="/parent-portal.html" class="btn-link">🔑 Parent Portal</a>
+            <a href="/index.html" class="btn-primary">School Admin Login</a>
+        </div>
+        <!-- Mobile hamburger -->
+        <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+        <!-- Mobile dropdown menu -->
+        <div class="mobile-menu" id="mobile-menu" role="menu">
             <a href="/parent-portal.html" class="btn-link">🔑 Parent Portal</a>
             <a href="/index.html" class="btn-primary">School Admin Login</a>
         </div>
@@ -1558,6 +1604,39 @@
     // Launch immediately
     initHeroSlideshow();
     loadSchools();
+
+    // ── Hamburger menu ──
+    (function() {
+        const btn = document.getElementById('hamburger-btn');
+        const menu = document.getElementById('mobile-menu');
+        if (!btn || !menu) return;
+
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = menu.classList.toggle('open');
+            btn.setAttribute('aria-expanded', isOpen);
+            btn.textContent = isOpen ? '✕' : '☰';
+        });
+
+        // Close on outside click
+        document.addEventListener('click', function(e) {
+            if (!menu.contains(e.target) && e.target !== btn) {
+                menu.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+                btn.textContent = '☰';
+            }
+        });
+
+        // Close when a link is tapped
+        menu.querySelectorAll('a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                menu.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+                btn.textContent = '☰';
+            });
+        });
+    })();
+
 </script>
 </body>
 </html>
