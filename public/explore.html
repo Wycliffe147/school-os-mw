@@ -131,11 +131,12 @@
         .hero {
             position: relative;
             overflow: hidden;
-            padding: 84px 24px 64px;
-            min-height: 520px;
+            min-height: calc(100dvh - 62px);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding: 40px 24px 36px;
             text-align: center;
             border-bottom: 1px solid rgba(255,255,255,0.08);
         }
@@ -839,7 +840,7 @@
 
         /* ── Responsive ── */
         @media (max-width: 600px) {
-            .hero { padding: 48px 16px 36px; min-height: auto; }
+            .hero { padding: 32px 16px 28px; min-height: calc(100dvh - 56px); }
             .search-bar-container { padding: 14px; border-radius: 14px; }
             .search-inputs { flex-direction: column; }
             .custom-dropdown { min-width: 100%; }
