@@ -1003,12 +1003,15 @@ async function renderStudentsTab() {
             if (!confirm(`⚠️ Remove "${sname}"?\n\nThis will permanently delete the student and all their marks. This cannot be undone.`)) return;
             try {
                 const res = await fetch(`/api/students/${sid}`, { method: 'DELETE' });
-                const data = await res.json();
+                let data;
+                const text = await res.text();
+                try { data = JSON.parse(text); } catch { data = {}; }
+                console.log('DELETE student response:', res.status, text);
                 if (data.success) {
                     students = students.filter(s => s.id !== sid);
                     renderStudentsTab();
                 } else {
-                    alert('Failed to delete student.');
+                    alert('Failed to delete student.\n\n' + (data.error || `HTTP ${res.status}: ${text.slice(0, 200)}`));
                 }
             } catch (e) {
                 alert('Error deleting student: ' + e.message);
