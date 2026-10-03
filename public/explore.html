@@ -549,23 +549,11 @@
             box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35);
         }
 
-        .school-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--accent-blue), #8b5cf6);
-            opacity: 0;
-            transition: opacity 0.25s;
-        }
-
         .school-card:hover {
             transform: translateY(-6px);
             border-color: rgba(91, 155, 248, 0.4);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(91, 155, 248, 0.2);
         }
-
-        .school-card:hover::before { opacity: 1; }
 
         .card-header {
             display: flex;
