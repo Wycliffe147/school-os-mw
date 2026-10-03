@@ -345,10 +345,20 @@ router.get('/students/:id/attendance-summary', (req, res) => {
 
 
 router.delete('/students/:id', requireAdmin, (req, res) => {
-    const db = readDb(req.user ? req.user.schoolId : 'default');
-    db.students = db.students.filter(s => s.id !== req.params.id);
-    writeDb();
-    res.json({ success: true });
+    try {
+        const schoolId = req.user ? req.user.schoolId : 'default';
+        const db = readDb(schoolId);
+        const before = (db.students || []).length;
+        db.students = (db.students || []).filter(s => s.id !== req.params.id);
+        if (db.students.length === before) {
+            return res.status(404).json({ success: false, error: 'Student not found' });
+        }
+        writeDb();
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Delete student error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
 });
 
 router.post('/promote-classes', requireAdmin, (req, res) => {
