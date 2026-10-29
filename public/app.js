@@ -925,7 +925,98 @@ document.getElementById('superadmin-account-form')?.addEventListener('submit', a
 
 document.addEventListener("DOMContentLoaded", () => {
     checkLogin();
+    // Init first phone entry listeners
+    document.querySelectorAll('#student-phones-container .phone-entry').forEach(e => attachPhoneListeners(e));
+    // Add another number button
+    document.getElementById('add-phone-btn')?.addEventListener('click', () => {
+        const container = document.getElementById('student-phones-container');
+        const entry = createPhoneEntry(false);
+        container.appendChild(entry);
+        attachPhoneListeners(entry);
+    });
 });
+
+// ── Phone Number Utilities ──────────────────────────────────────────────────
+const PHONE_COUNTRIES = {
+    '265': { flag: '🇲🇼', label: '+265', digits: 9, format: [3, 3, 3] },
+    '27':  { flag: '🇿🇦', label: '+27',  digits: 9, format: [2, 3, 4] },
+};
+
+function formatPhoneInput(digits, cc) {
+    const config = PHONE_COUNTRIES[cc];
+    if (!config) return digits;
+    const d = digits.slice(0, config.digits);
+    const parts = [];
+    let pos = 0;
+    for (const len of config.format) {
+        if (pos >= d.length) break;
+        parts.push(d.slice(pos, pos + len));
+        pos += len;
+    }
+    return parts.join(' ');
+}
+
+function formatStoredPhone(stored) {
+    for (const [cc, cfg] of Object.entries(PHONE_COUNTRIES)) {
+        if (stored.startsWith(cc)) {
+            const num = stored.slice(cc.length);
+            const parts = [];
+            let pos = 0;
+            for (const len of cfg.format) {
+                if (pos >= num.length) break;
+                parts.push(num.slice(pos, pos + len));
+                pos += len;
+            }
+            return `${cfg.flag} ${cfg.label} ${parts.join(' ')}`;
+        }
+    }
+    return stored;
+}
+
+function formatPhonesDisplay(student) {
+    const phones = (student.phones && student.phones.length) ? student.phones : (student.phone ? [student.phone] : []);
+    if (!phones.length) return '—';
+    return phones.map(p => formatStoredPhone(p)).join('<br>');
+}
+
+function createPhoneEntry(isFirst) {
+    const div = document.createElement('div');
+    div.className = 'phone-entry';
+    div.style.cssText = 'display:flex; gap:6px; align-items:center; margin-bottom:4px;';
+    div.innerHTML = `
+        <select class="phone-cc-select" style="height:38px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px; padding:0 6px; font-size:0.85rem; cursor:pointer;">
+            <option value="265" data-digits="9">🇲🇼 +265</option>
+            <option value="27" data-digits="9">🇿🇦 +27</option>
+        </select>
+        <input type="tel" class="phone-num-input" placeholder="999 123 456" autocomplete="off"
+               style="flex:1; height:38px; padding:0 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary);">
+        <span class="phone-validity" style="font-size:1.1rem; min-width:22px; text-align:center;"></span>
+        ${!isFirst ? `<button type="button" class="phone-remove-btn" title="Remove" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:1rem; padding:0 4px;">✕</button>` : ''}
+    `;
+    return div;
+}
+
+function attachPhoneListeners(entry) {
+    const ccSelect = entry.querySelector('.phone-cc-select');
+    const numInput = entry.querySelector('.phone-num-input');
+    const validity = entry.querySelector('.phone-validity');
+    const removeBtn = entry.querySelector('.phone-remove-btn');
+
+    function refresh() {
+        const cc = ccSelect.value;
+        const digits = numInput.value.replace(/\D/g, '');
+        numInput.value = formatPhoneInput(digits, cc);
+        const expected = PHONE_COUNTRIES[cc]?.digits || 9;
+        if (digits.length === 0) validity.textContent = '';
+        else if (digits.length === expected) validity.textContent = '✅';
+        else validity.textContent = '❌';
+    }
+
+    numInput.addEventListener('input', refresh);
+    ccSelect.addEventListener('change', refresh);
+    if (removeBtn) removeBtn.addEventListener('click', () => entry.remove());
+}
+// ───────────────────────────────────────────────────────────────────────────
 
 async function fetchStudents() {
     const res = await apiFetch('/api/students');
@@ -948,7 +1039,7 @@ async function renderStudentsTab() {
     // Render dynamic table headers
     const thead = document.getElementById('subjects-table-header');
     if (thead) {
-        thead.innerHTML = `<th>Student</th><th>Gender</th><th>Phone</th><th>Bursary</th>` + 
+        thead.innerHTML = `<th>Student</th><th>Gender</th><th>Guardian</th><th>Contact</th><th>Enrolled</th><th>Bursary</th>` + 
             subjectsList.map(sub => `<th title="${sub}" style="font-size: 10px; writing-mode: vertical-rl; transform: rotate(180deg);">${getAbbreviation(sub)}</th>`).join('') +
             (!readOnly ? `<th style="width:40px;"></th>` : '');
     }
@@ -957,7 +1048,7 @@ async function renderStudentsTab() {
     tbody.innerHTML = '';
     
     const classStudents = students.filter(s => (s.classLevel || 'Form 1') === currentClass)
-        .sort((a, b) => a.name.localeCompare(b.name));
+        .sort((a, b) => Number(a.id) - Number(b.id));
     
     classStudents.forEach(student => {
         const tr = document.createElement('tr');
@@ -965,7 +1056,9 @@ async function renderStudentsTab() {
             tr.innerHTML = `
                 <td>${student.name}</td>
                 <td>${student.gender || 'Male'}</td>
-                <td>${student.phone || ''}</td>
+                <td style="font-size:0.85rem;">${student.guardianName || '—'}</td>
+                <td style="font-size:0.82rem;">${formatPhonesDisplay(student)}</td>
+                <td style="font-size:0.82rem; color:var(--text-secondary); white-space:nowrap;">${student.enrollmentDate || '—'}</td>
                 <td>${student.bursaryName || ''}</td>
             ` +
                 subjectsList.map(sub => `
@@ -980,7 +1073,9 @@ async function renderStudentsTab() {
                         <option value="Female" ${student.gender === 'Female' ? 'selected' : ''}>Female</option>
                     </select>
                 </td>
-                <td><input type="text" data-student-id="${student.id}" data-field="phone" value="${student.phone || ''}" style="width: 100px;"></td>
+                <td><input type="text" data-student-id="${student.id}" data-field="guardianName" value="${student.guardianName || ''}" placeholder="Guardian" style="width: 110px;"></td>
+                <td><input type="text" data-student-id="${student.id}" data-field="phone" value="${student.phone || ''}" style="width: 110px;"></td>
+                <td style="font-size:0.82rem; color:var(--text-secondary); white-space:nowrap;">${student.enrollmentDate || '—'}</td>
                 <td><input type="text" data-student-id="${student.id}" data-field="bursaryName" value="${student.bursaryName || ''}" placeholder="None" style="width: 100px;"></td>
             ` + 
                 subjectsList.map(sub => `
@@ -1067,12 +1162,30 @@ document.getElementById('student-on-bursary').addEventListener('change', (e) => 
 // Add New Student Form
 document.getElementById('add-student-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = document.getElementById('student-name').value;
+    const name = document.getElementById('student-name').value.trim();
     const gender = document.getElementById('student-gender')?.value || 'Male';
-    const phone = document.getElementById('student-phone').value;
+    const guardianName = document.getElementById('student-guardian-name').value.trim();
     const onBursary = document.getElementById('student-on-bursary').checked;
     const bursaryName = onBursary ? document.getElementById('student-bursary-name').value : '';
-    
+
+    // Collect all phone entries
+    const phones = [];
+    document.querySelectorAll('#student-phones-container .phone-entry').forEach(entry => {
+        const cc = entry.querySelector('.phone-cc-select').value;
+        const digits = entry.querySelector('.phone-num-input').value.replace(/\D/g, '');
+        if (digits.length > 0) phones.push(cc + digits);
+    });
+
+    if (!phones.length) return alert('Please enter at least one phone number.');
+
+    // Validate primary phone digit count
+    const primaryCC = document.querySelector('#student-phones-container .phone-entry .phone-cc-select').value;
+    const primaryDigits = document.querySelector('#student-phones-container .phone-entry .phone-num-input').value.replace(/\D/g, '');
+    const expectedDigits = PHONE_COUNTRIES[primaryCC]?.digits || 9;
+    if (primaryDigits.length !== expectedDigits) {
+        return alert(`Phone number must be ${expectedDigits} digits for the selected country.`);
+    }
+
     // Get section - if only 1 section, the server will use the default
     const sectionEl = document.getElementById('student-section');
     const section = (sectionEl && schoolSections.length > 1) ? sectionEl.value : undefined;
@@ -1080,12 +1193,24 @@ document.getElementById('add-student-form').addEventListener('submit', async (e)
     const res = await apiFetch('/api/students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, gender, phone, bursaryName, classLevel: currentClass, section, subjects: {} })
+        body: JSON.stringify({
+            name, gender, guardianName,
+            phone: phones[0],
+            phones,
+            enrollmentDate: new Date().toISOString().split('T')[0],
+            bursaryName, classLevel: currentClass, section, subjects: {}
+        })
     });
     
     if (res.ok) {
         document.getElementById('student-name').value = '';
-        document.getElementById('student-phone').value = '';
+        document.getElementById('student-guardian-name').value = '';
+        // Reset phone entries back to a single blank entry
+        const container = document.getElementById('student-phones-container');
+        container.innerHTML = '';
+        const firstEntry = createPhoneEntry(true);
+        container.appendChild(firstEntry);
+        attachPhoneListeners(firstEntry);
         document.getElementById('student-bursary-name').value = '';
         document.getElementById('student-on-bursary').checked = false;
         document.getElementById('student-bursary-group').style.display = 'none';
@@ -1350,7 +1475,7 @@ async function renderMarksTab(skipFetch) {
     tbody.innerHTML = '';
     
     const classStudents = students.filter(s => (s.classLevel || 'Form 1') === currentClass)
-        .sort((a, b) => a.name.localeCompare(b.name));
+        .sort((a, b) => Number(a.id) - Number(b.id));
 
     // In quick entry mode (homeroom class), only show students enrolled in at least one allowed subject.
     // For non-homeroom class (subject-only), always show all students (same as plain teacher).

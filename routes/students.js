@@ -53,7 +53,13 @@ router.post('/students', requireBursarOrAdmin, (req, res) => {
             if (student) {
                 if (req.body.updates[id].name !== undefined) student.name = req.body.updates[id].name;
                 if (req.body.updates[id].gender !== undefined) student.gender = req.body.updates[id].gender;
-                if (req.body.updates[id].phone !== undefined) student.phone = req.body.updates[id].phone;
+                if (req.body.updates[id].guardianName !== undefined) student.guardianName = req.body.updates[id].guardianName;
+                if (req.body.updates[id].phone !== undefined) {
+                    student.phone = req.body.updates[id].phone;
+                    // Keep phones array primary entry in sync
+                    if (!student.phones || !student.phones.length) student.phones = [];
+                    student.phones[0] = req.body.updates[id].phone;
+                }
                 if (req.body.updates[id].bursaryName !== undefined) student.bursaryName = req.body.updates[id].bursaryName;
                 if (req.body.updates[id].section !== undefined) student.section = req.body.updates[id].section;
                 if (req.body.updates[id].feeLockOverride !== undefined) student.feeLockOverride = Boolean(req.body.updates[id].feeLockOverride);
@@ -75,7 +81,10 @@ router.post('/students', requireBursarOrAdmin, (req, res) => {
             id: Date.now().toString(),
             name: req.body.name,
             gender: req.body.gender || 'Male',
-            phone: req.body.phone,
+            guardianName: req.body.guardianName || '',
+            phone: req.body.phone || '',
+            phones: req.body.phones || (req.body.phone ? [req.body.phone] : []),
+            enrollmentDate: req.body.enrollmentDate || new Date().toISOString().split('T')[0],
             bursaryName: req.body.bursaryName,
             classLevel: req.body.classLevel || 'Form 1',
             section: req.body.section || defaultSection,

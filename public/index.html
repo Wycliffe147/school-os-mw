@@ -309,9 +309,23 @@
                                         <option value="Female">Female</option>
                                     </select>
                                 </div>
-                                <div class="input-group" style="flex: 1; min-width: 220px; margin-bottom: 0;">
-                                    <label for="student-phone">WhatsApp Number (with country code)</label>
-                                    <input type="text" id="student-phone" required placeholder="e.g. 265999123456">
+                                <div class="input-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                                    <label for="student-guardian-name">Guardian / Parent Name</label>
+                                    <input type="text" id="student-guardian-name" placeholder="e.g. Mary Doe">
+                                </div>
+                                <div class="input-group" style="flex: 1; min-width: 240px; margin-bottom: 0;">
+                                    <label>WhatsApp Number</label>
+                                    <div id="student-phones-container">
+                                        <div class="phone-entry" style="display: flex; gap: 6px; align-items: center; margin-bottom: 4px;">
+                                            <select class="phone-cc-select" style="height: 42px; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0 6px; font-size: 0.85rem; cursor: pointer;">
+                                                <option value="265" data-digits="9">🇲🇼 +265</option>
+                                                <option value="27" data-digits="9">🇿🇦 +27</option>
+                                            </select>
+                                            <input type="tel" class="phone-num-input" placeholder="999 123 456" autocomplete="off" style="flex: 1; height: 42px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                                            <span class="phone-validity" style="font-size: 1.1rem; min-width: 22px; text-align: center;"></span>
+                                        </div>
+                                    </div>
+                                    <button type="button" id="add-phone-btn" style="margin-top: 4px; background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 0.8rem; padding: 0;">+ Add another number</button>
                                 </div>
                                 <div class="input-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 0; padding-bottom: 10px;">
                                     <input type="checkbox" id="student-on-bursary" style="width: auto; cursor:pointer;">
