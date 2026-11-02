@@ -305,58 +305,76 @@
                     <div class="card form-card">
                         <h3>Add New Student</h3>
                         <form id="add-student-form">
-                            <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
-                                <div class="input-group" style="flex: 1; min-width: 220px; margin-bottom: 0;">
+                            <!-- All fields in one flex row, aligned top so labels & inputs match -->
+                            <div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start;">
+
+                                <!-- Full Name -->
+                                <div class="input-group" style="flex: 1 1 180px; min-width: 150px; margin-bottom: 0;">
                                     <label for="student-name">Full Name</label>
-                                    <input type="text" id="student-name" required placeholder="e.g. John Doe">
+                                    <input type="text" id="student-name" required placeholder="e.g. John Doe" style="height: 42px;">
                                 </div>
-                                <div class="input-group" style="flex: 0 0 130px; margin-bottom: 0;">
+
+                                <!-- Gender -->
+                                <div class="input-group" style="flex: 0 0 115px; margin-bottom: 0;">
                                     <label for="student-gender">Gender</label>
                                     <select id="student-gender" style="height: 42px; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0 10px; width: 100%;">
                                         <option value="Male">Male</option>
                                         <option value="Female">Female</option>
                                     </select>
                                 </div>
-                                <div class="input-group" style="flex: 2; min-width: 320px; margin-bottom: 0;">
-                                    <label>Guardians & WhatsApp Numbers</label>
+
+                                <!-- Guardians & Numbers -->
+                                <div class="input-group" style="flex: 2 1 280px; min-width: 260px; margin-bottom: 0;">
+                                    <label>Guardians &amp; WhatsApp Numbers</label>
                                     <div id="student-contacts-container">
-                                        <div class="contact-entry" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px;">
-                                            <input type="text" class="contact-name-input" placeholder="Guardian Name (e.g. Mary Doe)" style="flex: 1; min-width: 140px; height: 42px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
-                                            <div style="display: flex; gap: 6px; align-items: center; flex: 1.2; min-width: 200px;">
-                                                <select class="phone-cc-select" style="height: 42px; width: 82px; flex-shrink: 0; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0 6px; font-size: 0.85rem; cursor: pointer;">
-                                                    <option value="265" selected>🇲🇼 +265</option>
-                                                    <option value="260">🇿🇲 +260</option>
-                                                    <option value="255">🇹🇿 +255</option>
-                                                    <option value="256">🇺🇬 +256</option>
-                                                    <option value="254">🇰🇪 +254</option>
-                                                    <option value="27">🇿🇦 +27</option>
-                                                    <option value="44">🇬🇧 +44</option>
-                                                    <option value="1">🇺🇸 +1</option>
-                                                </select>
-                                                <input type="tel" class="phone-num-input" placeholder="999 123 456" autocomplete="off" style="flex: 1; min-width: 120px; height: 42px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
-                                                <span class="phone-validity" style="font-size: 1.1rem; min-width: 22px; text-align: center;"></span>
-                                            </div>
+                                        <div class="contact-entry" style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap; margin-bottom: 4px;">
+                                            <input type="text" class="contact-name-input" placeholder="Guardian Name" style="flex: 1 1 100px; min-width: 80px; height: 42px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                                            <select class="phone-cc-select" style="height: 42px; width: 82px; flex-shrink: 0; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0 6px; font-size: 0.85rem; cursor: pointer;">
+                                                <option value="265" selected>&#x1F1F2;&#x1F1FC; +265</option>
+                                                <option value="260">&#x1F1FF;&#x1F1F2; +260</option>
+                                                <option value="255">&#x1F1F9;&#x1F1FF; +255</option>
+                                                <option value="256">&#x1F1FA;&#x1F1EC; +256</option>
+                                                <option value="254">&#x1F1F0;&#x1F1EA; +254</option>
+                                                <option value="27">&#x1F1FF;&#x1F1E6; +27</option>
+                                                <option value="44">&#x1F1EC;&#x1F1E7; +44</option>
+                                                <option value="1">&#x1F1FA;&#x1F1F8; +1</option>
+                                            </select>
+                                            <input type="tel" class="phone-num-input" placeholder="999 123 456" autocomplete="off" style="flex: 1 1 90px; min-width: 90px; height: 42px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                                            <span class="phone-validity" style="font-size: 1rem; min-width: 22px; text-align: center; flex-shrink: 0;"></span>
                                         </div>
                                     </div>
-                                    <button type="button" id="add-contact-btn" style="margin-top: 4px; background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 0.8rem; padding: 0;">+ Add another guardian / number</button>
+                                    <button type="button" id="add-contact-btn" style="margin-top: 2px; background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 0.8rem; padding: 0;">+ Add another guardian / number</button>
                                 </div>
-                                <div class="input-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 0; padding-bottom: 10px;">
-                                    <input type="checkbox" id="student-on-bursary" style="width: auto; cursor:pointer;">
-                                    <label for="student-on-bursary" style="margin-bottom: 0; cursor:pointer;">On Bursary?</label>
+
+                                <!-- On Bursary? — ghost label keeps it aligned with other fields -->
+                                <div class="input-group" style="flex: 0 0 auto; margin-bottom: 0;">
+                                    <label style="visibility: hidden; display: block; margin-bottom: 4px; font-size: 0.82rem;">&nbsp;</label>
+                                    <label for="student-on-bursary" style="display: flex; align-items: center; gap: 7px; height: 42px; margin-bottom: 0; cursor: pointer; white-space: nowrap; font-weight: 400;">
+                                        <input type="checkbox" id="student-on-bursary" style="width: 16px; height: 16px; cursor: pointer; flex-shrink: 0;">
+                                        On Bursary?
+                                    </label>
                                 </div>
-                                <div class="input-group" id="student-bursary-group" style="display: none; flex: 1; min-width: 200px; margin-bottom: 0;">
+
+                                <!-- Bursary Name (hidden until checked) -->
+                                <div class="input-group" id="student-bursary-group" style="display: none; flex: 1 1 160px; min-width: 140px; margin-bottom: 0;">
                                     <label for="student-bursary-name">Bursary Name</label>
-                                    <input type="text" id="student-bursary-name" placeholder="e.g. Save the Children">
+                                    <input type="text" id="student-bursary-name" placeholder="e.g. Save the Children" style="height: 42px;">
                                 </div>
-                                <div class="input-group" id="student-section-group" style="display: none; flex: 1; min-width: 180px; margin-bottom: 0;">
-                                    <label for="student-section">Enrollment Section</label>
-                                    <select id="student-section">
+
+                                <!-- Enrollment Section (hidden unless configured) -->
+                                <div class="input-group" id="student-section-group" style="display: none; flex: 1 1 160px; min-width: 140px; margin-bottom: 0;">
+                                    <label for="student-section">Section</label>
+                                    <select id="student-section" style="height: 42px;">
                                         <!-- Populated dynamically from school sections -->
                                     </select>
                                 </div>
-                                <div>
-                                    <button type="submit" class="btn primary-btn" style="height: 42px;">Register Student</button>
+
+                                <!-- Register Button — ghost label aligns it with inputs -->
+                                <div class="input-group" style="flex: 0 0 auto; margin-bottom: 0;">
+                                    <label style="visibility: hidden; display: block; margin-bottom: 4px; font-size: 0.82rem;">&nbsp;</label>
+                                    <button type="submit" class="btn primary-btn" style="height: 42px; white-space: nowrap;">Register Student</button>
                                 </div>
+
                             </div>
                         </form>
                     </div>
