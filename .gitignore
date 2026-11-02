@@ -6,3 +6,4 @@ db.json
 uploads/
 auth_info_baileys_*/
 .env
+schoolos-bundle*.txt

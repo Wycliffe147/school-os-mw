@@ -4,7 +4,8 @@
   "description": "Termux-native Student Report Card Generator and WhatsApp Sender",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "bundle": "node make-bundle.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.8",
