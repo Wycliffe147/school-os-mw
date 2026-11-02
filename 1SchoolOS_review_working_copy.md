@@ -29,10 +29,10 @@
 
 ---
 
-## 2. Finance / Fee Ledger
+## 2. Finance / Fee Ledger ← NEXT UP
 
-- [x] **2.1 Rename "Total Expected" → "Projection / Total Expected" on Fee Ledger**
-  *Update the label on the fee ledger summary card (`fee-summary-total`). Also added live comma formatting (`attachMoneyInput`) across Record Payment, Batch Fees, Section Fees, and Staff Basic Salary.*
+- [ ] **2.1 Rename "Total Expected" → "Projection / Total Expected" on Fee Ledger**
+  *Update the label on the fee ledger only — refers to fee payment projection totals.*
 
 ---
 
@@ -85,10 +85,10 @@
 | Section | Total | Done | Pending |
 | :--- | :---: | :---: | :---: |
 | 1. Student & Guardian | 5 | 5 | 0 ✅ |
-| 2. Finance / Fee Ledger | 1 | 1 | 0 ✅ |
-| 3. Labels & Terminology | 1 | 0 | 1 ← current |
+| 2. Finance / Fee Ledger | 1 | 0 | 1 ← current |
+| 3. Labels & Terminology | 1 | 0 | 1 |
 | 4. Attendance | 2 | 0 | 2 |
 | 5. Time & Logs | 3 | 0 | 3 |
 | 6. Timetable | 1 | 0 | 1 ⛔ blocked |
 | 7. Analytics | 1 | 0 | 1 ⛔ blocked |
-| **Total** | **14** | **6** | **8** |
+| **Total** | **14** | **5** | **9** |

@@ -975,12 +975,12 @@ function buildPhoneCountries(enabledCodes) {
     PHONE_COUNTRIES = Object.keys(rebuilt).length ? rebuilt : { '265': ALL_PHONE_COUNTRIES['265'] };
 }
 
-/** Build <option> elements for all active country codes */
+/** Build <option> elements for all active country codes (compact flag + code only) */
 function buildCcOptions(selectedCc) {
     const fallback = Object.keys(PHONE_COUNTRIES)[0] || '265';
     const sel = (selectedCc && PHONE_COUNTRIES[selectedCc]) ? selectedCc : fallback;
     return Object.entries(PHONE_COUNTRIES).map(([code, cfg]) =>
-        `<option value="${code}"${code === sel ? ' selected' : ''}>${cfg.flag} ${cfg.label} ${cfg.name}</option>`
+        `<option value="${code}"${code === sel ? ' selected' : ''} title="${cfg.name}">${cfg.flag} ${cfg.label}</option>`
     ).join('');
 }
 
@@ -1088,11 +1088,11 @@ function createContactEntry(isFirst) {
         <input type="text" class="contact-name-input" placeholder="Guardian Name (e.g. Mary Doe)"
                style="flex:1; min-width:140px; height:42px; padding:0 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.85rem;">
         <div style="display:flex; gap:6px; align-items:center; flex:1.2; min-width:200px;">
-            <select class="phone-cc-select" style="height:42px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px; padding:0 6px; font-size:0.85rem; cursor:pointer;">
+            <select class="phone-cc-select" style="height:42px; width:82px; flex-shrink:0; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px; padding:0 6px; font-size:0.85rem; cursor:pointer;">
                 ${buildCcOptions(Object.keys(PHONE_COUNTRIES)[0] || '265')}
             </select>
             <input type="tel" class="phone-num-input" placeholder="999 123 456" autocomplete="off"
-                   style="flex:1; height:42px; padding:0 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.85rem;">
+                   style="flex:1; min-width:120px; height:42px; padding:0 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.85rem;">
             <span class="phone-validity" style="font-size:1.1rem; min-width:22px; text-align:center;"></span>
             ${!isFirst ? `<button type="button" class="contact-remove-btn" title="Remove" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:1.1rem; padding:0 4px;">✕</button>` : ''}
         </div>
@@ -1184,10 +1184,10 @@ async function renderStudentsTab() {
                         const digits = (student.phone || '').startsWith(cc) ? (student.phone || '').slice(cc.length) : (student.phone || '');
                         const fmtDigits = formatPhoneInput(digits.replace(/\D/g,''), cc);
                         return `<div style="display:flex; gap:3px; align-items:center;">
-                            <select class="student-cc-sel" data-student-id="${student.id}" style="height:32px; padding:0 3px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.75rem; cursor:pointer; max-width:90px;">
+                            <select class="student-cc-sel" data-student-id="${student.id}" style="height:32px; width:72px; flex-shrink:0; padding:0 3px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.75rem; cursor:pointer;">
                                 ${buildCcOptions(cc)}
                             </select>
-                            <input type="tel" class="student-phone-num-input" data-student-id="${student.id}" value="${fmtDigits}" placeholder="000 000 000" style="width:95px; height:32px; padding:0 5px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.82rem;">
+                            <input type="tel" class="student-phone-num-input" data-student-id="${student.id}" value="${fmtDigits}" placeholder="000 000 000" style="width:115px; height:32px; padding:0 6px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.82rem;">
                         </div>`;
                     })()}
                 </td>
