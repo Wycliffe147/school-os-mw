@@ -337,7 +337,26 @@ router.post('/whatsapp/send', blockClassTeacher, async (req, res) => {
         return res.status(400).json({ error: "WhatsApp is not connected. Scan the QR code first." });
     }
 
-    if (!student.phone) {
+    // Collect all recipient targets (each guardian or phone)
+    let targets = [];
+    if (student.guardians && Array.isArray(student.guardians) && student.guardians.length > 0) {
+        targets = student.guardians.filter(g => g && g.phone).map(g => ({
+            name: g.name || student.guardianName || '',
+            phone: g.phone
+        }));
+    } else if (student.phones && Array.isArray(student.phones) && student.phones.length > 0) {
+        targets = student.phones.filter(Boolean).map(p => ({
+            name: student.guardianName || '',
+            phone: p
+        }));
+    } else if (student.phone) {
+        targets = [{
+            name: student.guardianName || '',
+            phone: student.phone
+        }];
+    }
+
+    if (!targets.length) {
         return res.status(400).json({ error: "No phone number saved for this student." });
     }
 
@@ -359,20 +378,43 @@ router.post('/whatsapp/send', blockClassTeacher, async (req, res) => {
         const pdfPath = path.join(REPORTS_DIR, fileName);
         fs.writeFileSync(pdfPath, pdfBytes);
 
-        let cleanNumber = student.phone.replace(/\D/g, '');
-        if (cleanNumber.length === 9) {
-            cleanNumber = "265" + cleanNumber;
+        const seenNumbers = new Set();
+        let sentCount = 0;
+        const sendErrors = [];
+
+        for (const target of targets) {
+            let cleanNumber = String(target.phone).replace(/\D/g, '');
+            if (cleanNumber.length === 9) {
+                cleanNumber = "265" + cleanNumber;
+            }
+            if (!cleanNumber || seenNumbers.has(cleanNumber)) continue;
+            seenNumbers.add(cleanNumber);
+
+            const jid = `${cleanNumber}@c.us`;
+            const greeting = target.name ? `Hello ${target.name}, here` : 'Here';
+            const caption = `${greeting} is the progress report card for ${student.name}.`;
+
+            try {
+                await sock.sendMessage(jid, {
+                    document: fs.readFileSync(pdfPath),
+                    fileName: fileName,
+                    mimetype: 'application/pdf',
+                    caption: caption
+                });
+                sentCount++;
+            } catch (err) {
+                console.error(`WhatsApp send error to ${cleanNumber}:`, err);
+                sendErrors.push({ phone: cleanNumber, name: target.name, error: err.message });
+            }
         }
-        const jid = `${cleanNumber}@c.us`;
 
-        await sock.sendMessage(jid, {
-            document: fs.readFileSync(pdfPath),
-            fileName: fileName,
-            mimetype: 'application/pdf',
-            caption: `Here is the progress report card for ${student.name}.`
-        });
+        if (sentCount === 0 && sendErrors.length > 0) {
+            return res.status(500).json({
+                error: `Failed to send to registered number(s): ${sendErrors.map(e => e.error).join(', ')}`
+            });
+        }
 
-        res.json({ success: true });
+        res.json({ success: true, sentCount, totalNumbers: seenNumbers.size });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -407,17 +449,41 @@ router.post('/whatsapp/send-absent-alerts', async (req, res) => {
 
     for (const sid of absentStudentIds) {
         const student = db.students.find(s => s.id === sid);
-        if (student && student.phone) {
-            let cleanNumber = student.phone.replace(/\D/g, '');
-            if (cleanNumber.length === 9) cleanNumber = "265" + cleanNumber;
-            const jid = `${cleanNumber}@c.us`;
+        if (!student) continue;
 
+        let targets = [];
+        if (student.guardians && Array.isArray(student.guardians) && student.guardians.length > 0) {
+            targets = student.guardians.filter(g => g && g.phone).map(g => ({
+                name: g.name || student.guardianName || '',
+                phone: g.phone
+            }));
+        } else if (student.phones && Array.isArray(student.phones) && student.phones.length > 0) {
+            targets = student.phones.filter(Boolean).map(p => ({
+                name: student.guardianName || '',
+                phone: p
+            }));
+        } else if (student.phone) {
+            targets = [{
+                name: student.guardianName || '',
+                phone: student.phone
+            }];
+        }
+
+        const seenNumbers = new Set();
+        for (const target of targets) {
+            let cleanNumber = String(target.phone).replace(/\D/g, '');
+            if (cleanNumber.length === 9) cleanNumber = "265" + cleanNumber;
+            if (!cleanNumber || seenNumbers.has(cleanNumber)) continue;
+            seenNumbers.add(cleanNumber);
+
+            const jid = `${cleanNumber}@c.us`;
             try {
-                const message = `⚠️ *Absence Notice from ${schoolName}*\n\nDear Parent/Guardian,\nYour child *${student.name}* (${classLevel}) was marked *ABSENT* today (${date}).\n\nIf you were unaware of this absence, please contact the school administration immediately.`;
+                const salutation = target.name ? `Dear ${target.name},` : 'Dear Parent/Guardian,';
+                const message = `⚠️ *Absence Notice from ${schoolName}*\n\n${salutation}\nYour child *${student.name}* (${classLevel}) was marked *ABSENT* today (${date}).\n\nIf you were unaware of this absence, please contact the school administration immediately.`;
                 await sock.sendMessage(jid, { text: message });
                 sentCount++;
             } catch (err) {
-                errors.push({ student: student.name, error: err.message });
+                errors.push({ student: student.name, phone: cleanNumber, error: err.message });
             }
         }
     }

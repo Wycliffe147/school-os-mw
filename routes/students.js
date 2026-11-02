@@ -53,12 +53,29 @@ router.post('/students', requireBursarOrAdmin, (req, res) => {
             if (student) {
                 if (req.body.updates[id].name !== undefined) student.name = req.body.updates[id].name;
                 if (req.body.updates[id].gender !== undefined) student.gender = req.body.updates[id].gender;
-                if (req.body.updates[id].guardianName !== undefined) student.guardianName = req.body.updates[id].guardianName;
+                if (req.body.updates[id].guardianName !== undefined) {
+                    student.guardianName = req.body.updates[id].guardianName;
+                    if (!student.guardians || !student.guardians.length) {
+                        student.guardians = [{ name: student.guardianName, phone: student.phone || '' }];
+                    } else {
+                        student.guardians[0].name = student.guardianName;
+                    }
+                }
                 if (req.body.updates[id].phone !== undefined) {
                     student.phone = req.body.updates[id].phone;
-                    // Keep phones array primary entry in sync
                     if (!student.phones || !student.phones.length) student.phones = [];
                     student.phones[0] = req.body.updates[id].phone;
+                    if (!student.guardians || !student.guardians.length) {
+                        student.guardians = [{ name: student.guardianName || '', phone: student.phone }];
+                    } else {
+                        student.guardians[0].phone = student.phone;
+                    }
+                }
+                if (req.body.updates[id].guardians !== undefined) {
+                    student.guardians = Array.isArray(req.body.updates[id].guardians) ? req.body.updates[id].guardians : [];
+                    student.guardianName = student.guardians[0]?.name || '';
+                    student.phone = student.guardians[0]?.phone || '';
+                    student.phones = student.guardians.map(g => g.phone).filter(Boolean);
                 }
                 if (req.body.updates[id].bursaryName !== undefined) student.bursaryName = req.body.updates[id].bursaryName;
                 if (req.body.updates[id].section !== undefined) student.section = req.body.updates[id].section;
@@ -77,13 +94,23 @@ router.post('/students', requireBursarOrAdmin, (req, res) => {
             return (sections.find(s => s.isDefault) || sections[0] || { id: 'general' }).id;
         })();
 
+        // Normalize guardians array
+        let guardians = Array.isArray(req.body.guardians) ? req.body.guardians.filter(g => g && (g.phone || g.name)) : [];
+        if (!guardians.length && (req.body.phone || req.body.guardianName)) {
+            guardians = [{ name: req.body.guardianName || '', phone: req.body.phone || '' }];
+        }
+        const primaryPhone = guardians[0]?.phone || req.body.phone || '';
+        const primaryGuardianName = guardians[0]?.name || req.body.guardianName || '';
+        const allPhones = guardians.map(g => g.phone).filter(Boolean);
+
         db.students.push({
             id: Date.now().toString(),
             name: req.body.name,
             gender: req.body.gender || 'Male',
-            guardianName: req.body.guardianName || '',
-            phone: req.body.phone || '',
-            phones: req.body.phones || (req.body.phone ? [req.body.phone] : []),
+            guardianName: primaryGuardianName,
+            phone: primaryPhone,
+            phones: allPhones.length ? allPhones : (primaryPhone ? [primaryPhone] : []),
+            guardians: guardians,
             enrollmentDate: req.body.enrollmentDate || new Date().toISOString().split('T')[0],
             bursaryName: req.body.bursaryName,
             classLevel: req.body.classLevel || 'Form 1',

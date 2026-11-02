@@ -37,8 +37,20 @@ router.post('/parent-portal/login', (req, res) => {
 
     // Find ALL students whose parent phone matches (a parent may have multiple children)
     const students = (db.students || []).filter(s => {
-        const sp = normPhone(s.parentPhone || s.phone);
-        return sp && (sp.endsWith(phoneSuffix) || phoneSuffix.endsWith(sp));
+        const studentPhones = [];
+        if (s.guardians && Array.isArray(s.guardians)) {
+            s.guardians.forEach(g => { if (g && g.phone) studentPhones.push(g.phone); });
+        }
+        if (s.phones && Array.isArray(s.phones)) {
+            s.phones.forEach(p => { if (p) studentPhones.push(p); });
+        }
+        if (s.parentPhone) studentPhones.push(s.parentPhone);
+        if (s.phone) studentPhones.push(s.phone);
+
+        return studentPhones.some(p => {
+            const sp = normPhone(p);
+            return sp && (sp.endsWith(phoneSuffix) || phoneSuffix.endsWith(sp));
+        });
     });
 
     if (!students.length) {

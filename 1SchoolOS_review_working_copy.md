@@ -1,7 +1,7 @@
 # 1SchoolOS — Sprint Task Tracker & Action Items
 
 > Source: Derived from meeting notes (`1SchoolOS review.md`)
-> Last updated: 2026-10-29
+> Last updated: 2026-11-02
 
 ---
 
@@ -19,7 +19,7 @@
   *Added `guardianName` field to registration form, DB schema, and student table. Displayed as its own column in both read-only and edit modes.*
 
 - [x] **1.3 Support Multiple Contact Numbers per Guardian / Student**
-  *Dynamic phone entry UI with "+ Add another number" button. Each entry has its own country code dropdown + formatted input. Stored as `phones[]` array; primary phone kept in `phone` for backward compatibility.*
+  *Dynamic contact entry UI with "+ Add another guardian / number" button. Each phone number gets its own Guardian Name field and country code. Stored as `guardians: [{ name, phone }]` array with backward-compatible `phones[]` and `phone`. Reports and absent notices are dispatched to all registered numbers, with personal guardian greeting where provided.*
 
 - [x] **1.4 New Students Appear at the Bottom of the List**
   *Changed student table sort from alphabetical (`a.name.localeCompare`) to insertion order (`Number(a.id) - Number(b.id)`), since IDs are timestamps.*

@@ -925,18 +925,18 @@ document.getElementById('superadmin-account-form')?.addEventListener('submit', a
 
 document.addEventListener("DOMContentLoaded", () => {
     checkLogin();
-    // Init first phone entry listeners
-    document.querySelectorAll('#student-phones-container .phone-entry').forEach(e => attachPhoneListeners(e));
-    // Add another number button
-    document.getElementById('add-phone-btn')?.addEventListener('click', () => {
-        const container = document.getElementById('student-phones-container');
-        const entry = createPhoneEntry(false);
+    // Init first contact entry listeners
+    document.querySelectorAll('#student-contacts-container .contact-entry').forEach(e => attachContactListeners(e));
+    // Add another guardian / number button
+    document.getElementById('add-contact-btn')?.addEventListener('click', () => {
+        const container = document.getElementById('student-contacts-container');
+        const entry = createContactEntry(false);
         container.appendChild(entry);
-        attachPhoneListeners(entry);
+        attachContactListeners(entry);
     });
 });
 
-// ── Phone Number Utilities ──────────────────────────────────────────────────
+// ── Phone & Contact Utilities ───────────────────────────────────────────────
 const PHONE_COUNTRIES = {
     '265': { flag: '🇲🇼', label: '+265', digits: 9, format: [3, 3, 3] },
     '27':  { flag: '🇿🇦', label: '+27',  digits: 9, format: [2, 3, 4] },
@@ -957,6 +957,7 @@ function formatPhoneInput(digits, cc) {
 }
 
 function formatStoredPhone(stored) {
+    if (!stored) return '';
     for (const [cc, cfg] of Object.entries(PHONE_COUNTRIES)) {
         if (stored.startsWith(cc)) {
             const num = stored.slice(cc.length);
@@ -974,33 +975,46 @@ function formatStoredPhone(stored) {
 }
 
 function formatPhonesDisplay(student) {
-    const phones = (student.phones && student.phones.length) ? student.phones : (student.phone ? [student.phone] : []);
+    const phones = (student.guardians && student.guardians.length > 0)
+        ? student.guardians.map(g => g.phone).filter(Boolean)
+        : ((student.phones && student.phones.length) ? student.phones : (student.phone ? [student.phone] : []));
     if (!phones.length) return '—';
-    return phones.map(p => formatStoredPhone(p)).join('<br>');
+    return phones.map(p => `<div style="white-space:nowrap; margin-bottom:2px;">${formatStoredPhone(p)}</div>`).join('');
 }
 
-function createPhoneEntry(isFirst) {
+function formatGuardiansDisplay(student) {
+    if (student.guardians && student.guardians.length > 0) {
+        return student.guardians.map(g => `<div style="white-space:nowrap; margin-bottom:2px;">${g.name || '—'}</div>`).join('');
+    }
+    return student.guardianName || '—';
+}
+
+function createContactEntry(isFirst) {
     const div = document.createElement('div');
-    div.className = 'phone-entry';
-    div.style.cssText = 'display:flex; gap:6px; align-items:center; margin-bottom:4px;';
+    div.className = 'contact-entry';
+    div.style.cssText = 'display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:6px;';
     div.innerHTML = `
-        <select class="phone-cc-select" style="height:38px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px; padding:0 6px; font-size:0.85rem; cursor:pointer;">
-            <option value="265" data-digits="9">🇲🇼 +265</option>
-            <option value="27" data-digits="9">🇿🇦 +27</option>
-        </select>
-        <input type="tel" class="phone-num-input" placeholder="999 123 456" autocomplete="off"
-               style="flex:1; height:38px; padding:0 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary);">
-        <span class="phone-validity" style="font-size:1.1rem; min-width:22px; text-align:center;"></span>
-        ${!isFirst ? `<button type="button" class="phone-remove-btn" title="Remove" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:1rem; padding:0 4px;">✕</button>` : ''}
+        <input type="text" class="contact-name-input" placeholder="Guardian Name (e.g. Mary Doe)"
+               style="flex:1; min-width:140px; height:42px; padding:0 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.85rem;">
+        <div style="display:flex; gap:6px; align-items:center; flex:1.2; min-width:200px;">
+            <select class="phone-cc-select" style="height:42px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px; padding:0 6px; font-size:0.85rem; cursor:pointer;">
+                <option value="265" data-digits="9">🇲🇼 +265</option>
+                <option value="27" data-digits="9">🇿🇦 +27</option>
+            </select>
+            <input type="tel" class="phone-num-input" placeholder="999 123 456" autocomplete="off"
+                   style="flex:1; height:42px; padding:0 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.85rem;">
+            <span class="phone-validity" style="font-size:1.1rem; min-width:22px; text-align:center;"></span>
+            ${!isFirst ? `<button type="button" class="contact-remove-btn" title="Remove" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:1.1rem; padding:0 4px;">✕</button>` : ''}
+        </div>
     `;
     return div;
 }
 
-function attachPhoneListeners(entry) {
+function attachContactListeners(entry) {
     const ccSelect = entry.querySelector('.phone-cc-select');
     const numInput = entry.querySelector('.phone-num-input');
     const validity = entry.querySelector('.phone-validity');
-    const removeBtn = entry.querySelector('.phone-remove-btn');
+    const removeBtn = entry.querySelector('.contact-remove-btn');
 
     function refresh() {
         const cc = ccSelect.value;
@@ -1056,7 +1070,7 @@ async function renderStudentsTab() {
             tr.innerHTML = `
                 <td>${student.name}</td>
                 <td>${student.gender || 'Male'}</td>
-                <td style="font-size:0.85rem;">${student.guardianName || '—'}</td>
+                <td style="font-size:0.85rem;">${formatGuardiansDisplay(student)}</td>
                 <td style="font-size:0.82rem;">${formatPhonesDisplay(student)}</td>
                 <td style="font-size:0.82rem; color:var(--text-secondary); white-space:nowrap;">${student.enrollmentDate || '—'}</td>
                 <td>${student.bursaryName || ''}</td>
@@ -1164,27 +1178,42 @@ document.getElementById('add-student-form').addEventListener('submit', async (e)
     e.preventDefault();
     const name = document.getElementById('student-name').value.trim();
     const gender = document.getElementById('student-gender')?.value || 'Male';
-    const guardianName = document.getElementById('student-guardian-name').value.trim();
     const onBursary = document.getElementById('student-on-bursary').checked;
     const bursaryName = onBursary ? document.getElementById('student-bursary-name').value : '';
 
-    // Collect all phone entries
-    const phones = [];
-    document.querySelectorAll('#student-phones-container .phone-entry').forEach(entry => {
-        const cc = entry.querySelector('.phone-cc-select').value;
-        const digits = entry.querySelector('.phone-num-input').value.replace(/\D/g, '');
-        if (digits.length > 0) phones.push(cc + digits);
+    // Collect all guardian/contact entries
+    const guardians = [];
+    document.querySelectorAll('#student-contacts-container .contact-entry').forEach(entry => {
+        const gName = entry.querySelector('.contact-name-input')?.value.trim() || '';
+        const cc = entry.querySelector('.phone-cc-select')?.value || '265';
+        const digits = entry.querySelector('.phone-num-input')?.value.replace(/\D/g, '') || '';
+        if (digits.length > 0 || gName.length > 0) {
+            guardians.push({
+                name: gName,
+                phone: digits.length > 0 ? (cc + digits) : ''
+            });
+        }
     });
 
-    if (!phones.length) return alert('Please enter at least one phone number.');
-
-    // Validate primary phone digit count
-    const primaryCC = document.querySelector('#student-phones-container .phone-entry .phone-cc-select').value;
-    const primaryDigits = document.querySelector('#student-phones-container .phone-entry .phone-num-input').value.replace(/\D/g, '');
-    const expectedDigits = PHONE_COUNTRIES[primaryCC]?.digits || 9;
-    if (primaryDigits.length !== expectedDigits) {
-        return alert(`Phone number must be ${expectedDigits} digits for the selected country.`);
+    if (!guardians.length || !guardians.some(g => g.phone)) {
+        return alert('Please enter at least one guardian phone number.');
     }
+
+    // Validate phone numbers
+    for (let i = 0; i < guardians.length; i++) {
+        const g = guardians[i];
+        if (g.phone) {
+            const cc = g.phone.startsWith('27') ? '27' : '265';
+            const digits = g.phone.slice(cc.length);
+            const expected = PHONE_COUNTRIES[cc]?.digits || 9;
+            if (digits.length !== expected) {
+                return alert(`Phone number for "${g.name || 'Contact ' + (i + 1)}" must be ${expected} digits for the selected country.`);
+            }
+        }
+    }
+
+    const primaryGuardian = guardians.find(g => g.phone) || guardians[0];
+    const phones = guardians.map(g => g.phone).filter(Boolean);
 
     // Get section - if only 1 section, the server will use the default
     const sectionEl = document.getElementById('student-section');
@@ -1194,9 +1223,11 @@ document.getElementById('add-student-form').addEventListener('submit', async (e)
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            name, gender, guardianName,
-            phone: phones[0],
+            name, gender,
+            guardianName: primaryGuardian?.name || '',
+            phone: primaryGuardian?.phone || '',
             phones,
+            guardians,
             enrollmentDate: new Date().toISOString().split('T')[0],
             bursaryName, classLevel: currentClass, section, subjects: {}
         })
@@ -1204,13 +1235,14 @@ document.getElementById('add-student-form').addEventListener('submit', async (e)
     
     if (res.ok) {
         document.getElementById('student-name').value = '';
-        document.getElementById('student-guardian-name').value = '';
-        // Reset phone entries back to a single blank entry
-        const container = document.getElementById('student-phones-container');
-        container.innerHTML = '';
-        const firstEntry = createPhoneEntry(true);
-        container.appendChild(firstEntry);
-        attachPhoneListeners(firstEntry);
+        // Reset contacts container back to a single blank entry
+        const container = document.getElementById('student-contacts-container');
+        if (container) {
+            container.innerHTML = '';
+            const firstEntry = createContactEntry(true);
+            container.appendChild(firstEntry);
+            attachContactListeners(firstEntry);
+        }
         document.getElementById('student-bursary-name').value = '';
         document.getElementById('student-on-bursary').checked = false;
         document.getElementById('student-bursary-group').style.display = 'none';
