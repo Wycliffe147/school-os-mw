@@ -1052,6 +1052,28 @@
     document.getElementById('btn-portal-login').addEventListener('click', handleLogin);
     document.getElementById('login-phone').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
 
+    // Pamthunzi-style phone auto-detection & leading zero stripping
+    const ppPhoneInp = document.getElementById('login-phone');
+    const ppCcSelect = document.getElementById('login-phone-cc');
+    if (ppPhoneInp && ppCcSelect) {
+        ppPhoneInp.addEventListener('input', () => {
+            let val = ppPhoneInp.value;
+            if (val.includes('+') || /^(?:265|260|255|256|254|27|44|1)\d{6,}/.test(val.replace(/\D/g, ''))) {
+                const rawDigits = val.replace(/\D/g, '');
+                for (const cd of ['265','260','255','256','254','27','44','1']) {
+                    if (rawDigits.startsWith(cd)) {
+                        ppCcSelect.value = cd;
+                        val = rawDigits.slice(cd.length).replace(/^0+/, '');
+                        break;
+                    }
+                }
+            } else {
+                val = val.replace(/\D/g, '').replace(/^0+/, '');
+            }
+            ppPhoneInp.value = val;
+        });
+    }
+
     // ── Custom school picker dropdown with live search ──
     let ppSchoolsList = [];
 

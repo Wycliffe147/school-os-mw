@@ -1033,6 +1033,109 @@ function getMoneyValue(el) {
     return Number(String(el.value).replace(/[^\d]/g, '')) || 0;
 }
 
+/**
+ * Smart phone parser matching Pamthunzi logic:
+ * Handles +265..., 265..., 088..., 88...
+ * Auto-detects country code, strips leading zero, and separates digits.
+ */
+function pzParsePhone(raw, fallbackCc = '265') {
+    const ph = (raw || '').trim();
+    if (!ph) return { cCode: fallbackCc, digits: '' };
+
+    const activeCodes = Object.keys(PHONE_COUNTRIES).sort((a, b) => b.length - a.length);
+
+    if (ph.startsWith('+')) {
+        const withoutPlus = ph.slice(1).replace(/\D/g, '');
+        for (const cd of activeCodes) {
+            if (withoutPlus.startsWith(cd)) {
+                return { cCode: cd, digits: withoutPlus.slice(cd.length).replace(/^0+/, '') };
+            }
+        }
+    } else {
+        const clean = ph.replace(/\D/g, '');
+        for (const cd of activeCodes) {
+            if (clean.startsWith(cd) && clean.length > cd.length + 5) {
+                return { cCode: cd, digits: clean.slice(cd.length).replace(/^0+/, '') };
+            }
+        }
+        return { cCode: fallbackCc, digits: clean.replace(/^0+/, '') };
+    }
+    return { cCode: fallbackCc, digits: ph.replace(/\D/g, '').replace(/^0+/, '') };
+}
+
+/**
+ * Universal phone input handler & validator (Pamthunzi UI/UX):
+ * - Auto-detects dialed code/paste and switches dropdown
+ * - Strips leading zero automatically (e.g. 088 -> 88)
+ * - Hard caps digits at max country digits
+ * - Live count/validity badge & color-coded input border
+ */
+function attachPhoneInputValidation(numInput, ccSelect, statusEl) {
+    if (!numInput || !ccSelect) return;
+
+    function refresh() {
+        let val = numInput.value;
+        const currentCc = ccSelect.value || '265';
+
+        // Auto-detect country code from paste or typing with + or dial prefix
+        if (val.includes('+') || /^(?:265|260|255|256|254|27|44|1)\d{6,}/.test(val.replace(/\D/g, ''))) {
+            const parsed = pzParsePhone(val, currentCc);
+            if (PHONE_COUNTRIES[parsed.cCode]) {
+                ccSelect.value = parsed.cCode;
+            }
+            val = parsed.digits;
+        } else {
+            // Strip leading zero automatically (crucial for MW users typing 088...)
+            val = val.replace(/\D/g, '').replace(/^0+/, '');
+        }
+
+        const cc = ccSelect.value;
+        const cfg = PHONE_COUNTRIES[cc] || { digits: 9, format: [3, 3, 3], name: 'Malawi' };
+        
+        // Hard-cap digits to country length
+        const cappedDigits = val.slice(0, cfg.digits);
+        numInput.value = formatPhoneInput(cappedDigits, cc);
+
+        const len = cappedDigits.length;
+        const isValid = len === cfg.digits;
+
+        // Visual feedback on the input border
+        if (len === 0) {
+            numInput.style.borderColor = 'var(--border-color)';
+            numInput.style.boxShadow = 'none';
+        } else if (isValid) {
+            numInput.style.borderColor = '#10b981';
+            numInput.style.boxShadow = '0 0 0 1px rgba(16, 185, 129, 0.25)';
+        } else {
+            numInput.style.borderColor = '#f59e0b';
+            numInput.style.boxShadow = '0 0 0 1px rgba(245, 158, 11, 0.2)';
+        }
+
+        // Status badge / hint
+        if (statusEl) {
+            if (len === 0) {
+                statusEl.innerHTML = '';
+            } else if (isValid) {
+                statusEl.innerHTML = `<span style="color:#10b981; font-weight:600; font-size:0.75rem; white-space:nowrap;" title="Valid ${cfg.name} ${cfg.digits}-digit number">✓ Valid</span>`;
+            } else {
+                statusEl.innerHTML = `<span style="color:#f59e0b; font-weight:600; font-size:0.72rem; white-space:nowrap;" title="Expected ${cfg.digits} digits">${len}/${cfg.digits}</span>`;
+            }
+        }
+    }
+
+    numInput.addEventListener('input', refresh);
+    ccSelect.addEventListener('change', () => {
+        // Re-slice & format with new country config
+        const digits = numInput.value.replace(/\D/g, '');
+        const cfg = PHONE_COUNTRIES[ccSelect.value] || { digits: 9 };
+        numInput.value = formatPhoneInput(digits.slice(0, cfg.digits), ccSelect.value);
+        refresh();
+    });
+
+    // Run initial format & state if input already has value
+    if (numInput.value) refresh();
+}
+
 function formatPhoneInput(digits, cc) {
     const config = PHONE_COUNTRIES[cc];
     if (!config) return digits;
@@ -1106,18 +1209,7 @@ function attachContactListeners(entry) {
     const validity = entry.querySelector('.phone-validity');
     const removeBtn = entry.querySelector('.contact-remove-btn');
 
-    function refresh() {
-        const cc = ccSelect.value;
-        const digits = numInput.value.replace(/\D/g, '');
-        numInput.value = formatPhoneInput(digits, cc);
-        const expected = PHONE_COUNTRIES[cc]?.digits || 9;
-        if (digits.length === 0) validity.textContent = '';
-        else if (digits.length === expected) validity.textContent = '✅';
-        else validity.textContent = '❌';
-    }
-
-    numInput.addEventListener('input', refresh);
-    ccSelect.addEventListener('change', refresh);
+    attachPhoneInputValidation(numInput, ccSelect, validity);
     if (removeBtn) removeBtn.addEventListener('click', () => entry.remove());
 }
 // ───────────────────────────────────────────────────────────────────────────
@@ -1204,6 +1296,13 @@ async function renderStudentsTab() {
                 </td>`;
         }
         tbody.appendChild(tr);
+        if (!readOnly) {
+            const sNum = tr.querySelector('.student-phone-num-input');
+            const sCc = tr.querySelector('.student-cc-sel');
+            if (sNum && sCc) {
+                attachPhoneInputValidation(sNum, sCc, null);
+            }
+        }
     });
 
     // Wire delete buttons
@@ -1311,15 +1410,16 @@ document.getElementById('add-student-form').addEventListener('submit', async (e)
         return alert('Please enter at least one guardian phone number.');
     }
 
-    // Validate phone numbers
+    // Validate phone numbers (Pamthunzi style)
     for (let i = 0; i < guardians.length; i++) {
         const g = guardians[i];
         if (g.phone) {
             const cc = detectCcFromPhone(g.phone);
             const digits = g.phone.slice(cc.length);
-            const expected = PHONE_COUNTRIES[cc]?.digits || 9;
+            const cfg = PHONE_COUNTRIES[cc] || { digits: 9, name: 'Malawi', label: '+265' };
+            const expected = cfg.digits || 9;
             if (digits.length !== expected) {
-                return alert(`Phone number for "${g.name || 'Contact ' + (i + 1)}" must be ${expected} digits for the selected country.`);
+                return alert(`Invalid phone number for "${g.name || 'Contact ' + (i + 1)}"!\n\n${cfg.name} (${cfg.label}) numbers must have exactly ${expected} digits (currently ${digits.length}).`);
             }
         }
     }
