@@ -316,8 +316,14 @@
                                             <input type="text" class="contact-name-input" placeholder="Guardian Name (e.g. Mary Doe)" style="flex: 1; min-width: 140px; height: 42px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
                                             <div style="display: flex; gap: 6px; align-items: center; flex: 1.2; min-width: 200px;">
                                                 <select class="phone-cc-select" style="height: 42px; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0 6px; font-size: 0.85rem; cursor: pointer;">
-                                                    <option value="265" data-digits="9">🇲🇼 +265</option>
-                                                    <option value="27" data-digits="9">🇿🇦 +27</option>
+                                                    <option value="265" selected>🇲🇼 +265 Malawi</option>
+                                                    <option value="260">🇿🇲 +260 Zambia</option>
+                                                    <option value="255">🇹🇿 +255 Tanzania</option>
+                                                    <option value="256">🇺🇬 +256 Uganda</option>
+                                                    <option value="254">🇰🇪 +254 Kenya</option>
+                                                    <option value="27">🇿🇦 +27 South Africa</option>
+                                                    <option value="44">🇬🇧 +44 UK</option>
+                                                    <option value="1">🇺🇸 +1 USA/Canada</option>
                                                 </select>
                                                 <input type="tel" class="phone-num-input" placeholder="999 123 456" autocomplete="off" style="flex: 1; height: 42px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
                                                 <span class="phone-validity" style="font-size: 1.1rem; min-width: 22px; text-align: center;"></span>
@@ -1161,6 +1167,26 @@
 
                         <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border-color);">
 
+                        <h3>📱 Phone Country Codes</h3>
+                        <p class="subtitle" style="margin-bottom:15px;">Control which country codes appear in all phone number dropdowns across the system (Guardian contacts, staff, parent portal). Check the countries your school serves — unchecked entries are hidden from pickers. Changes take effect after saving.</p>
+                        <div class="table-container" style="margin-bottom:10px;">
+                            <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                                <thead>
+                                    <tr>
+                                        <th style="width:50px; text-align:center;">Active?</th>
+                                        <th>Code</th>
+                                        <th>Country</th>
+                                        <th>Digits</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cc-manager-tbody">
+                                    <!-- Populated by renderCountryCodesSettings() in app.js -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border-color);">
+
                         <h3>Report Card Footer Details</h3>
                         <p class="subtitle" style="margin-bottom:15px;">Information displayed at the bottom of every report card.</p>
                         
@@ -1562,7 +1588,7 @@
                         <label style="margin: 0;">Payment Amount (MK)</label>
                         <button type="button" id="btn-pay-full-balance" style="background: none; border: none; color: var(--accent-blue); font-size: 0.8rem; cursor: pointer; text-decoration: underline;">Pay Full Balance</button>
                     </div>
-                    <input type="number" id="payment-amount" required min="1" placeholder="e.g. 25000" style="width:100%;">
+                    <input type="text" inputmode="numeric" id="payment-amount" required placeholder="e.g. 25,000" style="width:100%;">
                 </div>
 
                 <div class="input-group" style="margin-bottom:12px;">
@@ -1618,7 +1644,7 @@
 
                 <div class="input-group" style="margin-bottom:14px;">
                     <label>Default Fee Amount (MK)</label>
-                    <input type="number" id="batch-fee-amount" required min="0" placeholder="e.g. 50000" style="width:100%;">
+                    <input type="text" inputmode="numeric" id="batch-fee-amount" required placeholder="e.g. 50,000" style="width:100%;">
                 </div>
 
                 <div class="input-group" style="margin-bottom:20px;">

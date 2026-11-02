@@ -26,6 +26,10 @@ router.get('/settings', (req, res) => {
     if (!db.settings.sections || db.settings.sections.length === 0) {
         db.settings.sections = [{ id: 'general', name: 'General', fee: 0, isDefault: true }];
     }
+    // Ensure countryCodes always returned; default: all enabled
+    if (!db.settings.countryCodes || !Array.isArray(db.settings.countryCodes) || db.settings.countryCodes.length === 0) {
+        db.settings.countryCodes = ['265', '260', '255', '256', '254', '27', '44', '1'];
+    }
     res.json(db.settings);
 });
 
@@ -76,6 +80,18 @@ router.post('/settings', requireAdmin, upload.fields([
         const idx = Number(req.body.deletePhotoIndex);
         if (Array.isArray(db.settings.photos) && !isNaN(idx) && idx >= 0 && idx < db.settings.photos.length) {
             db.settings.photos.splice(idx, 1);
+        }
+    }
+
+    // Country Codes (enabled phone country list)
+    if (req.body.countryCodes !== undefined) {
+        try {
+            const parsed = JSON.parse(req.body.countryCodes);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                db.settings.countryCodes = parsed.filter(c => typeof c === 'string' && /^\d+$/.test(c));
+            }
+        } catch (e) {
+            console.error('Error parsing countryCodes:', e);
         }
     }
 

@@ -77,6 +77,10 @@ async function loadGlobals() {
         if (document.getElementById('exam-weight')) {
             document.getElementById('exam-weight').value = settings.examWeight !== undefined ? settings.examWeight : 70;
         }
+
+        // Build dynamic phone country list from settings, then refresh all cc selects on page
+        buildPhoneCountries(settings.countryCodes);
+        refreshAllCcSelects();
     } catch(e) {}
 }
 
@@ -934,13 +938,100 @@ document.addEventListener("DOMContentLoaded", () => {
         container.appendChild(entry);
         attachContactListeners(entry);
     });
+    // Attach money formatting to static money inputs
+    attachMoneyInput(document.getElementById('payment-amount'));
+    attachMoneyInput(document.getElementById('batch-fee-amount'));
 });
 
 // ── Phone & Contact Utilities ───────────────────────────────────────────────
-const PHONE_COUNTRIES = {
-    '265': { flag: '🇲🇼', label: '+265', digits: 9, format: [3, 3, 3] },
-    '27':  { flag: '🇿🇦', label: '+27',  digits: 9, format: [2, 3, 4] },
+// Master list of all known countries (superset). Enabled subset is loaded from settings.
+const ALL_PHONE_COUNTRIES = {
+    '265': { flag: '🇲🇼', label: '+265', name: 'Malawi',        digits: 9,  format: [3, 3, 3] },
+    '260': { flag: '🇿🇲', label: '+260', name: 'Zambia',        digits: 9,  format: [3, 3, 3] },
+    '255': { flag: '🇹🇿', label: '+255', name: 'Tanzania',      digits: 9,  format: [3, 3, 3] },
+    '256': { flag: '🇺🇬', label: '+256', name: 'Uganda',        digits: 9,  format: [3, 3, 3] },
+    '254': { flag: '🇰🇪', label: '+254', name: 'Kenya',         digits: 9,  format: [3, 3, 3] },
+    '27':  { flag: '🇿🇦', label: '+27',  name: 'South Africa',  digits: 9,  format: [2, 3, 4] },
+    '44':  { flag: '🇬🇧', label: '+44',  name: 'UK',            digits: 10, format: [4, 3, 3] },
+    '1':   { flag: '🇺🇸', label: '+1',   name: 'USA/Canada',    digits: 10, format: [3, 3, 4] },
 };
+
+// Active subset — populated from settings (defaults to MW + ZA until settings load)
+let PHONE_COUNTRIES = {
+    '265': ALL_PHONE_COUNTRIES['265'],
+    '27':  ALL_PHONE_COUNTRIES['27'],
+};
+
+/** Rebuild PHONE_COUNTRIES from an array of enabled code strings e.g. ['265','260','27'] */
+function buildPhoneCountries(enabledCodes) {
+    if (!Array.isArray(enabledCodes) || enabledCodes.length === 0) {
+        PHONE_COUNTRIES = { ...ALL_PHONE_COUNTRIES };
+        return;
+    }
+    const rebuilt = {};
+    enabledCodes.forEach(code => {
+        if (ALL_PHONE_COUNTRIES[code]) rebuilt[code] = ALL_PHONE_COUNTRIES[code];
+    });
+    PHONE_COUNTRIES = Object.keys(rebuilt).length ? rebuilt : { '265': ALL_PHONE_COUNTRIES['265'] };
+}
+
+/** Build <option> elements for all active country codes */
+function buildCcOptions(selectedCc) {
+    const fallback = Object.keys(PHONE_COUNTRIES)[0] || '265';
+    const sel = (selectedCc && PHONE_COUNTRIES[selectedCc]) ? selectedCc : fallback;
+    return Object.entries(PHONE_COUNTRIES).map(([code, cfg]) =>
+        `<option value="${code}"${code === sel ? ' selected' : ''}>${cfg.flag} ${cfg.label} ${cfg.name}</option>`
+    ).join('');
+}
+
+/** Re-populate every .phone-cc-select on the page after country list changes */
+function refreshAllCcSelects() {
+    document.querySelectorAll('.phone-cc-select').forEach(sel => {
+        const cur = sel.value;
+        sel.innerHTML = buildCcOptions(PHONE_COUNTRIES[cur] ? cur : null);
+    });
+}
+
+/** Detect the country code prefix of a stored raw phone string */
+function detectCcFromPhone(stored) {
+    if (!stored) return Object.keys(PHONE_COUNTRIES)[0] || '265';
+    // Try longest match first (e.g. '265' before '26')
+    for (const code of Object.keys(PHONE_COUNTRIES).sort((a, b) => b.length - a.length)) {
+        if (stored.startsWith(code)) return code;
+    }
+    return Object.keys(PHONE_COUNTRIES)[0] || '265';
+}
+
+// ── Money / Currency Input Utilities ──────────────────────────────────────────
+/**
+ * Attach live comma-formatting and numeric validation to a money/quantity input.
+ * Converts type="number" to type="text" with inputmode="numeric".
+ * Adds el._getRawValue() to read the clean integer value.
+ */
+function attachMoneyInput(el) {
+    if (!el || el._moneyAttached) return;
+    el._moneyAttached = true;
+    el.setAttribute('type', 'text');
+    el.setAttribute('inputmode', 'numeric');
+
+    function fmt() {
+        const raw = el.value.replace(/[^\d]/g, '');
+        el.value = raw ? Number(raw).toLocaleString() : '';
+    }
+    el._getRawValue = () => Number(el.value.replace(/[^\d]/g, '')) || 0;
+
+    el.addEventListener('input', fmt);
+    el.addEventListener('blur', fmt);
+    // Format initial value if already set
+    if (el.value) fmt();
+}
+
+/** Read the raw numeric value from a money input (works with or without attachMoneyInput) */
+function getMoneyValue(el) {
+    if (!el) return 0;
+    if (el._getRawValue) return el._getRawValue();
+    return Number(String(el.value).replace(/[^\d]/g, '')) || 0;
+}
 
 function formatPhoneInput(digits, cc) {
     const config = PHONE_COUNTRIES[cc];
@@ -998,8 +1089,7 @@ function createContactEntry(isFirst) {
                style="flex:1; min-width:140px; height:42px; padding:0 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.85rem;">
         <div style="display:flex; gap:6px; align-items:center; flex:1.2; min-width:200px;">
             <select class="phone-cc-select" style="height:42px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px; padding:0 6px; font-size:0.85rem; cursor:pointer;">
-                <option value="265" data-digits="9">🇲🇼 +265</option>
-                <option value="27" data-digits="9">🇿🇦 +27</option>
+                ${buildCcOptions(Object.keys(PHONE_COUNTRIES)[0] || '265')}
             </select>
             <input type="tel" class="phone-num-input" placeholder="999 123 456" autocomplete="off"
                    style="flex:1; height:42px; padding:0 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.85rem;">
@@ -1088,7 +1178,19 @@ async function renderStudentsTab() {
                     </select>
                 </td>
                 <td><input type="text" data-student-id="${student.id}" data-field="guardianName" value="${student.guardianName || ''}" placeholder="Guardian" style="width: 110px;"></td>
-                <td><input type="text" data-student-id="${student.id}" data-field="phone" value="${student.phone || ''}" style="width: 110px;"></td>
+                <td>
+                    ${(() => {
+                        const cc = detectCcFromPhone(student.phone || '');
+                        const digits = (student.phone || '').startsWith(cc) ? (student.phone || '').slice(cc.length) : (student.phone || '');
+                        const fmtDigits = formatPhoneInput(digits.replace(/\D/g,''), cc);
+                        return `<div style="display:flex; gap:3px; align-items:center;">
+                            <select class="student-cc-sel" data-student-id="${student.id}" style="height:32px; padding:0 3px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.75rem; cursor:pointer; max-width:90px;">
+                                ${buildCcOptions(cc)}
+                            </select>
+                            <input type="tel" class="student-phone-num-input" data-student-id="${student.id}" value="${fmtDigits}" placeholder="000 000 000" style="width:95px; height:32px; padding:0 5px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.82rem;">
+                        </div>`;
+                    })()}
+                </td>
                 <td style="font-size:0.82rem; color:var(--text-secondary); white-space:nowrap;">${student.enrollmentDate || '—'}</td>
                 <td><input type="text" data-student-id="${student.id}" data-field="bursaryName" value="${student.bursaryName || ''}" placeholder="None" style="width: 100px;"></td>
             ` + 
@@ -1148,6 +1250,16 @@ document.getElementById('save-subjects-btn').addEventListener('click', async () 
         updates[studentId][field] = input.value;
     });
 
+    // Collect phone from new cc-select + num-input pairs
+    document.querySelectorAll('#subjects-table .student-phone-num-input').forEach(numInp => {
+        const studentId = numInp.getAttribute('data-student-id');
+        const ccSel = document.querySelector(`#subjects-table .student-cc-sel[data-student-id="${studentId}"]`);
+        const cc = ccSel ? ccSel.value : (Object.keys(PHONE_COUNTRIES)[0] || '265');
+        const digits = numInp.value.replace(/\D/g, '');
+        if (!updates[studentId]) updates[studentId] = { subjects: {} };
+        updates[studentId].phone = digits ? (cc + digits) : '';
+    });
+
     document.querySelectorAll('#subjects-table select[data-field="gender"]').forEach(select => {
         const studentId = select.getAttribute('data-student-id');
         if (!updates[studentId]) updates[studentId] = { subjects: {} };
@@ -1203,7 +1315,7 @@ document.getElementById('add-student-form').addEventListener('submit', async (e)
     for (let i = 0; i < guardians.length; i++) {
         const g = guardians[i];
         if (g.phone) {
-            const cc = g.phone.startsWith('27') ? '27' : '265';
+            const cc = detectCcFromPhone(g.phone);
             const digits = g.phone.slice(cc.length);
             const expected = PHONE_COUNTRIES[cc]?.digits || 9;
             if (digits.length !== expected) {
@@ -2034,6 +2146,9 @@ async function loadSettings() {
         sections.forEach(sec => addSectionRow(sec));
     }
 
+    // Render country code manager
+    renderCountryCodesSettings(settings.countryCodes);
+
     const year = settings.academicYear || '2025/2026';
     const term = settings.currentTerm || 'Term 1';
     
@@ -2085,7 +2200,7 @@ function addSectionRow(section = { id: '', name: '', fee: 0, isDefault: false })
     tr.setAttribute('data-id', secId);
     tr.innerHTML = `
         <td><input type="text" class="sec-name" value="${section.name || ''}" placeholder="e.g. Day School" required style="width: 150px;"></td>
-        <td><input type="number" class="sec-fee" value="${section.fee !== undefined ? section.fee : ''}" placeholder="e.g. 30000" min="0" required style="width: 110px;"></td>
+        <td><input type="text" inputmode="numeric" class="sec-fee" value="${section.fee ? Number(section.fee).toLocaleString() : ''}" placeholder="e.g. 30,000" required style="width: 110px;"></td>
         <td><input type="radio" name="defaultSectionRadio" class="sec-default" ${section.isDefault ? 'checked' : ''} style="cursor:pointer;"></td>
         <td><button type="button" class="btn danger-btn remove-section-btn" style="padding:5px;">Remove</button></td>
     `;
@@ -2101,10 +2216,48 @@ function addSectionRow(section = { id: '', name: '', fee: 0, isDefault: false })
         }
     });
     tbody.appendChild(tr);
+    attachMoneyInput(tr.querySelector('.sec-fee'));
 }
 
 const addSecBtn = document.getElementById('add-section-btn');
 if (addSecBtn) addSecBtn.addEventListener('click', () => addSectionRow());
+
+// ── Country Code Settings Manager ──────────────────────────────────────────────
+/**
+ * Render the country code manager table in the Settings tab.
+ * enabledCodes: array of code strings currently active, e.g. ['265','260','27']
+ * Defaults to all available codes when not yet set.
+ */
+function renderCountryCodesSettings(enabledCodes) {
+    const tbody = document.getElementById('cc-manager-tbody');
+    if (!tbody) return;
+
+    const active = new Set(
+        Array.isArray(enabledCodes) && enabledCodes.length
+            ? enabledCodes
+            : Object.keys(ALL_PHONE_COUNTRIES)
+    );
+
+    tbody.innerHTML = '';
+    Object.entries(ALL_PHONE_COUNTRIES).forEach(([code, cfg]) => {
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-cc', code);
+        const checked = active.has(code);
+        tr.innerHTML = `
+            <td style="padding:6px 8px; text-align:center;">
+                <input type="checkbox" class="cc-active-chk" value="${code}" ${checked ? 'checked' : ''} style="cursor:pointer; width:16px; height:16px;">
+            </td>
+            <td style="padding:6px 8px;">${cfg.flag} ${cfg.label}</td>
+            <td style="padding:6px 8px;">${cfg.name}</td>
+            <td style="padding:6px 8px; color:var(--text-secondary); font-size:0.82rem;">${cfg.digits} digits</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function getSelectedCountryCodes() {
+    return Array.from(document.querySelectorAll('#cc-manager-tbody .cc-active-chk:checked')).map(cb => cb.value);
+}
 
 function addMasterSubjectRow(sub = {name: '', abbr: '', active: true}) {
     const tbody = document.getElementById('master-subjects-tbody');
@@ -2190,7 +2343,7 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
     document.querySelectorAll('#sections-tbody tr').forEach(tr => {
         const id = tr.getAttribute('data-id') || ('sec_' + Date.now());
         const name = tr.querySelector('.sec-name').value.trim();
-        const fee = Number(tr.querySelector('.sec-fee').value || 0);
+        const fee = getMoneyValue(tr.querySelector('.sec-fee'));
         const isDefault = tr.querySelector('.sec-default').checked;
         if (name) {
             sections.push({ id, name, fee, isDefault });
@@ -2231,6 +2384,10 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
         });
     });
     formData.append('masterSubjects', JSON.stringify(mSubjects));
+
+    // Country codes — save enabled subset
+    const selectedCodes = getSelectedCountryCodes();
+    formData.append('countryCodes', JSON.stringify(selectedCodes.length ? selectedCodes : Object.keys(ALL_PHONE_COUNTRIES)));
     
     try {
         const res = await apiFetch('/api/settings', {
@@ -2241,7 +2398,7 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
         if (res.ok) {
             alert('Settings saved successfully!');
             document.getElementById('school-logo').value = '';
-            await loadGlobals();
+            await loadGlobals();  // this rebuilds PHONE_COUNTRIES + refreshes cc selects
             await loadSettings(); // refresh logo preview
         } else {
             const err = await res.json().catch(() => ({}));
@@ -2732,7 +2889,9 @@ function openPaymentModal(studentId, studentName) {
     const payFullBtn = document.getElementById('btn-pay-full-balance');
     if (payFullBtn) {
         payFullBtn.onclick = () => {
-            document.getElementById('payment-amount').value = Math.max(0, bal);
+            const payEl = document.getElementById('payment-amount');
+            const fullBal = Math.max(0, bal);
+            payEl.value = fullBal ? Number(fullBal).toLocaleString() : '';
         };
     }
 
@@ -2822,7 +2981,7 @@ document.getElementById('payment-cancel-btn')?.addEventListener('click', () => {
 document.getElementById('payment-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const studentId = document.getElementById('payment-student-id').value;
-    const amount = Number(document.getElementById('payment-amount').value);
+    const amount = getMoneyValue(document.getElementById('payment-amount'));
     const method = document.getElementById('payment-method').value;
     const note = document.getElementById('payment-note').value;
 
@@ -3214,7 +3373,7 @@ async function renderPayrollTab() {
             <td>${formatRole(s.role)}</td>
             <td>${s.employmentType || 'Full-Time'}</td>
             <td>
-                <input type="number" class="payroll-basic-input" value="${s.basicSalary || 0}" min="0" data-id="${s.id}" style="width:110px; padding:5px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-primary); color:white;">
+                <input type="text" inputmode="numeric" class="payroll-basic-input" value="${s.basicSalary ? Number(s.basicSalary).toLocaleString() : '0'}" data-id="${s.id}" style="width:110px; padding:5px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-primary); color:white;">
             </td>
             <td>MK ${gross.toLocaleString()}</td>
             <td style="font-weight:bold; color:var(--accent-success);">MK ${net.toLocaleString()}</td>
@@ -3231,10 +3390,11 @@ async function renderPayrollTab() {
             await apiFetch(`/api/payroll/staff/${s.id}`, {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ basicSalary: Number(e.target.value) })
+                body: JSON.stringify({ basicSalary: getMoneyValue(e.target) })
             });
             renderPayrollTab();
         });
+        attachMoneyInput(tr.querySelector('.payroll-basic-input'));
 
         tr.querySelector('.btn-gen-payslip').addEventListener('click', async (e) => {
             const sid = e.target.getAttribute('data-id');

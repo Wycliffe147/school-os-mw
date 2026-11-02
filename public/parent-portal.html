@@ -779,7 +779,20 @@
 
         <div class="form-group">
             <label>Your WhatsApp Number</label>
-            <input type="tel" id="login-phone" placeholder="e.g. 0881234567" inputmode="tel" autocomplete="tel">
+            <div style="display:flex; gap:6px; align-items:center;">
+                <select id="login-phone-cc" style="height:46px; padding:0 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.08); color:white; font-size:0.85rem; cursor:pointer; flex-shrink:0;">
+                    <option value="265">🇲🇼 +265</option>
+                    <option value="260">🇿🇲 +260</option>
+                    <option value="255">🇹🇿 +255</option>
+                    <option value="256">🇺🇬 +256</option>
+                    <option value="254">🇰🇪 +254</option>
+                    <option value="27">🇿🇦 +27</option>
+                    <option value="44">🇬🇧 +44</option>
+                    <option value="1">🇺🇸 +1</option>
+                </select>
+                <input type="tel" id="login-phone" placeholder="e.g. 881 234 567" inputmode="tel" autocomplete="tel" style="flex:1;">
+            </div>
+            <small style="color:rgba(255,255,255,0.5); font-size:0.78rem; margin-top:4px; display:block;">Enter the number linked to your child's school record</small>
         </div>
 
         <div class="form-group">
@@ -1156,7 +1169,10 @@
     }
 
     async function handleLogin() {
-        const phone = document.getElementById('login-phone').value.trim();
+        const rawPhone = document.getElementById('login-phone').value.trim().replace(/\D/g, '');
+        const cc = document.getElementById('login-phone-cc')?.value || '265';
+        // Build international number: prepend cc if not already starting with it
+        const phone = rawPhone.startsWith(cc) ? rawPhone : (cc + rawPhone.replace(/^0+/, ''));
         const schoolCode = document.getElementById('login-school-id').value.trim();
         const errorEl = document.getElementById('login-error');
         const btn = document.getElementById('btn-portal-login');
