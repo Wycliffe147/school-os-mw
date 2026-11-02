@@ -927,8 +927,82 @@ document.getElementById('superadmin-account-form')?.addEventListener('submit', a
     }
 });
 
+// ── Fixed Sidebar & Auto-Hide Controller (Pamthunzi UI/UX) ───────────────────
+function initSidebarController() {
+    const appContainer = document.getElementById('main-app');
+    const sidebar = document.querySelector('.sidebar');
+    const toggleBtn = document.getElementById('sidebar-toggle-btn');
+    const revealBtn = document.getElementById('sidebar-reveal-btn');
+    if (!appContainer || !sidebar) return;
+
+    let isCollapsed = localStorage.getItem('schoolos_sidebar_collapsed') === 'true';
+    let isPeeking = false;
+
+    function applyState() {
+        if (window.innerWidth <= 768) {
+            appContainer.classList.remove('sidebar-collapsed');
+            sidebar.classList.remove('sidebar-peeking');
+            return;
+        }
+        if (isCollapsed) {
+            appContainer.classList.add('sidebar-collapsed');
+        } else {
+            appContainer.classList.remove('sidebar-collapsed');
+            sidebar.classList.remove('sidebar-peeking');
+        }
+    }
+
+    function toggleCollapsed() {
+        if (window.innerWidth <= 768) return;
+        isCollapsed = !isCollapsed;
+        localStorage.setItem('schoolos_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+        isPeeking = false;
+        applyState();
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', toggleCollapsed);
+    if (revealBtn) revealBtn.addEventListener('click', toggleCollapsed);
+
+    // Keyboard shortcut: Ctrl+B or Cmd+B
+    window.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
+            const tag = (document.activeElement && document.activeElement.tagName) || '';
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+            e.preventDefault();
+            toggleCollapsed();
+        }
+    });
+
+    // Auto-reveal on left edge mousemove (clientX <= 20) when collapsed
+    window.addEventListener('mousemove', (e) => {
+        if (window.innerWidth <= 768 || !isCollapsed) return;
+
+        if (e.clientX <= 20 && !isPeeking) {
+            isPeeking = true;
+            sidebar.classList.add('sidebar-peeking');
+        } else if (isPeeking && e.clientX > 260) {
+            isPeeking = false;
+            sidebar.classList.remove('sidebar-peeking');
+        }
+    });
+
+    // Auto-unpeek when clicking any navigation link
+    sidebar.querySelectorAll('.nav-links li').forEach(item => {
+        item.addEventListener('click', () => {
+            if (isPeeking) {
+                isPeeking = false;
+                sidebar.classList.remove('sidebar-peeking');
+            }
+        });
+    });
+
+    window.addEventListener('resize', applyState);
+    applyState();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     checkLogin();
+    initSidebarController();
     // Init first contact entry listeners
     document.querySelectorAll('#student-contacts-container .contact-entry').forEach(e => attachContactListeners(e));
     // Add another guardian / number button
