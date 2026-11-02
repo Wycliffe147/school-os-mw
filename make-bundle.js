@@ -143,18 +143,39 @@ function buildBundle(label, fileList, outFileName) {
   return { label, includedCount, skippedCount, totalKB: (totalBytes / 1024).toFixed(1), bundleKB, outFile, outFileName };
 }
 
+// ── Build ZIP bundle (like Pamthunzi — Claude.ai unpacks into directory tree)
+function buildZipBundle(fileList, outZipName) {
+  const { execSync } = require('child_process');
+  const outPath = path.join(root, outZipName);
+  if (fs.existsSync(outPath)) fs.unlinkSync(outPath);
+  const existingFiles = fileList.filter(rel => fs.existsSync(path.join(root, rel)) && !SKIP.has(path.basename(rel)));
+  execSync(`zip -q "${outPath}" ${existingFiles.map(f => `"${f}"`).join(' ')}`, { cwd: root });
+  const stat = fs.statSync(outPath);
+  return { outFileName: outZipName, zipKB: (stat.size / 1024).toFixed(1), totalFiles: existingFiles.length };
+}
+
 // ── Run generators ─────────────────────────────────────────────────────────
-console.log('🚀 Generating SchoolOS bundles for Claude.ai...\n');
+async function run() {
+  console.log('🚀 Generating SchoolOS bundles for Claude.ai...\n');
 
-const resAll      = buildBundle('Full Codebase', FILES, 'schoolos-bundle.txt');
-const resBackend  = buildBundle('Backend & Docs', BUNDLE_BACKEND, 'schoolos-bundle-backend.txt');
-const resFrontend = buildBundle('Frontend', BUNDLE_FRONTEND, 'schoolos-bundle-frontend.txt');
+  // 1. ZIP bundle (Pamthunzi style - preserves folder tree & unpacks in Claude)
+  const zipRes = await buildZipBundle(FILES, 'schoolos-bundle.zip');
+  console.log(`📦  ${zipRes.outFileName.padEnd(28)} | ${zipRes.zipKB.padStart(6)} KB | ${zipRes.totalFiles} files (ZIP archive - recommended!)`);
 
-[resAll, resBackend, resFrontend].forEach(r => {
-  console.log(`✅  ${r.outFileName.padEnd(28)} | ${r.bundleKB.padStart(6)} KB | ${r.includedCount} files (${r.label})`);
-});
+  // 2. Text bundles (concatenated raw text files)
+  const resAll      = buildBundle('Full Codebase', FILES, 'schoolos-bundle.txt');
+  const resBackend  = buildBundle('Backend & Docs', BUNDLE_BACKEND, 'schoolos-bundle-backend.txt');
+  const resFrontend = buildBundle('Frontend', BUNDLE_FRONTEND, 'schoolos-bundle-frontend.txt');
 
-console.log('\n💡 Recommendation for Claude.ai Project:');
-console.log('   - For general/backend work: Upload schoolos-bundle-backend.txt (~140 KB)');
-console.log('   - For frontend UI/UX work : Upload schoolos-bundle-frontend.txt (~600 KB)');
-console.log('   - For full global context : Upload schoolos-bundle.txt (~740 KB)\n');
+  [resAll, resBackend, resFrontend].forEach(r => {
+    console.log(`📄  ${r.outFileName.padEnd(28)} | ${r.bundleKB.padStart(6)} KB | ${r.includedCount} files (${r.label})`);
+  });
+
+  console.log('\n💡 Which one to upload to Claude.ai?');
+  console.log('   ⭐ schoolos-bundle.zip  (~170 KB) → Upload this directly! Claude unpacks all');
+  console.log('      individual files into your Project with full directory structure.');
+  console.log('   📄 schoolos-bundle-backend.txt (~190 KB) → If you only need backend in chat.');
+  console.log('   📄 schoolos-bundle-frontend.txt (~580 KB) → If you only need frontend in chat.\n');
+}
+
+run().catch(console.error);
