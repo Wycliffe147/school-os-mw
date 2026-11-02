@@ -1670,6 +1670,43 @@
         </div>
     </div>
 
+    <!-- Student Contacts & WhatsApp Numbers Modal -->
+    <div id="student-contacts-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.72); z-index:11000; justify-content:center; align-items:center; padding:15px;">
+        <div class="card" style="width:580px; max-width:96vw; background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:22px; box-shadow:0 12px 36px rgba(0,0,0,0.5); max-height:90vh; display:flex; flex-direction:column;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
+                <div>
+                    <h3 style="margin:0 0 4px 0; color:white; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
+                        👥 Manage Contacts &amp; WhatsApp Numbers
+                    </h3>
+                    <p style="margin:0; font-size:0.85rem; color:var(--text-secondary);">
+                        Student: <strong id="contacts-modal-student-name" style="color:var(--accent-blue);"></strong>
+                    </p>
+                </div>
+                <button type="button" id="contacts-modal-close-btn" style="background:none; border:none; color:var(--text-secondary); font-size:1.3rem; cursor:pointer; padding:2px 6px;">✕</button>
+            </div>
+
+            <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:12px;">
+                Reports, absent notifications, and fee balance reminders will be dispatched to all registered numbers.
+            </p>
+
+            <div id="contacts-modal-list" style="overflow-y:auto; flex:1; max-height:48vh; padding-right:4px; margin-bottom:12px;">
+                <!-- Dynamic contact entry rows -->
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <button type="button" id="contacts-modal-add-btn" class="btn outline-btn" style="font-size:0.82rem; padding:6px 12px; border:1px solid var(--accent-blue); color:var(--accent-blue); background:transparent; cursor:pointer;">
+                    + Add another guardian / number
+                </button>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:14px;">
+                <button type="button" id="contacts-modal-cancel-btn" class="btn outline-btn" style="padding:8px 16px;">Cancel</button>
+                <button type="button" id="contacts-modal-save-btn" class="btn primary-btn" style="padding:8px 20px;">Save Contacts</button>
+            </div>
+            <p id="contacts-modal-error" style="color:var(--accent-danger); font-size:0.82rem; margin-top:8px; display:none;"></p>
+        </div>
+    </div>
+
     <!-- Printable Receipt Modal -->
     <div id="receipt-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:11000; justify-content:center; align-items:center;">
         <div class="card" style="width:500px; max-width:95vw; background: white; color: #1e293b; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">

@@ -1323,11 +1323,23 @@ async function renderStudentsTab() {
     classStudents.forEach(student => {
         const tr = document.createElement('tr');
         if (readOnly) {
+            const gList = (student.guardians && student.guardians.length > 0)
+                ? student.guardians.filter(g => g && (g.phone || g.name))
+                : (student.phone ? [{ name: student.guardianName, phone: student.phone }] : []);
+            const gCount = gList.length;
+
             tr.innerHTML = `
                 <td>${student.name}</td>
                 <td>${student.gender || 'Male'}</td>
                 <td style="font-size:0.85rem;">${formatGuardiansDisplay(student)}</td>
-                <td style="font-size:0.82rem;">${formatPhonesDisplay(student)}</td>
+                <td style="font-size:0.82rem;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+                        <div>${formatPhonesDisplay(student)}</div>
+                        <button type="button" class="btn-manage-contacts" data-student-id="${student.id}" title="View all ${gCount} contacts" style="background:rgba(59,130,246,0.15); border:1px solid var(--accent-blue); color:#93c5fd; border-radius:4px; padding:2px 6px; font-size:0.72rem; cursor:pointer; white-space:nowrap; flex-shrink:0;">
+                            👥 ${gCount}
+                        </button>
+                    </div>
+                </td>
                 <td style="font-size:0.82rem; color:var(--text-secondary); white-space:nowrap;">${student.enrollmentDate || '—'}</td>
                 <td>${student.bursaryName || ''}</td>
             ` +
@@ -1349,11 +1361,18 @@ async function renderStudentsTab() {
                         const cc = detectCcFromPhone(student.phone || '');
                         const digits = (student.phone || '').startsWith(cc) ? (student.phone || '').slice(cc.length) : (student.phone || '');
                         const fmtDigits = formatPhoneInput(digits.replace(/\D/g,''), cc);
+                        const gList = (student.guardians && student.guardians.length > 0)
+                            ? student.guardians.filter(g => g && (g.phone || g.name))
+                            : (student.phone ? [{ name: student.guardianName, phone: student.phone }] : []);
+                        const gCount = gList.length;
                         return `<div style="display:flex; gap:3px; align-items:center;">
                             <select class="student-cc-sel" data-student-id="${student.id}" style="height:32px; width:72px; flex-shrink:0; padding:0 3px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.75rem; cursor:pointer;">
                                 ${buildCcOptions(cc)}
                             </select>
-                            <input type="tel" class="student-phone-num-input" data-student-id="${student.id}" value="${fmtDigits}" placeholder="000 000 000" style="width:115px; height:32px; padding:0 6px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.82rem;">
+                            <input type="tel" class="student-phone-num-input" data-student-id="${student.id}" value="${fmtDigits}" placeholder="000 000 000" style="width:105px; height:32px; padding:0 5px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:0.82rem;">
+                            <button type="button" class="btn-manage-contacts" data-student-id="${student.id}" title="${gCount > 1 ? `Manage all ${gCount} contacts` : 'Add another guardian / number'}" style="height:32px; padding:0 6px; border-radius:4px; border:1px solid ${gCount > 1 ? 'var(--accent-blue)' : 'var(--border-color)'}; background:${gCount > 1 ? 'rgba(59,130,246,0.18)' : 'var(--bg-primary)'}; color:${gCount > 1 ? '#93c5fd' : 'var(--text-secondary)'}; font-size:0.75rem; cursor:pointer; display:flex; align-items:center; gap:2px; flex-shrink:0; white-space:nowrap;">
+                                👥 ${gCount > 1 ? `<span style="font-weight:700;">${gCount}</span>` : '+'}
+                            </button>
                         </div>`;
                     })()}
                 </td>
@@ -1402,7 +1421,197 @@ async function renderStudentsTab() {
             }
         });
     });
+
+    // Wire manage contacts modal buttons (Option A)
+    tbody.querySelectorAll('.btn-manage-contacts').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const sid = btn.getAttribute('data-student-id');
+            openContactsModal(sid);
+        });
+    });
 }
+
+// ── Student Contacts & WhatsApp Numbers Modal (Option A) ─────────────────────
+let activeModalStudentId = null;
+
+function createModalContactRow(guardian = { name: '', phone: '' }, canRemove = true, isReadOnly = false) {
+    const div = document.createElement('div');
+    div.className = 'modal-contact-row';
+    div.style.cssText = 'display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:10px; background:var(--bg-primary); padding:10px; border-radius:8px; border:1px solid var(--border-color);';
+
+    const cc = detectCcFromPhone(guardian.phone || '');
+    const digits = (guardian.phone || '').startsWith(cc) ? (guardian.phone || '').slice(cc.length) : (guardian.phone || '').replace(/^0+/, '');
+    const fmtDigits = formatPhoneInput(digits.replace(/\D/g, ''), cc);
+
+    div.innerHTML = `
+        <div style="flex:1; min-width:140px;">
+            <label style="font-size:0.75rem; color:var(--text-secondary); display:block; margin-bottom:3px;">Guardian Name</label>
+            <input type="text" class="m-contact-name" value="${guardian.name || ''}" placeholder="e.g. Mary Doe (Mother)" ${isReadOnly ? 'disabled' : ''} style="width:100%; height:38px; padding:0 8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-secondary); color:white; font-size:0.85rem;">
+        </div>
+        <div style="flex:1.3; min-width:210px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                <label style="font-size:0.75rem; color:var(--text-secondary);">WhatsApp Phone</label>
+                <span class="m-phone-validity" style="font-size:0.75rem; min-width:44px; text-align:right;"></span>
+            </div>
+            <div style="display:flex; gap:4px; align-items:center;">
+                <select class="m-phone-cc" ${isReadOnly ? 'disabled' : ''} style="height:38px; width:78px; flex-shrink:0; background:var(--bg-secondary); border:1px solid var(--border-color); color:white; border-radius:6px; padding:0 6px; font-size:0.82rem; cursor:pointer;">
+                    ${buildCcOptions(cc)}
+                </select>
+                <input type="tel" class="m-phone-num" value="${fmtDigits}" placeholder="999 123 456" autocomplete="off" ${isReadOnly ? 'disabled' : ''} style="flex:1; height:38px; padding:0 8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-secondary); color:white; font-size:0.85rem;">
+                ${(!isReadOnly && canRemove) ? `<button type="button" class="m-remove-btn" title="Remove contact" style="background:none; border:none; color:#ef4444; font-size:1.1rem; cursor:pointer; padding:0 6px;">🗑</button>` : `<div style="width:24px;"></div>`}
+            </div>
+        </div>
+    `;
+
+    const numInp = div.querySelector('.m-phone-num');
+    const ccSel = div.querySelector('.m-phone-cc');
+    const validity = div.querySelector('.m-phone-validity');
+    const removeBtn = div.querySelector('.m-remove-btn');
+
+    if (!isReadOnly) {
+        attachPhoneInputValidation(numInp, ccSel, validity);
+        if (removeBtn) {
+            removeBtn.addEventListener('click', () => {
+                const list = document.getElementById('contacts-modal-list');
+                if (list.querySelectorAll('.modal-contact-row').length <= 1) {
+                    alert('A student must have at least one contact number.');
+                    return;
+                }
+                div.remove();
+            });
+        }
+    } else if (fmtDigits) {
+        validity.innerHTML = `<span style="color:#10b981; font-size:0.75rem;">✓ Saved</span>`;
+    }
+    return div;
+}
+
+function openContactsModal(studentId) {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    activeModalStudentId = studentId;
+    document.getElementById('contacts-modal-student-name').textContent = `${student.name} (${student.classLevel || 'Form 1'})`;
+    document.getElementById('contacts-modal-error').style.display = 'none';
+
+    const list = document.getElementById('contacts-modal-list');
+    list.innerHTML = '';
+
+    const isReadOnly = currentUser && currentUser.role === 'class_teacher';
+    const addBtn = document.getElementById('contacts-modal-add-btn');
+    const saveBtn = document.getElementById('contacts-modal-save-btn');
+    if (addBtn) addBtn.style.display = isReadOnly ? 'none' : '';
+    if (saveBtn) saveBtn.style.display = isReadOnly ? 'none' : '';
+
+    const guardians = (student.guardians && student.guardians.length > 0)
+        ? student.guardians.filter(g => g && (g.phone || g.name))
+        : (student.phone ? [{ name: student.guardianName || '', phone: student.phone }] : [{ name: '', phone: '' }]);
+
+    guardians.forEach(g => {
+        list.appendChild(createModalContactRow(g, guardians.length > 1, isReadOnly));
+    });
+
+    if (addBtn) {
+        addBtn.onclick = () => {
+            const newRow = createModalContactRow({ name: '', phone: '' }, true, false);
+            list.appendChild(newRow);
+            list.querySelectorAll('.m-remove-btn').forEach(btn => btn.style.visibility = 'visible');
+            newRow.querySelector('.m-contact-name')?.focus();
+        };
+    }
+
+    document.getElementById('student-contacts-modal').style.display = 'flex';
+}
+
+function closeContactsModal() {
+    document.getElementById('student-contacts-modal').style.display = 'none';
+    activeModalStudentId = null;
+}
+
+document.getElementById('contacts-modal-close-btn')?.addEventListener('click', closeContactsModal);
+document.getElementById('contacts-modal-cancel-btn')?.addEventListener('click', closeContactsModal);
+
+document.getElementById('contacts-modal-save-btn')?.addEventListener('click', async () => {
+    if (!activeModalStudentId) return;
+
+    const list = document.getElementById('contacts-modal-list');
+    const rows = list.querySelectorAll('.modal-contact-row');
+    const guardians = [];
+    const errorEl = document.getElementById('contacts-modal-error');
+    errorEl.style.display = 'none';
+
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const name = row.querySelector('.m-contact-name')?.value.trim() || '';
+        const cc = row.querySelector('.m-phone-cc')?.value || '265';
+        const numInp = row.querySelector('.m-phone-num');
+        const digits = (numInp?.value || '').replace(/\D/g, '').replace(/^0+/, '');
+
+        if (digits.length === 0 && name.length === 0) continue;
+
+        const cfg = PHONE_COUNTRIES[cc] || { digits: 9, name: 'Malawi', label: '+265' };
+        if (digits.length !== cfg.digits) {
+            errorEl.textContent = `Contact #${i + 1} (${name || 'Guardian'}): ${cfg.name} (${cfg.label}) numbers must have exactly ${cfg.digits} digits (currently ${digits.length}).`;
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        guardians.push({
+            name,
+            phone: cc + digits
+        });
+    }
+
+    if (guardians.length === 0) {
+        errorEl.textContent = 'Please enter at least one valid phone number.';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    try {
+        const btn = document.getElementById('contacts-modal-save-btn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        const res = await apiFetch('/api/students', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                updates: {
+                    [activeModalStudentId]: {
+                        guardians,
+                        guardianName: guardians[0].name,
+                        phone: guardians[0].phone
+                    }
+                }
+            })
+        });
+
+        btn.disabled = false;
+        btn.textContent = 'Save Contacts';
+
+        if (res.ok) {
+            const s = students.find(x => x.id === activeModalStudentId);
+            if (s) {
+                s.guardians = guardians;
+                s.guardianName = guardians[0].name;
+                s.phone = guardians[0].phone;
+                s.phones = guardians.map(g => g.phone).filter(Boolean);
+            }
+            closeContactsModal();
+            renderStudentsTab();
+        } else {
+            const err = await res.json().catch(() => ({}));
+            errorEl.textContent = err.error || 'Failed to save contacts.';
+            errorEl.style.display = 'block';
+        }
+    } catch (e) {
+        document.getElementById('contacts-modal-save-btn').disabled = false;
+        document.getElementById('contacts-modal-save-btn').textContent = 'Save Contacts';
+        errorEl.textContent = 'Error: ' + e.message;
+        errorEl.style.display = 'block';
+    }
+});
 
 // Save Subject Config Checkboxes
 document.getElementById('save-subjects-btn').addEventListener('click', async () => {
