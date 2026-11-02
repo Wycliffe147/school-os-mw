@@ -114,7 +114,20 @@ router.post('/payroll/leave/:id', (req, res) => {
     const { startDate, endDate, reason, type } = req.body;
     if (!startDate || !endDate) return res.status(400).json({ error: "Start and end date required" });
 
-    const days = Math.round((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1;
+    // Accept DD/MM/YYYY (Malawian standard) or YYYY-MM-DD
+    function parseFlexDate(s) {
+        if (!s) return null;
+        const dmyMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (dmyMatch) return new Date(`${dmyMatch[3]}-${dmyMatch[2].padStart(2,'0')}-${dmyMatch[1].padStart(2,'0')}`);
+        return new Date(s);
+    }
+    const startDt = parseFlexDate(startDate);
+    const endDt   = parseFlexDate(endDate);
+    if (!startDt || !endDt || isNaN(startDt) || isNaN(endDt)) {
+        return res.status(400).json({ error: "Invalid date format. Use DD/MM/YYYY." });
+    }
+
+    const days = Math.round((endDt - startDt) / (1000 * 60 * 60 * 24)) + 1;
 
     if (!staffUser.leaveHistory) staffUser.leaveHistory = [];
     if (staffUser.leaveBalance === undefined) staffUser.leaveBalance = 14;

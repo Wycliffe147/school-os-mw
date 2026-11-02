@@ -1688,7 +1688,7 @@
                     </tr></thead>
                     <tbody>
                         ${history.map(p => `<tr>
-                            <td>${new Date(p.date).toLocaleDateString()}</td>
+                            <td>${(function(d){if(!d)return'—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return m[3]+'/'+m[2]+'/'+m[1];const dt=new Date(d);if(isNaN(dt))return d;return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+dt.getFullYear();})(p.date)}</td>
                             <td><strong>${Number(p.amount).toLocaleString()}</strong></td>
                             <td>${p.method || 'Cash'}</td>
                             <td><span class="badge badge-blue">${p.receiptNo || '-'}</span></td>
@@ -1747,7 +1747,7 @@
                             ${records.slice(-30).reverse().map(r => {
                                 const cls = { present:'badge-success', absent:'badge-danger', late:'badge-warning', excused:'badge-blue' }[r.status] || 'badge-blue';
                                 return `<tr>
-                                    <td>${r.date}</td>
+                                    <td>${(function(d){if(!d)return'—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return m[3]+'/'+m[2]+'/'+m[1];const dt=new Date(d);if(isNaN(dt))return d;return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+dt.getFullYear();})(r.date)}</td>
                                     <td><span class="badge ${cls}">${r.status.toUpperCase()}</span></td>
                                 </tr>`;
                             }).join('')}
@@ -1853,7 +1853,7 @@
                 const cleared = bal <= 0;
                 const pymtRows = (t.paymentHistory || []).map(p => `
                     <tr>
-                        <td>${new Date(p.date).toLocaleDateString()}</td>
+                        <td>${(function(d){if(!d)return'—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return m[3]+'/'+m[2]+'/'+m[1];const dt=new Date(d);if(isNaN(dt))return d;return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+dt.getFullYear();})(p.date)}</td>
                         <td><strong>MK ${Number(p.amount).toLocaleString()}</strong></td>
                         <td>${p.method || 'Cash'}</td>
                         <td><span class="badge badge-blue">${p.receiptNo || '-'}</span></td>
@@ -1969,7 +1969,7 @@
             container.innerHTML = notices.map(n => `
                 <div class="notice-item">
                     <div class="notice-title">${n.title}</div>
-                    <div class="notice-date">${new Date(n.postedAt || Date.now()).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}</div>
+                    <div class="notice-date">${(function(d){if(!d)return'—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return m[3]+'/'+m[2]+'/'+m[1];const dt=new Date(d);if(isNaN(dt))return d;return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+dt.getFullYear();})(n.postedAt || Date.now())}</div>
                     <div class="notice-body">${n.body}</div>
                 </div>`).join('');
         } catch(e) {

@@ -97,6 +97,25 @@ function formatRole(role) {
     return role.charAt(0).toUpperCase() + role.slice(1);
 }
 
+// Universal Malawian / Commonwealth date formatter: DD/MM/YYYY
+function formatDateDMY(d) {
+    if (!d) return '—';
+    if (typeof d === 'string') {
+        const trimmed = d.trim();
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) return trimmed;
+        const m = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m && !trimmed.includes('T')) {
+            return `${m[3]}/${m[2]}/${m[1]}`;
+        }
+    }
+    const dt = (d instanceof Date) ? d : new Date(d);
+    if (isNaN(dt.getTime())) return String(d);
+    const day = String(dt.getDate()).padStart(2, '0');
+    const month = String(dt.getMonth() + 1).padStart(2, '0');
+    const year = dt.getFullYear();
+    return `${day}/${month}/${year}`;
+}
+
 const CLASS_LEVELS = ['Form 1', 'Form 2', 'Form 3', 'Form 4'];
 
 let authToken = localStorage.getItem('token');
@@ -1340,7 +1359,7 @@ async function renderStudentsTab() {
                         </button>
                     </div>
                 </td>
-                <td style="font-size:0.82rem; color:var(--text-secondary); white-space:nowrap;">${student.enrollmentDate || '—'}</td>
+                <td style="font-size:0.82rem; color:var(--text-secondary); white-space:nowrap;">${formatDateDMY(student.enrollmentDate)}</td>
                 <td>${student.bursaryName || ''}</td>
             ` +
                 subjectsList.map(sub => `
@@ -1376,7 +1395,7 @@ async function renderStudentsTab() {
                         </div>`;
                     })()}
                 </td>
-                <td style="font-size:0.82rem; color:var(--text-secondary); white-space:nowrap;">${student.enrollmentDate || '—'}</td>
+                <td style="font-size:0.82rem; color:var(--text-secondary); white-space:nowrap;">${formatDateDMY(student.enrollmentDate)}</td>
                 <td><input type="text" data-student-id="${student.id}" data-field="bursaryName" value="${student.bursaryName || ''}" placeholder="None" style="width: 100px;"></td>
             ` + 
                 subjectsList.map(sub => `
@@ -3093,7 +3112,7 @@ function openFeeLedgerPrintWindow() {
         const statusSelect = document.getElementById('fee-status-filter');
         const statusLabel = (statusSelect && statusSelect.selectedIndex >= 0) ? statusSelect.options[statusSelect.selectedIndex].text : 'All Statuses';
 
-        const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const dateStr = formatDateDMY(new Date());
         const staffName = (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.name || currentUser.username) : 'Staff';
 
         // Summary values from DOM
@@ -3301,7 +3320,7 @@ function renderPaymentHistoryList(student) {
                         <span style="font-size: 0.78rem; color: var(--text-secondary);">${p.receiptNo}</span>
                     </div>
                     <div style="font-size: 0.8rem; color: var(--text-secondary);">
-                        ${new Date(p.date).toLocaleDateString()} ${p.note ? `· ${p.note}` : ''} <span style="opacity: 0.7;">(by ${p.recordedBy || 'Admin'})</span>
+                        ${formatDateDMY(p.date)} ${p.note ? `· ${p.note}` : ''} <span style="opacity: 0.7;">(by ${p.recordedBy || 'Admin'})</span>
                     </div>
                 </div>
                 <div style="display: flex; gap: 6px; flex-shrink: 0;">
@@ -3398,7 +3417,7 @@ function openReceiptModal(student, payment) {
     
     document.getElementById('receipt-school-name').innerText = schoolName.toUpperCase();
     document.getElementById('receipt-no').innerText = payment.receiptNo;
-    document.getElementById('receipt-date').innerText = new Date(payment.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    document.getElementById('receipt-date').innerText = formatDateDMY(payment.date);
     document.getElementById('receipt-student-name').innerText = student.name;
     document.getElementById('receipt-student-class').innerText = student.classLevel || 'Form 1';
     document.getElementById('receipt-method').innerText = payment.method || 'Cash';
@@ -3801,9 +3820,10 @@ async function renderPayrollTab() {
             const sname = e.target.getAttribute('data-name');
             const type = prompt(`Leave type for ${sname}:\n1. Annual Leave\n2. Sick Leave\n3. Compassionate\nEnter type:`, 'Annual Leave');
             if (!type) return;
-            const startDate = prompt('Start date (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+            const todayDmy = formatDateDMY(new Date());
+            const startDate = prompt('Start date (DD/MM/YYYY):', todayDmy);
             if (!startDate) return;
-            const endDate = prompt('End date (YYYY-MM-DD):', startDate);
+            const endDate = prompt('End date (DD/MM/YYYY):', startDate);
             if (!endDate) return;
             const reason = prompt('Reason (optional):') || '';
             const res = await apiFetch(`/api/payroll/leave/${sid}`, {
@@ -3877,7 +3897,7 @@ function openStaffHistoryModal(staff) {
             div.innerHTML = `
                 <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
                     <span class="badge" style="background: ${typeColor}; color: white; font-size: 0.75rem;">${l.type || 'Annual Leave'} (${l.days} day${l.days > 1 ? 's' : ''})</span>
-                    <span style="color: var(--text-secondary); font-size: 0.78rem;">${new Date(l.startDate).toLocaleDateString()} to ${new Date(l.endDate).toLocaleDateString()}</span>
+                    <span style="color: var(--text-secondary); font-size: 0.78rem;">${formatDateDMY(l.startDate)} to ${formatDateDMY(l.endDate)}</span>
                 </div>
                 ${l.reason ? `<div style="color: var(--text-primary); margin-top: 4px;">Reason: ${l.reason}</div>` : ''}
                 <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px;">Recorded by: ${l.recordedBy || 'Admin'}</div>
@@ -3902,7 +3922,7 @@ function openPrintablePayslipModal(staff, payslip) {
 
     document.getElementById('ps-period').innerText = `${payslip.month} ${payslip.year}`;
     document.getElementById('ps-slip-id').innerText = payslip.slipId;
-    document.getElementById('ps-date').innerText = payslip.generatedAt ? new Date(payslip.generatedAt).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB');
+    document.getElementById('ps-date').innerText = formatDateDMY(payslip.generatedAt || new Date());
 
     const basic = Number(payslip.basicSalary || 0);
     const allow = payslip.allowances || {};
@@ -3990,7 +4010,7 @@ async function renderNoticesTab() {
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
                     <div>
                         <div style="font-weight:700; margin-bottom:4px;">${n.title}</div>
-                        <div style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:6px;">${new Date(n.postedAt).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})} · by ${n.postedBy || 'Admin'}</div>
+                        <div style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:6px;">${formatDateDMY(n.postedAt)} · by ${n.postedBy || 'Admin'}</div>
                         <div style="font-size:0.88rem; color:var(--text-secondary);">${n.body}</div>
                     </div>
                     ${canPostNotices ? `<button class="btn outline-btn btn-del-notice" data-id="${n.id}" style="padding:3px 8px; font-size:0.75rem; color:var(--accent-danger); border-color:var(--accent-danger); flex-shrink:0;">✕</button>` : ''}
@@ -4050,7 +4070,7 @@ async function renderApplicationsTab() {
                 <td>${a.classApplied}</td>
                 <td>${a.parentName || '-'}</td>
                 <td>${a.parentPhone}</td>
-                <td>${new Date(a.appliedAt).toLocaleDateString()}</td>
+                <td>${formatDateDMY(a.appliedAt)}</td>
                 <td><span style="color:${statusColor}; font-weight:bold;">${a.status}</span></td>
                 <td>
                     <div style="display:flex; gap:6px;">
@@ -4416,7 +4436,7 @@ function renderStudentAnalyticsModalContent(st) {
                         <span style="font-weight:600; color:var(--text-primary);">MK ${Number(p.amount).toLocaleString()}</span>
                         <span style="color:var(--text-secondary); font-size:0.75rem;"> (${p.method || 'Cash'})</span>
                     </div>
-                    <span style="color:var(--text-secondary); font-size:0.72rem;">${new Date(p.date).toLocaleDateString()}</span>
+                    <span style="color:var(--text-secondary); font-size:0.72rem;">${formatDateDMY(p.date)}</span>
                 </div>`).join('')}
             </div>` : '<p style="color:var(--text-secondary); font-size:0.8rem; margin:0;">No payments recorded yet.</p>'}
         </div>
@@ -5049,7 +5069,7 @@ function openExplorerPrintWindow() {
             ? feeSelect.options[feeSelect.selectedIndex].text
             : 'All Financial Statuses';
         
-        const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const dateStr = formatDateDMY(new Date());
         const staffName = (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.name || currentUser.username) : 'Staff';
 
         // Collect rendered table rows

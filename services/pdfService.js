@@ -377,7 +377,9 @@ async function generatePDF(student, db) {
     page.drawText(`Next Term Opens On: ${db.settings.nextTermDate}`, { x: 40, y: currentY, size: 10, font: fontRegular });
 
     currentY -= 20;
-    page.drawText(`Generated on: ${new Date().toLocaleDateString()}`, { x: 380, y: currentY, size: 9, font: fontRegular });
+    const today = new Date();
+    const genDateDMY = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+    page.drawText(`Generated on: ${genDateDMY}`, { x: 380, y: currentY, size: 9, font: fontRegular });
 
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;
